@@ -32,7 +32,7 @@ class PSB(App):
                 old.destroy()
         window.size_hint = size_hint
         window.open(self.ui_)
-        self.ui_.add_widget(window.create())
+        #self.ui_.add_widget(window.create())
         #self.activeWindow_.append(window)
         
     

@@ -70,12 +70,12 @@ class WindowBase(FloatLayout):
 
     _anim_duration = NumericProperty(.1)
 
-    _window = ObjectProperty(None, allownone=True)
+    window_ = ObjectProperty(None, allownone=True)
 
     __events__ = ('on_open', 'on_dismiss')
     
     windowed_ = True
-    draggable_ = OptionProperty("Top", options=["All", "Top", "None"])
+    dragable = OptionProperty("Top", options=["All", "Top", "None"])
     grabOffset_ = (0, 0)
 
     def __init__(self, parent, **kwargs):
@@ -94,39 +94,38 @@ class WindowBase(FloatLayout):
             window = Window
         return window
 
-    def open(self, window = None, *largs):
+    def open(self, window=None, *largs):
         '''Show the view window from the :attr:`attach_to` widget. If set, it
         will attach to the nearest window. If the widget is not attached to any
         window, the view will attach to the global
         :class:`~kivy.core.window.Window`.
         '''
-        if self._window is not None:
+        if self.window_ is not None:
             Logger.warning('WindowBase: you can only open once.')
             return self
         # search window
-        self._window = self._search_window()
-        if not self._window:
+        self.window_ = window#self._search_window()
+        if not self.window_:
             Logger.warning('WindowBase: cannot open view, no window found.')
             return self
-        self._window.add_widget(self)
-        self._window.bind(
+        self.window_.add_widget(self.create())
+        self.window_.bind(
             on_resize=self._align_center,
             on_keyboard=self._handle_keyboard)
-        self.center = self._window.center
+        self.center = self.window_.center
         self.fbind('size', self._update_center)
-        self.create()
         a = Animation(_anim_alpha=1., d=self._anim_duration)
         a.bind(on_complete=lambda *x: self.dispatch('on_open'))
         a.start(self)
         return self
 
     def _update_center(self, *args):
-        if not self._window:
+        if not self.window_:
             return
         # XXX HACK DONT REMOVE OR FOUND AND FIX THE ISSUE
         # It seems that if we don't access to the center before assigning a new
         # value, no dispatch will be done >_>
-        self.center = self._window.center
+        self.center = self.window_.center
 
     def dismiss(self, *largs, **kwargs):
         '''Close the view if it is open. If you really want to close the
@@ -143,7 +142,7 @@ class WindowBase(FloatLayout):
             view.dismiss(animation=False)
 
         '''
-        if self._window is None:
+        if self.window_ is None:
             return self
         if self.dispatch('on_dismiss') is True:
             if kwargs.get('force', False) is not True:
@@ -159,21 +158,19 @@ class WindowBase(FloatLayout):
         self._align_center()
 
     def _align_center(self, *l):
-        if self._window:
-            self.center = self._window.center
+        if self.window_:
+            self.center = self.window_.center
             # hack to resize dark background on window resize
-            _window = self._window
-            self._window = None
-            self._window = _window
+            window = self.window_
+            self.window_ = None
+            self.window_ = window
 
     def on_touch_down(self, touch):
-        if self.draggable_ is not "None":
-            self.grabOffset_ = self.ui_.to_local(*touch.pos, relative=True)
-            
-            if self.ui_.collide_point(*self.grabOffset_):
+        if self.dragable is not "None":
+            if self.ui_.collide_point(*touch.pos):
+                self.grabOffset_ = self.ui_.to_local(*touch.pos, relative = True)
                 # check if we should really drag (in case of top)
-                if self.draggable_ is not 'Top' or (self.ui_.height - self.grabOffset_[1]) <= 30:
-                    print(self.grabOffset_)
+                if self.dragable is not 'Top' or (self.ui_.height - self.grabOffset_[1]) <= 30:
                     touch.grab(self)
                     return True
         
@@ -196,17 +193,17 @@ class WindowBase(FloatLayout):
         return True
 
     def on__anim_alpha(self, instance, value):
-        if value == 0 and self._window is not None:
+        if value == 0 and self.window_ is not None:
             self._real_remove_widget()
 
     def _real_remove_widget(self):
-        if self._window is None:
+        if self.window_ is None:
             return
-        self._window.remove_widget(self)
-        self._window.unbind(
+        self.window_.remove_widget(self)
+        self.window_.unbind(
             on_resize=self._align_center,
             on_keyboard=self._handle_keyboard)
-        self._window = None
+        self.window_ = None
 
     def on_open(self):
         pass
@@ -236,15 +233,15 @@ class WindowBase(FloatLayout):
     def create(self):
         if self.ui_ == None:
             # build the display
-            self.ui_ = GridLayout(cols = 1)
+            self.ui_ = GridLayout(cols=1)
             self.ui_.rows_minimum = {0:30}
-            self.ui_.add_widget(Label(text='Window', height = 30, size_hint_y = None, id = '_windowTop'))
+            self.ui_.add_widget(Label(text='Window', height=30, size_hint_y=None, id='_windowTop'))
             r = self.getRootUI()
             self.ui_.add_widget(r)
 #             self.ui_ = r
             self.ui_.size_hint = self.size_hint
-        
-        return self.ui_
+        self.add_widget(self.ui_)
+        return self
     
     def destroy(self):
         pass      
