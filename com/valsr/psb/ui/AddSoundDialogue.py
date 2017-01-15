@@ -17,10 +17,22 @@ class AddSoundDialogue(WindowBase):
     def init(self, **kwargs):
         self.title = "Add Audio File"
         pass
+    
     def on_open(self, **kwargs):
-        self.ui_.ids['fc'].path = self.cwd_
-        self.ui_.ids['pathinp'].text = self.cwd_
+        self.getRootUI().ids['fc'].path = self.cwd_
+        self.getRootUI().ids['pathinp'].text = self.cwd_
         
-    def getRootUI(self):
+    def createRootUI(self):
         return Builder.load_file("ui/kv/addsound.kv")
+    
+    def on_autoplay_label(self, touch):
+        print (touch)
+        label = self.getUI('AutoPlayLabel')
+        if label.collide_point(*touch.pos):
+            self.getUI('AutoPlayButton').active = not self.getUI('AutoPlayButton').active
+     
+    def cancel(self, *args):   
+        self.dismiss()
         
+    #def open(self, *args):
+    #    self.dismiss()

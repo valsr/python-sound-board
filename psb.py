@@ -23,8 +23,11 @@ class PSB(App):
         
         if 'title' in kwargs:
             window.title = kwargs['title']
-            
-        window.open(self.ui_)
+         
+        if 'windowed' in kwargs:
+            window.windowed = kwargs['windowed']
+               
+        window.open()
         
         return window        
     

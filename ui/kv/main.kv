@@ -57,8 +57,8 @@ GridLayout:
 						hint_y: 1
 				ImageButton:
 					id: addsound
+					on_press: root.parent.addSound()
 					label: 'Add Sound'
-					on_press: app.action(root.id, 'addsound')
 					source: 'plus'
 					height: 30
 					size_hint_y: None		

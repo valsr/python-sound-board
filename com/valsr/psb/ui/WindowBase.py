@@ -188,7 +188,7 @@ class WindowBase(GridLayout):
                 self.label_.text = self.title
                 self.padding = (self.border[3], self.border[0],self.border[1],self.border[2])
             self.add_widget(self.label_)
-            self.ui_ = self.getRootUI()
+            self.ui_ = self.createRootUI()
             self.ui_.id = str(uuid.uuid1().hex)
             self.add_widget(self.ui_)
                 
@@ -215,11 +215,22 @@ class WindowBase(GridLayout):
                 Rectangle(pos=(self.x, self.y), size=(self.border[3], self.height)) # LEFT
 
     @abstractmethod
-    def getRootUI(self):
+    def createRootUI(self):
         pass
+    
+    def getRootUI(self):
+        return self.ui_
     
     def bindActions(self, controller):
         pass
     
     def unbindActions(self, controller):
         pass
+    
+    def getUI(self, uiID):
+        root = self.getRootUI()
+        
+        if root is not None:
+            return root.ids[uiID]
+        
+        return None

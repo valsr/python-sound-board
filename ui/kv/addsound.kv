@@ -60,15 +60,15 @@ BoxLayout:
 					width: 100
 					size_hint_x: None
 					CheckBox:
-						id: uiAutoPlay
+						id: AutoPlayButton
 						active: True
 						width: 24
 						size_hint_x: None
 						text: 'Auto-play'
 					Label:
-						id: uiAutoPlayLabel
+						id: AutoPlayLabel
 						text: 'Auto-play'
-						on_touch_down: app.on_autoplay_label(args[1])
+						on_touch_down: root.parent.on_autoplay_label(args[1])
 		BoxLayout:
 			orientation: 'vertical'
 			width: 150
@@ -78,8 +78,10 @@ BoxLayout:
 				size_hint: None,None
 				label: 'Open'
 				source: 'folder-open'
+				on_press: root.parent.open()
 			ImageButton:
 				size: 150, 25
 				size_hint: None,None
 				label: 'Cancel'
+				on_press: root.parent.cancel()
 				source: 'ban'
