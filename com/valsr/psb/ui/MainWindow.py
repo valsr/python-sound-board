@@ -15,5 +15,5 @@ class MainWindow(WindowBase):
     def createRootUI(self):
         return Builder.load_file("ui/kv/main.kv") 
 
-    def addSound(self, *args):
+    def uiAddSound(self, *args):
         window = self.controller_.openWindow(AddSoundDialogue, windowed = True, size_hint=(0.75,0.75))

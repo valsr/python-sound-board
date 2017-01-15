@@ -25,14 +25,13 @@ class AddSoundDialogue(WindowBase):
     def createRootUI(self):
         return Builder.load_file("ui/kv/addsound.kv")
     
-    def on_autoplay_label(self, touch):
-        print (touch)
+    def uiAutoplayLabel(self, touch):
         label = self.getUI('AutoPlayLabel')
         if label.collide_point(*touch.pos):
             self.getUI('AutoPlayButton').active = not self.getUI('AutoPlayButton').active
      
-    def cancel(self, *args):   
+    def uiCancel(self, *args):   
         self.dismiss()
         
-    #def open(self, *args):
-    #    self.dismiss()
+    def uiOpen(self, *args):
+        self.dismiss()

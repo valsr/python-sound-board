@@ -68,7 +68,7 @@ BoxLayout:
 					Label:
 						id: AutoPlayLabel
 						text: 'Auto-play'
-						on_touch_down: root.parent.on_autoplay_label(args[1])
+						on_touch_down: root.parent.uiAutoplayLabel(args[1])
 		BoxLayout:
 			orientation: 'vertical'
 			width: 150
@@ -78,10 +78,10 @@ BoxLayout:
 				size_hint: None,None
 				label: 'Open'
 				source: 'folder-open'
-				on_press: root.parent.open()
+				on_press: root.parent.uiOpen()
 			ImageButton:
 				size: 150, 25
 				size_hint: None,None
 				label: 'Cancel'
-				on_press: root.parent.cancel()
+				on_press: root.parent.uiCancel()
 				source: 'ban'

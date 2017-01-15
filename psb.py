@@ -12,6 +12,10 @@ class PSB(App):
     ui_ = None
     activeWindow_ = []
   
+    def on_keyoard(self, window, key, *largs):
+        print('hey')
+        return True
+    
     def openWindow(self, windowClass, **kwargs):
         window = windowClass(self)
         
