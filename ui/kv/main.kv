@@ -1,0 +1,83 @@
+<ImageButton@Button>:
+	label: ''
+	source: None
+	size_hint_y: None
+	BoxLayout:
+		y: self.parent.y + (self.parent.height - self.height)/2
+		x: self.parent.center_x - self.width/2
+		Image:
+			size: 30, 24
+			source: app.getThemeImageFilename(root.source, 24)
+		Label:
+			text: root.label
+	
+GridLayout:
+	cols: 1
+	rows_minimum: {0:30}
+	BoxLayout:
+		orientation: 'horizontal'
+		height: 30
+		size_hint_y: None
+		ImageButton:
+			height: 30
+			size_hint_y: None
+			label: 'New'
+			source: 'file-text'
+		ImageButton:
+			height: 30
+			size_hint_y: None
+			label: 'Open'
+			source: 'folder-open'
+		ImageButton:
+			height: 30
+			size_hint_y: None
+			label: 'Save'
+			source: 'download'
+	GridLayout:
+		cols: 2
+		size: root.width, root.height-30
+		pos: 0,30
+		Splitter:
+			sizable_from: 'right'
+			min_size: 150
+			max_size: 400
+			size_hint_x: None
+			width: 250
+			keep_within_parent: True
+			strip_size: '8pt'			
+			BoxLayout:
+				orientation: 'vertical'
+				TextInput:
+					height: 30
+					size_hint_y: None
+					text: 'Search'
+				ScrollView:
+					TreeView:
+						hint_y: 1
+				ImageButton:
+					label: 'Add Sound'
+					on_press: app.on_add_sound()
+					source: 'plus'
+					height: 30
+					size_hint_y: None		
+		BoxLayout:
+			orientation: 'vertical'
+			BoxLayout:
+				orientation: 'vertical'
+				ImageButton:
+					hint_size_y: 1
+					label: 'Newer'
+					source: 'file'
+			Splitter:
+				sizable_from: 'top'
+				min_size: 150
+				max_size: 250
+				size_hint_y: None
+				height: 200
+				keep_within_parent: True
+				strip_size: '8pt'
+				BoxLayout:
+					ImageButton:
+						label: 'New'
+						source: 'hotel'
+

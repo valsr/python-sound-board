@@ -1,0 +1,77 @@
+<ImageButton@Button>:
+	label: ' '
+	source: None
+	size_hint_y: None
+	size_hint_x: None
+	BoxLayout:
+		y: self.parent.y + (self.parent.height - self.height)/2
+		x: self.parent.center_x - self.width/2
+		Image:
+			size: 24, 24
+			source: app.getThemeImageFilename(root.source, 24)
+		Label:
+			text: root.label
+<ImageOnlyButton@Button>:
+	source: None
+	size_hint_y: None
+	size_hint_x: None
+	BoxLayout:
+		size: self.parent.size
+		y: self.parent.y
+		x: self.parent.x
+		Image:
+			size: self.parent.size
+			source: app.getThemeImageFilename(root.source, self.parent.height)	
+
+BoxLayout:
+	orientation: 'vertical'
+	TextInput:
+		height: 30
+		size_hint_y: None
+		text: 'Path'
+	BoxLayout:
+		FileChooser:
+			id: fc
+			FileChooserIconLayout:
+	GridLayout:
+		cols: 3
+		size_hint_y: None
+		ImageButton:
+			size: 150, 30
+			size_hint: None,None
+			label: 'Cancel'
+			source: 'ban'
+		BoxLayout:
+			orientation: 'vertical'
+			Button:
+				height: 50
+				size_hint_y: None
+			BoxLayout:
+				orientatin: 'horizontal'
+				ImageOnlyButton:
+					source: 'play'
+					size: 48, 24
+					size_hint: None, None
+				ImageOnlyButton:
+					source: 'stop'
+					size: 48, 24
+					size_hint: None, None
+				BoxLayout:
+					width: 100
+					size_hint_x: None
+					CheckBox:
+						id: uiAutoPlay
+						active: True
+						width: 24
+						size_hint_x: None
+						text: 'Auto-play'
+					Label:
+						id: uiAutoPlayLabel
+						text: 'Auto-play'
+						on_touch_down: app.on_autoplay_label(args[1])
+		ImageButton:
+			size: 150, 30
+			size_hint: None,None
+			label: 'Open'
+			source: 'folder-open'
+			
