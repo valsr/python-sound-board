@@ -32,19 +32,16 @@ BoxLayout:
 	BoxLayout:
 		FileChooser:
 			id: fc
+			size_hint_y: 1
 			FileChooserIconLayout:
-	GridLayout:
-		cols: 3
+	BoxLayout:
+		orientation: 'horizontal'
 		size_hint_y: None
-		ImageButton:
-			size: 150, 30
-			size_hint: None,None
-			label: 'Cancel'
-			source: 'ban'
+		height: 50
 		BoxLayout:
 			orientation: 'vertical'
 			Button:
-				height: 50
+				height: 26
 				size_hint_y: None
 			BoxLayout:
 				orientatin: 'horizontal'
@@ -69,9 +66,17 @@ BoxLayout:
 						id: uiAutoPlayLabel
 						text: 'Auto-play'
 						on_touch_down: app.on_autoplay_label(args[1])
-		ImageButton:
-			size: 150, 30
-			size_hint: None,None
-			label: 'Open'
-			source: 'folder-open'
-			
+		BoxLayout:
+			orientation: 'vertical'
+			width: 150
+			size_hint_x: None
+			ImageButton:
+				size: 150, 25
+				size_hint: None,None
+				label: 'Open'
+				source: 'folder-open'
+			ImageButton:
+				size: 150, 25
+				size_hint: None,None
+				label: 'Cancel'
+				source: 'ban'

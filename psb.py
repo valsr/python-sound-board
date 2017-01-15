@@ -3,13 +3,10 @@ Created on Jan 13, 2017
 
 @author: radoslav
 '''
-
 from kivy.app import App
 from com.valsr.psb.ui.MainWindow import MainWindow
 from kivy.uix.floatlayout import FloatLayout
 from com.valsr.psb.ui.AddSoundDialogue import AddSoundDialogue
-from kivy.uix.modalview import ModalView
-
 
 class PSB(App):
     theme_ = 'white'
@@ -22,7 +19,9 @@ class PSB(App):
         pass
      
     def on_add_sound(self):
-        self.addWindow(AddSoundDialogue(self), size_hint=(0.5, 0.5))
+        window = AddSoundDialogue(self)
+        window.windowed = True
+        self.addWindow(window, size_hint=(0.75, 0.75))
             
     def addWindow(self, window, replace=False, size_hint=(1.0, 1.0)):
         if replace == True:
@@ -32,8 +31,8 @@ class PSB(App):
                 old.destroy()
         window.size_hint = size_hint
         window.open(self.ui_)
-        #self.ui_.add_widget(window.create())
-        #self.activeWindow_.append(window)
+        # self.ui_.add_widget(window.create())
+        # self.activeWindow_.append(window)
         
     
     def getThemeImageFilename(self, name, size):
@@ -41,7 +40,9 @@ class PSB(App):
             
     def build(self):
         self.ui_ = FloatLayout()
-        self.addWindow(MainWindow(self))
+        main = MainWindow(self)
+        main.draggable = 'None'
+        self.addWindow(main)
         return self.ui_
 
 

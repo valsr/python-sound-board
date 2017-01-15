@@ -3,20 +3,17 @@ Created on Jan 14, 2017
 
 @author: radoslav
 '''
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.gridlayout import GridLayout
+from kivy.graphics import Rectangle, Color 
 __all__ = ('WindowBase',)
 
-from kivy.lang import Builder
-from abc import abstractmethod, ABC, ABCMeta
+from abc import abstractmethod, ABCMeta
 from kivy.logger import Logger
 from kivy.animation import Animation
 from kivy.properties import *
 
-class WindowBase(FloatLayout):
+class WindowBase(GridLayout):
     __metaclass__ = ABCMeta
     '''WindowBase class. See module documentation for more information.
 
@@ -27,31 +24,14 @@ class WindowBase(FloatLayout):
             Fired when the WindowBase is closed. If the callback returns True,
             the dismiss will be canceled.
     '''
-    attach_to = ObjectProperty(None)
-    '''If a widget is set on attach_to, the view will attach to the nearest
-    parent window of the widget. If none is found, it will attach to the
-    main/global Window.
-
-    :attr:`attach_to` is an :class:`~kivy.properties.ObjectProperty` and
-    defaults to None.
-    '''
-
-    background_color = ListProperty([1, 0, 0, .7])
+    background_color = ListProperty([0, 0, 0, .8])
     '''Background color in the format (r, g, b, a).
 
     :attr:`background_color` is a :class:`~kivy.properties.ListProperty` and
     defaults to [0, 0, 0, .7].
     '''
 
-    background = StringProperty(
-        'atlas://data/images/defaulttheme/modalview-background')
-    '''Background image of the view used for the view background.
-
-    :attr:`background` is a :class:`~kivy.properties.StringProperty` and
-    defaults to 'atlas://data/images/defaulttheme/modalview-background'.
-    '''
-
-    border = ListProperty([16, 16, 16, 16])
+    border = ListProperty([3, 3, 3, 3])
     '''Border used for :class:`~kivy.graphics.vertex_instructions.BorderImage`
     graphics instruction. Used for the :attr:`background_normal` and the
     :attr:`background_down` properties. Can be used when using custom
@@ -65,18 +45,14 @@ class WindowBase(FloatLayout):
     '''
 
     # Internals properties used for graphical representation.
-
     _anim_alpha = NumericProperty(0)
-
     _anim_duration = NumericProperty(.1)
-
     window_ = ObjectProperty(None, allownone=True)
-
     __events__ = ('on_open', 'on_dismiss')
-    
-    windowed_ = True
-    dragable = OptionProperty("Top", options=["All", "Top", "None"])
+    windowed = False
+    draggable = OptionProperty("Top", options=["All", "Top", "None"])
     grabOffset_ = (0, 0)
+    ui_ = None
 
     def __init__(self, parent, **kwargs):
         self._parent = parent
@@ -104,11 +80,12 @@ class WindowBase(FloatLayout):
             Logger.warning('WindowBase: you can only open once.')
             return self
         # search window
-        self.window_ = window#self._search_window()
+        self.window_ = window  # self._search_window()
         if not self.window_:
             Logger.warning('WindowBase: cannot open view, no window found.')
             return self
-        self.window_.add_widget(self.create())
+        self.create()
+        self.window_.add_widget(self)
         self.window_.bind(
             on_resize=self._align_center,
             on_keyboard=self._handle_keyboard)
@@ -156,6 +133,7 @@ class WindowBase(FloatLayout):
 
     def on_size(self, instance, value):
         self._align_center()
+        self.drawBackground()
 
     def _align_center(self, *l):
         if self.window_:
@@ -166,11 +144,11 @@ class WindowBase(FloatLayout):
             self.window_ = window
 
     def on_touch_down(self, touch):
-        if self.dragable is not "None":
-            if self.ui_.collide_point(*touch.pos):
-                self.grabOffset_ = self.ui_.to_local(*touch.pos, relative = True)
+        if self.draggable is not "None":
+            if self.collide_point(*touch.pos):
+                self.grabOffset_ = self.to_local(*touch.pos, relative=True)
                 # check if we should really drag (in case of top)
-                if self.dragable is not 'Top' or (self.ui_.height - self.grabOffset_[1]) <= 30:
+                if self.draggable is not 'Top' or (self.height - self.grabOffset_[1]) <= 30:
                     touch.grab(self)
                     return True
         
@@ -179,7 +157,8 @@ class WindowBase(FloatLayout):
 
     def on_touch_move(self, touch):
         if touch.grab_current is self:
-            self.ui_.pos = touch.x - self.grabOffset_[0], touch.y - self.grabOffset_[1]
+            self.pos = touch.x - self.grabOffset_[0], touch.y - self.grabOffset_[1]
+            self.drawBackground()
         else:
             super(WindowBase, self).on_touch_move(touch)
             return True
@@ -215,33 +194,34 @@ class WindowBase(FloatLayout):
         if key == 27 and self.auto_dismiss:
             self.dismiss()
             return True
-   
-    controller_ = None
-    ui_ = None
-    
-    
-    def build(self):
-        pass
-    
-    def show(self):
-        pass
-    
-    @abstractmethod
-    def getRootUI(self):
-        pass
-    
+      
     def create(self):
         if self.ui_ == None:
-            # build the display
-            self.ui_ = GridLayout(cols=1)
-            self.ui_.rows_minimum = {0:30}
-            self.ui_.add_widget(Label(text='Window', height=30, size_hint_y=None, id='_windowTop'))
-            r = self.getRootUI()
-            self.ui_.add_widget(r)
-#             self.ui_ = r
-            self.ui_.size_hint = self.size_hint
-        self.add_widget(self.ui_)
+            self.cols = 1
+            if self.windowed:
+                self.padding = (self.border[3], self.border[0],self.border[1],self.border[2])
+            self.add_widget(Label(text='Window', height=30, size_hint_y=None, id='_windowTop'))
+            self.ui_ = self.getRootUI()
+            self.add_widget(self.ui_)
+                
         return self
     
     def destroy(self):
         pass      
+    
+    def drawBackground(self):
+        self.canvas.before.clear()
+        with self.canvas.before:
+            Color(*self.background_color, mode='rgba')
+            Rectangle(pos=self.pos, size=self.size)
+            if self.windowed:
+                self.padding = (self.border[3], self.border[0],self.border[1],self.border[2])
+                Color(0.294, 0.596, 0.705, 1, mode='rgba')
+                Rectangle(pos=(self.x, self.y+self.height), size=(self.width, self.border[0])) # TOP
+                Rectangle(pos=(self.x+self.width, self.y), size=(self.border[1], self.height+self.border[0])) #RIGHT
+                Rectangle(pos=(self.x, self.y), size=(self.width, self.border[2])) # BOTTOM
+                Rectangle(pos=(self.x, self.y), size=(self.border[3], self.height)) # LEFT
+
+    @abstractmethod
+    def getRootUI(self):
+        pass
