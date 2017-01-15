@@ -12,6 +12,7 @@
 			text: root.label
 	
 GridLayout:
+	id: 'main'
 	cols: 1
 	rows_minimum: {0:30}
 	BoxLayout:
@@ -55,8 +56,9 @@ GridLayout:
 					TreeView:
 						hint_y: 1
 				ImageButton:
+					id: addsound
 					label: 'Add Sound'
-					on_press: app.on_add_sound()
+					on_press: app.action(root.id, 'addsound')
 					source: 'plus'
 					height: 30
 					size_hint_y: None		

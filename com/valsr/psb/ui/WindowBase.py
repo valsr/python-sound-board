@@ -6,6 +6,7 @@ Created on Jan 14, 2017
 from kivy.uix.label import Label
 from kivy.uix.gridlayout import GridLayout
 from kivy.graphics import Rectangle, Color 
+import uuid
 __all__ = ('WindowBase',)
 
 from abc import abstractmethod, ABCMeta
@@ -51,24 +52,14 @@ class WindowBase(GridLayout):
     grabOffset_ = (0, 0)
     ui_ = None
     label_ = None
+    controller_ = None
 
-    def __init__(self, parent, **kwargs):
-        self._parent = parent
+    def __init__(self, controller, **kwargs):
+        self.controller_ = controller
+        self._parent = controller.getUIRoot()
         super().__init__(**kwargs)
 
-    def _search_window(self):
-        # get window to attach to
-        window = None
-        if self.attach_to is not None:
-            window = self.attach_to.get_parent_window()
-            if not window:
-                window = self.attach_to.get_root_window()
-        if not window:
-            from kivy.core.window import Window
-            window = Window
-        return window
-
-    def open(self, window=None, *largs):
+    def open(self, *largs):
         '''Show the view window from the :attr:`attach_to` widget. If set, it
         will attach to the nearest window. If the widget is not attached to any
         window, the view will attach to the global
@@ -78,7 +69,7 @@ class WindowBase(GridLayout):
             Logger.warning('WindowBase: you can only open once.')
             return self
         # search window
-        self.window_ = window  # self._search_window()
+        self.window_ = self.controller_.getUIRoot()  # self._search_window()
         if not self.window_:
             Logger.warning('WindowBase: cannot open view, no window found.')
             return self
@@ -87,6 +78,7 @@ class WindowBase(GridLayout):
         self.window_.bind(
             on_resize=self._align_center,
             on_keyboard=self._handle_keyboard)
+        self.bindActions(self.controller_)
         self.center = self.window_.center
         self.fbind('size', self._update_center)
         self.dispatch('on_open')
@@ -171,6 +163,7 @@ class WindowBase(GridLayout):
         if self.window_ is None:
             return
         self.window_.remove_widget(self)
+        self.unbindActions(self.controller_)
         self.window_.unbind(
             on_resize=self._align_center,
             on_keyboard=self._handle_keyboard)
@@ -196,13 +189,15 @@ class WindowBase(GridLayout):
                 self.padding = (self.border[3], self.border[0],self.border[1],self.border[2])
             self.add_widget(self.label_)
             self.ui_ = self.getRootUI()
+            self.ui_.id = str(uuid.uuid1().hex)
             self.add_widget(self.ui_)
                 
         return self
     
-    def on_title(self):
-        self.label_.text = self.title
-        
+    def on_title(self, *args):
+        if self.label_:
+            self.label_.text = args[1]
+                
     def destroy(self):
         pass      
     
@@ -221,4 +216,10 @@ class WindowBase(GridLayout):
 
     @abstractmethod
     def getRootUI(self):
+        pass
+    
+    def bindActions(self, controller):
+        pass
+    
+    def unbindActions(self, controller):
         pass
