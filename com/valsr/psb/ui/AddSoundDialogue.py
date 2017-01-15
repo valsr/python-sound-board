@@ -15,11 +15,11 @@ class AddSoundDialogue(WindowBase):
     file_ = None
     
     def init(self, **kwargs):
+        self.title = "Add Audio File"
         pass
     def on_open(self, **kwargs):
-        #self.ids['fc'].path = self.cwd_
-        print(self.ids)
-        print(self.cwd_)
+        self.ui_.ids['fc'].path = self.cwd_
+        self.ui_.ids['pathinp'].text = self.cwd_
         
     def getRootUI(self):
         return Builder.load_file("ui/kv/addsound.kv")

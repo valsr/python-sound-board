@@ -42,7 +42,7 @@ class WindowBase(GridLayout):
     :attr:`border` is a :class:`~kivy.properties.ListProperty` and defaults to
     (16, 16, 16, 16).
     '''
-
+    title = StringProperty("Window")
     # Internals properties used for graphical representation.
     window_ = ObjectProperty(None, allownone=True)
     __events__ = ('on_open', 'on_dismiss')
@@ -50,6 +50,7 @@ class WindowBase(GridLayout):
     draggable = OptionProperty("Top", options=["All", "Top", "None"])
     grabOffset_ = (0, 0)
     ui_ = None
+    label_ = None
 
     def __init__(self, parent, **kwargs):
         self._parent = parent
@@ -189,14 +190,19 @@ class WindowBase(GridLayout):
     def create(self):
         if self.ui_ == None:
             self.cols = 1
+            self.label_ = Label(text=self.title, height=30, size_hint_y=None, id='_windowTop')
             if self.windowed:
+                self.label_.text = self.title
                 self.padding = (self.border[3], self.border[0],self.border[1],self.border[2])
-            self.add_widget(Label(text='Window', height=30, size_hint_y=None, id='_windowTop'))
+            self.add_widget(self.label_)
             self.ui_ = self.getRootUI()
             self.add_widget(self.ui_)
                 
         return self
     
+    def on_title(self):
+        self.label_.text = self.title
+        
     def destroy(self):
         pass      
     
