@@ -7,6 +7,7 @@ from kivy.app import App
 from com.valsr.psb.ui.MainWindow import MainWindow
 from kivy.uix.floatlayout import FloatLayout
 from com.valsr.psb.ui.AddSoundDialogue import AddSoundDialogue
+import os
 
 class PSB(App):
     theme_ = 'white'

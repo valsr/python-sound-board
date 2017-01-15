@@ -10,7 +10,6 @@ __all__ = ('WindowBase',)
 
 from abc import abstractmethod, ABCMeta
 from kivy.logger import Logger
-from kivy.animation import Animation
 from kivy.properties import *
 
 class WindowBase(GridLayout):
@@ -45,8 +44,6 @@ class WindowBase(GridLayout):
     '''
 
     # Internals properties used for graphical representation.
-    _anim_alpha = NumericProperty(0)
-    _anim_duration = NumericProperty(.1)
     window_ = ObjectProperty(None, allownone=True)
     __events__ = ('on_open', 'on_dismiss')
     windowed = False
@@ -91,9 +88,7 @@ class WindowBase(GridLayout):
             on_keyboard=self._handle_keyboard)
         self.center = self.window_.center
         self.fbind('size', self._update_center)
-        a = Animation(_anim_alpha=1., d=self._anim_duration)
-        a.bind(on_complete=lambda *x: self.dispatch('on_open'))
-        a.start(self)
+        self.dispatch('on_open')
         return self
 
     def _update_center(self, *args):
@@ -124,11 +119,7 @@ class WindowBase(GridLayout):
         if self.dispatch('on_dismiss') is True:
             if kwargs.get('force', False) is not True:
                 return self
-        if kwargs.get('animation', True):
-            Animation(_anim_alpha=0., d=self._anim_duration).start(self)
-        else:
-            self._anim_alpha = 0
-            self._real_remove_widget()
+        self._real_remove_widget()
         return self
 
     def on_size(self, instance, value):
