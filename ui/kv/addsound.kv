@@ -30,13 +30,15 @@ BoxLayout:
 		height: 30
 		size_hint_y: None
 		text: 'Path'
-		id: pathinp
+		id: PathInput
 	BoxLayout:
-		FileChooser:
-			id: fc
+		FileChooserIconView:
+			id: Files
 			size_hint_y: 1
-			FileChooserIconLayout:
-				id: test
+			on_selection: root.parent.fileSelection()
+			dirselect: False
+			show_hidden: True
+
 	BoxLayout:
 		orientation: 'horizontal'
 		size_hint_y: None

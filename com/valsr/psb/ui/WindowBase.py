@@ -176,7 +176,6 @@ class WindowBase(GridLayout):
         pass
 
     def _handle_keyboard(self, window, key, *largs):
-        print ('hy')
         if key == 27 and self.auto_dismiss:
             self.dismiss()
             return True

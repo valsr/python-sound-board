@@ -6,11 +6,18 @@ Created on Jan 13, 2017
 from kivy.app import App
 from com.valsr.psb.ui.MainWindow import MainWindow
 from kivy.uix.floatlayout import FloatLayout
+import gi
+gi.require_version('Gst', '1.0')
+
+from kivy.logger import Logger
 
 class PSB(App):
     theme_ = 'white'
     ui_ = None
     activeWindow_ = []
+    
+    def getAllowedAudioFiles(self):
+        return ['.mp3', '.wav', '.flac', '.ogg', '.mp4']
   
     def on_keyoard(self, window, key, *largs):
         return True
@@ -46,4 +53,7 @@ class PSB(App):
         return self.ui_
 
 if __name__ == '__main__':
+    from gi.repository import Gst
+    version = Gst.version()
+    Logger.info("GStreamer version %d.%d.%d.%d"%version)
     PSB().run()

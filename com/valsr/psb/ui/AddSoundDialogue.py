@@ -19,8 +19,9 @@ class AddSoundDialogue(WindowBase):
         pass
     
     def on_open(self, **kwargs):
-        self.getRootUI().ids['fc'].path = self.cwd_
-        self.getRootUI().ids['pathinp'].text = self.cwd_
+        self.getUI('Files').path = self.cwd_
+        self.getUI('PathInput').text = self.cwd_
+        self.getUI('Files').filters.append(self.uiFilterFiles)
         
     def createRootUI(self):
         return Builder.load_file("ui/kv/addsound.kv")
@@ -35,3 +36,29 @@ class AddSoundDialogue(WindowBase):
         
     def uiOpen(self, *args):
         self.dismiss()
+    
+    def uiFilterFiles(self, folder, file):
+        if os.path.isdir(file):
+            return True
+        
+        if self.getUI('PathInput').text is not folder:
+            self.getUI('PathInput').text = folder
+        ext = os.path.splitext(file)[1]
+        return ext.lower() in self.controller_.getAllowedAudioFiles()
+    
+    def fileSelection(self, *args):
+        files = self.getUI('Files')
+        
+        file = files.selection[0]
+             
+        if os.path.isfile(file):
+            self.autoPlay(file)
+            pass
+        
+        return True
+    
+    def autoPlay(self, file):
+        if self.getUI('AutoPlayButton').active:
+            pass
+            # load wave FORM
+            # play file
