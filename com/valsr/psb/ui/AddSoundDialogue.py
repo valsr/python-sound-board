@@ -7,6 +7,10 @@ from kivy.lang import Builder
 from com.valsr.psb.ui.WindowBase import WindowBase
 import os
 from com.valsr.psb.sound import PlayerManager
+from kivy.logger import Logger
+from time import sleep
+from kivy.clock import Clock
+from com.valsr.psb.sound.Util import PlayerState
 
 class AddSoundDialogue(WindowBase):
     '''
@@ -73,6 +77,20 @@ class AddSoundDialogue(WindowBase):
             (id, p) = PlayerManager.createPlayer(file)
             self.playerId_ = id
             p.play()
+            Clock.schedule_once(self.updateUI, 1)
             
             # load wave FORM
             # play file
+            
+    def updateUI(self, delta):
+        if self.playerId_:
+            p = PlayerManager.getPlayer(self.playerId_)
+            dur = p.queryTime()
+            pos = p.queryPos()
+            
+            Logger.debug(str(pos) + "/" + str(dur))
+            Logger.debug(p.getState().name)
+            if p.getState() is PlayerState.READY:
+                PlayerManager.destroyPlayer(self.playerId_)
+                self.playerId_ = None
+            Clock.schedule_once(self.updateUI, 1)

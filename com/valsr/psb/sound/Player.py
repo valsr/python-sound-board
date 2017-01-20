@@ -22,47 +22,51 @@ class Player(object):
     pipeline_ = None
     source_ = None
     sink_ = None
+    id_ = None
      
-    def __init__(self, file):
+    def __init__(self, id, file):
         '''
         Constructor
         '''
         self.file_ = os.path.abspath(file)
+        self.id_ = id
         self._setUpPipeline()
     
     def _setUpPipeline(self):
         pass
-        self.pipeline_ = Gst.Pipeline.new()
+        self.pipeline_ = Gst.Pipeline.new(self.id_ + 'player')
 
-        #creating the filesrc element, and adding it to the pipeline
-        self.source_ = Gst.ElementFactory.make("filesrc")
+        # creating the filesrc element, and adding it to the pipeline
+        self.source_ = Gst.ElementFactory.make("filesrc", self.id_ + "_source")
         self.source_.set_property("location", self.file_)
         self.pipeline_.add(self.source_)
         
-        #creating and adding the decodebin element , an "automagic" element able to configure itself to decode pretty much anything
-        self.decode_ = Gst.ElementFactory.make("decodebin")
+        # creating and adding the decodebin element , an "automagic" element able to configure itself to decode pretty much anything
+        self.decode_ = Gst.ElementFactory.make("decodebin", self.id_ + "_decodebin")
         self.pipeline_.add(self.decode_)
-        #connecting the decoder's "pad-added" event to a handler: the decoder doesn't yet have an output pad (a source), it's created at runtime when the decoders starts receiving some data
+        # connecting the decoder's "pad-added" event to a handler: the decoder doesn't yet have an output pad (a source), it's created at runtime when the decoders starts receiving some data
         self.decode_.connect("pad-added", self._decodeSrcCreated) 
         
-        #setting up (and adding) the alsasin, which is actually going to "play" the sound it receives
-        self.sink_ = Gst.ElementFactory.make("autoaudiosink", 'sink')
+        # setting up (and adding) the alsasin, which is actually going to "play" the sound it receives
+        self.sink_ = Gst.ElementFactory.make("autoaudiosink", self.id_ + "_sink")
         self.pipeline_.add(self.sink_)
 
-        #linking elements one to another (here it's just the filesrc - > decoder link , the decoder -> sink link's going to be set up later)
+        # linking elements one to another (here it's just the filesrc - > decoder link , the decoder -> sink link's going to be set up later)
         self.source_.link(self.decode_)
         self.state_ = PlayerState.READY
             
-    #handler taking care of linking the decoder's newly created source pad to the sink
+        
+        
     def _decodeSrcCreated(self, element, pad):
-        pad.link(self.sink_.get_static_pad("sink"))
+        pad.link(self.sink_.get_static_pad('sink'))
         
     def onMessage(self, bus, message):
         t = message.type
+        
+        Logger.debug("Got message")
          
         if t == Gst.Message.EOS:
-            self.pipeline_.set_state(Gst.State.PAUSED)
-            self.state_ = PlayerState.READY
+            self.onFinish(bus)
         elif t == Gst.Message.ERROR:
             self.pipeline_.set_state(Gst.State.NULL)
             self.state_ = PlayerState.ERROR
@@ -77,19 +81,18 @@ class Player(object):
      
     def onFinish(self, bus):
         self.state_ = PlayerState.STOPPED
-        Logger.debug("Finished playing %s"%self.file_)
+        Logger.debug("Finished playing %s" % self.file_)
          
     def play(self):
         if self.state_ is PlayerState.READY or self.state_ is PlayerState.PAUSED or self.state_ is PlayerState.STOPPED:
             self.pipeline_.set_state(Gst.State.PLAYING)
-            Logger.debug("Playing %s"%self.file_)
+            Logger.debug("Playing %s" % self.file_)
             self.state_ = PlayerState.PLAYING
         elif self.state_ is PlayerState.PLAYING:
-            Logger.debug("Already playing %s"%self.file_)
+            Logger.debug("Already playing %s" % self.file_)
         else:
             Logger.debug("Not in a state to play - %s" % self.state_.name)
              
-         
     def stop(self):
         if self.state_ == PlayerState.PLAYING:
             self.pipeline_.set_state(Gst.State.PAUSED)
@@ -106,3 +109,16 @@ class Player(object):
         self.pipeline_ = None
         Logger.debug("Destroyed player (%s)" % self.file_)
 
+    def queryPos(self):
+        if self.state_ is PlayerState.PAUSED or self.state_ is PlayerState.PLAYING:
+            ret, current = self.pipeline_.query_position(Gst.Format.TIME)
+            return current/Gst.SECOND
+        
+        return -1
+    
+    def queryTime(self):
+        if self.state_ is PlayerState.PAUSED or self.state_ is PlayerState.PLAYING or self.state_ is PlayerState.READY or self.state_ is PlayerState.STOPPED:
+            ret, current = self.pipeline_.query_duration(Gst.Format.TIME)
+            return current/Gst.SECOND
+        
+        return -1

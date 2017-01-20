@@ -21,8 +21,8 @@ def getPlayer(id):
 
 def createPlayer(filePath):
     global __PLAYERS__
-    p = Player(filePath)
-    id = uuid.uuid1()
+    id = str(uuid.uuid1().int)
+    p = Player(id, filePath)
     __PLAYERS__[id] = p
     return (id, p)
 
