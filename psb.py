@@ -7,6 +7,8 @@ from kivy.app import App
 from com.valsr.psb.ui.MainWindow import MainWindow
 from kivy.uix.floatlayout import FloatLayout
 import gi
+from com.valsr.psb.sound import Util
+from com.valsr.psb.sound.Player import Player
 gi.require_version('Gst', '1.0')
 
 from kivy.logger import Logger
@@ -56,4 +58,5 @@ if __name__ == '__main__':
     from gi.repository import Gst
     version = Gst.version()
     Logger.info("GStreamer version %d.%d.%d.%d"%version)
+    Util.initAudio()
     PSB().run()

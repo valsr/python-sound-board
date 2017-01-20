@@ -6,6 +6,7 @@ Created on Jan 14, 2017
 from kivy.lang import Builder
 from com.valsr.psb.ui.WindowBase import WindowBase
 import os
+from com.valsr.psb.sound import PlayerManager
 
 class AddSoundDialogue(WindowBase):
     '''
@@ -13,6 +14,7 @@ class AddSoundDialogue(WindowBase):
     '''
     cwd_ = os.getcwd()
     file_ = None
+    playerId_ = None
     
     def init(self, **kwargs):
         self.title = "Add Audio File"
@@ -31,10 +33,16 @@ class AddSoundDialogue(WindowBase):
         if label.collide_point(*touch.pos):
             self.getUI('AutoPlayButton').active = not self.getUI('AutoPlayButton').active
      
-    def uiCancel(self, *args):   
+    def uiCancel(self, *args):
+        if self.playerId_ is not None:
+            PlayerManager.destroyPlayer(self.playerId_)
+            
         self.dismiss()
         
     def uiOpen(self, *args):
+        if self.playerId_ is not None:
+            PlayerManager.destroyPlayer(self.playerId_)
+        
         self.dismiss()
     
     def uiFilterFiles(self, folder, file):
@@ -59,6 +67,12 @@ class AddSoundDialogue(WindowBase):
     
     def autoPlay(self, file):
         if self.getUI('AutoPlayButton').active:
-            pass
+            if self.playerId_ is not None:
+                PlayerManager.destroyPlayer(self.playerId_)
+            
+            (id, p) = PlayerManager.createPlayer(file)
+            self.playerId_ = id
+            p.play()
+            
             # load wave FORM
             # play file
