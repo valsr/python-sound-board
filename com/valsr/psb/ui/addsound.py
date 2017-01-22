@@ -8,10 +8,10 @@ from kivy.lang import Builder
 from kivy.logger import Logger
 import os
 
-from com.valsr.psb.sound import PlayerManager
-from com.valsr.psb.sound.Util import PlayerState
-from com.valsr.psb.ui.WindowBase import WindowBase
-from com.valsr.psb.ui.widget.WaveformWidget import WaveformWidget
+from com.valsr.psb.sound.player.manager import PlayerManager
+from com.valsr.psb.sound.util import PlayerState
+from com.valsr.psb.ui.widget.waveform import WaveformWidget
+from com.valsr.psb.ui.window.base import WindowBase
 
 
 class AddSoundDialogue( WindowBase ):
@@ -77,6 +77,7 @@ class AddSoundDialogue( WindowBase ):
                 PlayerManager.destroyPlayer( self.playerId_ )
 
             ( id, p ) = PlayerManager.createPlayer( file )
+            self.getUI( 'Waveform' ).file_ = file
             self.playerId_ = id
             p.registerUpdateCallback( self.updateUI )
             p.registerMessageCallback( self.messageCallback )
