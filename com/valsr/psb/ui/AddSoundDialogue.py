@@ -4,7 +4,6 @@ Created on Jan 14, 2017
 @author: radoslav
 '''
 from gi.repository import Gst
-from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.logger import Logger
 import os
@@ -18,13 +17,13 @@ class AddSoundDialogue( WindowBase ):
     '''
     classdocs
     '''
-    cwd_ = os.getcwd()
-    file_ = None
-    playerId_ = None
 
-    def init( self, **kwargs ):
+    def __init__( self, **kwargs ):
+        WindowBase.__init__( self, **kwargs )
         self.title = "Add Audio File"
-        pass
+        self.cwd_ = os.getcwd()
+        self.file_ = None
+        self.playerId_ = None
 
     def on_open( self, **kwargs ):
         self.getUI( 'Files' ).path = self.cwd_

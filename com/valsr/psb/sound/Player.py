@@ -7,7 +7,6 @@ from gi.repository import Gst
 from kivy.clock import Clock
 from kivy.logger import Logger
 import os
-from time import sleep
 import uuid
 
 from com.valsr.psb.sound.Util import PlayerState
@@ -15,29 +14,27 @@ from com.valsr.psb.sound.Util import PlayerState
 
 _PLAYER_MESSAGE_LIMIT_ = 10
 _PLAYER_MESSAGE_TIME_ = 0.5
+
 class Player( object ):
     '''
     classdocs
     '''
-
-    file_ = None
-    state_ = PlayerState.NOTINIT
-    time_ = 0
-    error_ = None
-    pipeline_ = None
-    source_ = None
-    sink_ = None
-    id_ = None
-    updateCallbacks_ = {}
-    messageCallbacks_ = {}
-    messageScheduleEvent_ = None
-
     def __init__( self, id, file ):
         '''
         Constructor
         '''
         self.file_ = os.path.abspath( file )
         self.id_ = id
+        self.state_ = PlayerState.NOTINIT
+        self.time_ = 0
+        self.error_ = None
+        self.pipeline_ = None
+        self.source_ = None
+        self.sink_ = None
+        self.updateCallbacks_ = {}
+        self.messageCallbacks_ = {}
+        self.messageScheduleEvent_ = None
+
         self._setUpPipeline()
 
     def _setUpPipeline( self ):
@@ -90,12 +87,14 @@ class Player( object ):
             self.onMessage( bus, message )
             for key in self.messageCallbacks_:
                 if self.messageCallbacks_[key]( self, bus, message ):
+                    Logger.debug( "Callback %s handled the event." % key )
                     self.registerMessageLoop()
                     return
 
         # call the update callbacks
         for key in self.updateCallbacks_:
             if self.updateCallbacks_[key]( self, delta ):
+                Logger.debug( "Callback %s handled the event." % key )
                 self.registerMessageLoop()
                 return
 
@@ -126,7 +125,6 @@ class Player( object ):
             Logger.debug( "Unregistered callback by id %s" % id )
         else:
             Logger.debug( "Unable to unregistered callback: %s not found" % id )
-
 
     def onMessage( self, bus, message ):
         t = message.type
