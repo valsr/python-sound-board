@@ -8,8 +8,8 @@ from kivy.lang import Builder
 from kivy.logger import Logger
 import os
 
+from com.valsr.psb.sound import PlayerState
 from com.valsr.psb.sound.player.manager import PlayerManager
-from com.valsr.psb.sound.util import PlayerState
 from com.valsr.psb.ui.widget.waveform import WaveformWidget
 from com.valsr.psb.ui.window.base import WindowBase
 

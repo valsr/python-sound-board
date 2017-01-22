@@ -8,7 +8,7 @@ import uuid
 from com.valsr.psb.sound.player import Player
 
 
-__PLAYERS__ = {}
+_PLAYERS_ = {}
 
 class PlayerManager:
     def __init__( self, params ):
@@ -17,24 +17,24 @@ class PlayerManager:
         '''
     @staticmethod
     def getPlayer( id ):
-        global __PLAYERS__
-        if id in __PLAYERS__:
-            return __PLAYERS__[id]
+        global _PLAYERS_
+        if id in _PLAYERS_:
+            return _PLAYERS_[id]
 
         return None
 
     @staticmethod
     def createPlayer( filePath ):
-        global __PLAYERS__
+        global _PLAYERS_
         id = str( uuid.uuid1().int )
         p = Player( id, filePath )
-        __PLAYERS__[id] = p
+        _PLAYERS_[id] = p
         return ( id, p )
 
     @staticmethod
     def destroyPlayer( id ):
-        global __PLAYERS__
-        p = __PLAYERS__.pop( id, None )
+        global _PLAYERS_
+        p = _PLAYERS_.pop( id, None )
 
         if p is not None:
             p.stop()

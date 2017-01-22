@@ -9,7 +9,7 @@ from kivy.logger import Logger
 import os
 import uuid
 
-from com.valsr.psb.sound.util import PlayerState
+from com.valsr.psb.sound import PlayerState
 
 
 _PLAYER_MESSAGE_LIMIT_ = 10
