@@ -8,7 +8,6 @@ from com.valsr.psb.ui.WindowBase import WindowBase
 import os
 from com.valsr.psb.sound import PlayerManager
 from kivy.logger import Logger
-from time import sleep
 from kivy.clock import Clock
 from com.valsr.psb.sound.Util import PlayerState
 
@@ -94,3 +93,16 @@ class AddSoundDialogue(WindowBase):
                 PlayerManager.destroyPlayer(self.playerId_)
                 self.playerId_ = None
             Clock.schedule_once(self.updateUI, 1)
+            
+    def onStop(self):
+        if self.playerId_ is not None:
+            p = PlayerManager.getPlayer(self.playerId_)
+            p.stop()
+    
+    def onPlay(self):
+        if self.playerId_ is not None:
+            p = PlayerManager.getPlayer(self.playerId_)
+            if p.getState() == PlayerState.PLAYING:
+                p.pause()
+            else:
+                p.play()

@@ -54,10 +54,12 @@ BoxLayout:
 					source: 'play'
 					size: 48, 24
 					size_hint: None, None
+					on_press: root.parent.onPlay()
 				ImageOnlyButton:
 					source: 'stop'
 					size: 48, 24
 					size_hint: None, None
+					on_press: root.parent.onStop()
 				BoxLayout:
 					width: 100
 					size_hint_x: None

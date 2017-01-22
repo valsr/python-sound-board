@@ -7,9 +7,9 @@ from gi.repository import Gst
 from com.valsr.psb.sound.Util import PlayerState
 from kivy.logger import Logger
 import os
+from kivy.clock import Clock
 
-
- 
+_PLAYER_MESSAGE_LIMIT_ = 10
 class Player(object):
     '''
     classdocs
@@ -23,6 +23,8 @@ class Player(object):
     source_ = None
     sink_ = None
     id_ = None
+    updatecallbacks_ = []
+    messageCallbacks_ = []
      
     def __init__(self, id, file):
         '''
@@ -33,8 +35,7 @@ class Player(object):
         self._setUpPipeline()
     
     def _setUpPipeline(self):
-        pass
-        self.pipeline_ = Gst.Pipeline.new(self.id_ + 'player')
+        self.pipeline_ = Gst.Pipeline.new(self.id_ + '_player')
 
         # creating the filesrc element, and adding it to the pipeline
         self.source_ = Gst.ElementFactory.make("filesrc", self.id_ + "_source")
@@ -54,21 +55,45 @@ class Player(object):
         # linking elements one to another (here it's just the filesrc - > decoder link , the decoder -> sink link's going to be set up later)
         self.source_.link(self.decode_)
         self.state_ = PlayerState.READY
-            
-        
         
     def _decodeSrcCreated(self, element, pad):
         pad.link(self.sink_.get_static_pad('sink'))
+   
+    def registerCallback(self):
+        if self.state_ == PlayerState.PLAYING or self.state_ == PlayerState.PAUSED:
+            Clock.schedule_once(self.messageLoop, 1)
         
+    def messageLoop(self, delta):
+        global _PLAYER_MESSAGE_LIMIT_
+        # check for messages
+        bus = self.pipeline_.get_bus()
+        
+        # check upto 10 messages
+        for i in range(0, _PLAYER_MESSAGE_LIMIT_):
+            message = bus.pop()
+            if message == None:
+                break
+            
+            self.onMessage(bus, message)
+            for cb in self.messageCallbacks_:
+                if cb(bus, message):
+                    self.registerCallback()
+                    return
+        
+        # call the update callbacks
+        for cb in self.updatecallbacks_:
+            if cb(delta):
+                self.registerCallback()
+                return
+        
+        self.registerCallback()
+             
     def onMessage(self, bus, message):
         t = message.type
-        
-        Logger.debug("Got message")
-         
-        if t == Gst.Message.EOS:
+        if t == Gst.MessageType.EOS:
             self.onFinish(bus)
-        elif t == Gst.Message.ERROR:
-            self.pipeline_.set_state(Gst.State.NULL)
+        elif t == Gst.MessageType.ERROR:
+            self.onFinish(bus)
             self.state_ = PlayerState.ERROR
             error, debug = message.parse_error()
             self.error_ = "Error %s: %s" % (error, debug)
@@ -88,11 +113,19 @@ class Player(object):
             self.pipeline_.set_state(Gst.State.PLAYING)
             Logger.debug("Playing %s" % self.file_)
             self.state_ = PlayerState.PLAYING
+            self.registerCallback()
         elif self.state_ is PlayerState.PLAYING:
             Logger.debug("Already playing %s" % self.file_)
         else:
             Logger.debug("Not in a state to play - %s" % self.state_.name)
-             
+      
+    def pause(self):
+        if self.state_ is PlayerState.PLAYING:
+            self.pipeline_.set_state(Gst.State.PAUSED)
+            self.state_ = PlayerState.PAUSED
+        else:
+            Logger.debug("Unable to pause since we are not playing")
+               
     def stop(self):
         if self.state_ == PlayerState.PLAYING:
             self.pipeline_.set_state(Gst.State.PAUSED)

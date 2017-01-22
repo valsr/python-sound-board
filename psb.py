@@ -4,10 +4,10 @@ Created on Jan 13, 2017
 @author: radoslav
 '''
 from kivy.app import App
-from com.valsr.psb.ui.MainWindow import MainWindow
 from kivy.uix.floatlayout import FloatLayout
 import gi
 from com.valsr.psb.sound import Util
+from com.valsr.psb.ui.MainWindow import MainWindow
 gi.require_version('Gst', '1.0')
 
 from kivy.logger import Logger
@@ -52,7 +52,7 @@ class PSB(App):
 
     def getUIRoot(self):
         return self.ui_
-
+    
 if __name__ == '__main__':
     from gi.repository import Gst
     version = Gst.version()
