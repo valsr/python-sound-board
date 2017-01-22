@@ -11,6 +11,7 @@ import os
 from com.valsr.psb.sound import PlayerManager
 from com.valsr.psb.sound.Util import PlayerState
 from com.valsr.psb.ui.WindowBase import WindowBase
+from com.valsr.psb.ui.widget.WaveformWidget import WaveformWidget
 
 
 class AddSoundDialogue( WindowBase ):

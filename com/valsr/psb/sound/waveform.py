@@ -5,4 +5,4 @@ Created on Jan 16, 2017
 '''
 
 class WaveForm():
-    
+    pass
