@@ -128,7 +128,7 @@ class MediaInfoLoader( object ):
         return self._loaded_
 
     @loaded_.setter
-    def loaded( self, loaded ):
+    def loaded_( self, loaded ):
         self._loaded_ = loaded
         if loaded and self.callback_:
             self.callback_( self )

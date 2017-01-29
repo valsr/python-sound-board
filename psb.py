@@ -24,14 +24,15 @@ class PSB( App ):
         self.ui_ = None
         self.activeWindow_ = []
         self.windowOrder_ = []
+        self._keyboard_ = None
         self.rebindKeyboard()
 
     def getAllowedAudioFiles( self ):
         return ['.mp3', '.wav', '.flac', '.ogg', '.mp4']
 
     def _keyboard_closed( self ):
-        self._keyboard.unbind( on_key_down = self._on_keyboard_down )
-        self._keyboard = None
+        self._keyboard_.unbind( on_key_down = self._on_keyboard_down )
+        self._keyboard_ = None
         Logger.debug( 'Keyboard closed' )
 
     def _on_keyboard_down( self, keyboard, keycode, text, modifiers ):
@@ -39,9 +40,9 @@ class PSB( App ):
         return True
 
     def rebindKeyboard( self ):
-        if not self._keyboard:
-            self._keyboard = Window.request_keyboard( self._keyboard_closed, self )
-            self._keyboard.bind( on_key_down = self._on_keyboard_down )
+        if not self._keyboard_:
+            self._keyboard_ = Window.request_keyboard( self._keyboard_closed, self )
+            self._keyboard_.bind( on_key_down = self._on_keyboard_down )
             Logger.debug( 'Keyboard bound' )
 
     def openWindow( self, windowClass, **kwargs ):
