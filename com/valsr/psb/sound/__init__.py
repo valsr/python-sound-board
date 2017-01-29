@@ -5,6 +5,10 @@ Created on Jan 17, 2017
 '''
 from enum import Enum
 from gi.repository import Gst, GObject
+from kivy.logger import Logger
+import os
+from threading import Thread
+
 
 class PlayerState( Enum ):
     STOPPED = 1
@@ -17,3 +21,4 @@ class PlayerState( Enum ):
 def initAudio():
     GObject.threads_init()
     Gst.init_check( None )
+

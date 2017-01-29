@@ -8,8 +8,9 @@ from kivy.lang import Builder
 from kivy.logger import Logger
 import os
 
-from com.valsr.psb.sound import PlayerState
+from com.valsr.psb.sound import PlayerState, waveform
 from com.valsr.psb.sound.player.manager import PlayerManager
+from com.valsr.psb.sound.waveform.manager import WaveformManager
 from com.valsr.psb.ui.widget.waveform import WaveformWidget
 from com.valsr.psb.ui.window.base import WindowBase
 
@@ -82,21 +83,16 @@ class AddSoundDialogue( WindowBase ):
             p.registerUpdateCallback( self.updateUI )
             p.registerMessageCallback( self.messageCallback )
             p.play()
-
-            # load wave FORM
+            self.getUI( 'Waveform' ).player = p
             # play file
 
     def messageCallback( self, player, bus, message ):
         if message.type == Gst.MessageType.EOS:
-            print( "blha" )
             self.onStop()
 
     def updateUI( self, player, delta ):
-        dur = player.queryTime()
-        pos = player.queryPos()
-
-        Logger.debug( player.getState().name )
-        Logger.debug( str( pos ) + "/" + str( dur ) )
+        pos = player.position
+        self.getUI( 'Waveform' ).position_ = pos
 
     def onStop( self ):
         if self.playerId_ is not None:

@@ -4,7 +4,7 @@ Created on Jan 14, 2017
 @author: radoslav
 '''
 from kivy.lang import Builder
-from com.valsr.psb.ui.addsound import AddSoundDialogue
+from com.valsr.psb.ui.dialogue.addsound import AddSoundDialogue
 from com.valsr.psb.ui.window.base import WindowBase
 
 class MainWindow( WindowBase ):

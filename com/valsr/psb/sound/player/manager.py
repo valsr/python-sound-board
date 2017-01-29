@@ -3,9 +3,10 @@ Created on Jan 19, 2017
 
 @author: radoslav
 '''
+from kivy.logger import Logger
 import uuid
 
-from com.valsr.psb.sound.player import Player
+from com.valsr.psb.sound.player import FilePlayer
 
 
 _PLAYERS_ = {}
@@ -27,15 +28,17 @@ class PlayerManager:
     def createPlayer( filePath ):
         global _PLAYERS_
         id = str( uuid.uuid1().int )
-        p = Player( id, filePath )
+        p = FilePlayer( id, filePath )
         _PLAYERS_[id] = p
+
+        Logger.debug( "Number of active players %d" % len( _PLAYERS_ ) )
         return ( id, p )
 
     @staticmethod
     def destroyPlayer( id ):
         global _PLAYERS_
         p = _PLAYERS_.pop( id, None )
-
+        Logger.debug( "Number of active players %d" % len( _PLAYERS_ ) )
         if p is not None:
             p.stop()
             p.destroy()
