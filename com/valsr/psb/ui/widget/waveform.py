@@ -134,14 +134,14 @@ class WaveformWidget( Widget ):
 
     def on_touch_down( self, touch ):
         if self.collide_point( *touch.pos ):
-            if self.player_:
+            if self.player_ and self.waveform_.info_:
                 x = touch.pos[0] - self.pos[0]
 
                 # convert x to position and seek to that position
                 pps = self.width / self.waveform_.info_.duration_
                 toPosition = x / pps
 
-                self.player_.seek( toPosition )
+                self.player_.position = toPosition
             return True
 
     @property
