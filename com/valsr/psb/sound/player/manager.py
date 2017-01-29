@@ -8,37 +8,62 @@ import uuid
 
 from com.valsr.psb.sound.player import FilePlayer
 
-
-_PLAYERS_ = {}
-
 class PlayerManager:
-    def __init__( self, params ):
+    '''
+    Manages all players allowing for creation, storage, retrieval by given identifier. All methods are static 
+    eliminating the need for object creation.
+    '''
+    _PLAYERS_ = {}
+    def __init__( self ):
         '''
         Constructor
         '''
+        super().__init__()
+
     @staticmethod
     def getPlayer( id ):
-        global _PLAYERS_
-        if id in _PLAYERS_:
-            return _PLAYERS_[id]
+        '''
+        Obtain player by given identifier
+
+        Parameters:
+            id -- Player identifier
+
+        Returns:
+            PlayerBase or None
+        '''
+        if id in PlayerManager._PLAYERS_:
+            return PlayerManager._PLAYERS_[id]
 
         return None
 
     @staticmethod
     def createPlayer( filePath ):
-        global _PLAYERS_
+        '''
+        Create player for given path
+
+        Parameters:
+            filePath -- Path to media file
+
+        Returns:
+            id, p -- Player id and the player it self
+        '''
         id = str( uuid.uuid1().int )
         p = FilePlayer( id, filePath )
-        _PLAYERS_[id] = p
+        PlayerManager._PLAYERS_[id] = p
 
-        Logger.debug( "Number of active players %d" % len( _PLAYERS_ ) )
+        Logger.debug( "Number of active players %d" , len( PlayerManager._PLAYERS_ ) )
         return ( id, p )
 
     @staticmethod
     def destroyPlayer( id ):
-        global _PLAYERS_
-        p = _PLAYERS_.pop( id, None )
-        Logger.debug( "Number of active players %d" % len( _PLAYERS_ ) )
+        '''
+        Destroy given player and free resources
+        
+        Parameters:
+            id -- Player id
+        '''
+        p = PlayerManager._PLAYERS_.pop( id, None )
+        Logger.debug( "Number of active players %d" , len( PlayerManager._PLAYERS_ ) )
         if p is not None:
             p.stop()
             p.destroy()

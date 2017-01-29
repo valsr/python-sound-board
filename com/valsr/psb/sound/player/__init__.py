@@ -61,6 +61,7 @@ class PlayerBase( object ):
         '''
         Set up the pipeline (overriding classes). This method is called once self.pipeline_ has been initialized and 
         before the main loop is started.
+        Warning: do not override
         '''
         pass
 
@@ -87,7 +88,8 @@ class PlayerBase( object ):
 
     def __messageLoop( self, **kwargs ):
         '''
-        Message loop. Will call callbacks.
+        Message loop. Will call callbacks. 
+        Warning: do not override
         '''
         global _PLAYER_UPDATE_TIMEOUT_
         nextUpdate = self._lastUpdate + _PLAYER_UPDATE_TIMEOUT_
@@ -189,6 +191,10 @@ class PlayerBase( object ):
 
     # Play back Functionality (override the non __ ones)
     def __finish( self ):
+        '''
+        Called when the stream finishes.
+        Warning: do not override.
+        '''
         self.finish()
         self.state_ = PlayerState.STOPPED
         Logger.debug( "Finished playing %s" % self.id_ )
@@ -206,6 +212,12 @@ class PlayerBase( object ):
         pass
 
     def __stop( self, waitForStop = True ):
+        '''
+        Called to stop the stream (usually due to error). Note: will call stop() method first.
+
+        Parameters:
+            waitForStop -- Whether to wait for the player thread to exit or not (max 5 seconds)
+        '''
         self.stop()
         self.pipeline_.set_state( Gst.State.NULL )
         self.state_ = PlayerState.STOPPED
@@ -214,6 +226,9 @@ class PlayerBase( object ):
         Logger.debug( "Stopped playing %s" % self.id_ )
 
     def destroy( self ):
+        '''
+        Called to terminate the player and free resources.
+        '''
         self.__stop()
         self.run_ = False
         if self.messageThread_.is_alive():
@@ -259,11 +274,15 @@ class PlayerBase( object ):
 
 class FilePlayer( PlayerBase ):
     '''
-    classdocs
+    File player
     '''
     def __init__( self, id, file ):
         '''
         Constructor
+
+        Parameters:
+            id -- Player identifier
+            file -- File (path) to play
         '''
         self.file_ = os.path.abspath( file )
         super().__init__( id )
