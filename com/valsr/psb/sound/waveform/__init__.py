@@ -28,11 +28,11 @@ class Waveform():
         self.sink_ = None
         self.messageThread_ = None
         self.run_ = True
-        self.done_ = False
+        self._loaded_ = False
         self.info_ = None
 
-    def isReady( self ):
-        return self.done_
+    def loaded_( self ):
+        return self._loaded_
 
     def _waitForInfo( self, *args ):
         if not self.info_:
@@ -42,10 +42,10 @@ class Waveform():
                 Clock.schedule_once( self._waitForInfo, 0.2 )
                 return
 
-        self.analyse()
+        self.analyze()
 
-    def analyse( self ):
-        if not self.done_:
+    def analyze( self ):
+        if not self._loaded_:
             if not self.info_:
                 self._waitForInfo()
                 return
@@ -114,7 +114,7 @@ class Waveform():
                         self.lChannel_ += [[self.info_.duration_ + x / Gst.SECOND, 0] for x in range ( 0, self.numPoints() - len( self.lChannel_ ) )]
                     if len( self.rChannel_ ) < self.numPoints():
                         self.rChannel_ += [[self.info_.duration_ + x / Gst.SECOND, 0] for x in range ( 0, self.numPoints() - len( self.rChannel_ ) )]
-                    self.done_ = True
+                    self._loaded_ = True
                     self.run_ = False
 
         self.pipeline_.set_state( Gst.State.NULL )
@@ -125,13 +125,13 @@ class Waveform():
         return 2000
 
     def pointInterval( self ):
-        if self.isReady():
+        if self.loaded_():
             return self.info_.duration_ / self.numPoints()
 
         return None
 
     def getPoint( self, num ):
-        if num < self.numPoints() and self.isReady():
+        if num < self.numPoints() and self.loaded_():
             return ( self.lChannel_[num][0], self.lChannel_[num][1], self.rChannel_[num][1] )
 
         return None

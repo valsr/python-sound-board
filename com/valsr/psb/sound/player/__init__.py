@@ -4,7 +4,6 @@ Created on Jan 17, 2017
 @author: radoslav
 '''
 from abc import ABC, ABCMeta, abstractmethod
-from builtins import property
 from gi.repository import Gst, GObject
 from kivy.clock import Clock
 from kivy.logger import Logger
@@ -17,22 +16,28 @@ import uuid
 from com.valsr.psb.sound import PlayerState
 
 
-_PLAYER_UPDATE_TIMEOUT_ = 0.2
+_PLAYER_UPDATE_TIMEOUT_ = 0.2 # Update timetout (for update callbacks)
 
 class PlayerBase( object ):
     '''
-    classdocs
+    Base class for all player objects
     '''
+    __metaclass__ = ABCMeta
     def __init__( self, id ):
-        __metaclass__ = ABCMeta
         '''
         Constructor
+
+        Parameters:
+            id -- Player identifier
         '''
         self.id_ = id
-        self._init()
+        self.__init()
         self.__setUpPipeline()
 
-    def _init( self ):
+    def __init( self ):
+        '''
+        Initialize all variables to their default state.
+        '''
         self.state_ = PlayerState.NOTINIT
         self.error_ = None
         self.pipeline_ = None
@@ -43,13 +48,26 @@ class PlayerBase( object ):
         self.messageThread_ = None
         self.run_ = True
         self._lastUpdate = time.time()
+        self._init()
+
+    def _init( self ):
+        '''
+        Initialize all variables to their default state (overriding classes)
+        '''
+        pass
 
     @abstractmethod
     def _setUpPipeline( self ):
+        '''
+        Set up the pipeline (overriding classes). This method is called once self.pipeline_ has been initialized and 
+        before the main loop is started.
+        '''
         pass
 
     def __setUpPipeline( self ):
-        # pipeline
+        '''
+        Set up the pipeline
+        '''
         self.pipeline_ = Gst.Pipeline.new( self.id_ + '_player' )
 
         self._setUpPipeline()
@@ -62,9 +80,15 @@ class PlayerBase( object ):
 
     @abstractmethod
     def _messageLoop( self ):
+        '''
+        Message loop (overreding classes).
+        '''
         pass
 
     def __messageLoop( self, **kwargs ):
+        '''
+        Message loop. Will call callbacks.
+        '''
         global _PLAYER_UPDATE_TIMEOUT_
         nextUpdate = self._lastUpdate + _PLAYER_UPDATE_TIMEOUT_
 
@@ -72,8 +96,7 @@ class PlayerBase( object ):
             bus = self.pipeline_.get_bus()
             message = bus.peek()
 
-            # call child loop
-            self._messageLoop()
+            self._messageLoop() # call child loop
             if message:
                 if message.type == Gst.MessageType.EOS:
                     self.__finish()
@@ -99,36 +122,76 @@ class PlayerBase( object ):
                 nextUpdate = self._lastUpdate + _PLAYER_UPDATE_TIMEOUT_
 
     def registerUpdateCallback( self, cb ):
+        '''
+        Register update callback
+
+        Parameters:
+            cb -- callback
+
+        Returns:
+            callback identifier
+        '''
         id = str( uuid.uuid1().int )
         self.updateCallbacks_[id] = cb
         Logger.debug( "Registered callback by id %s" % id )
         return id
 
     def unregisterUpdateCallback( self, id ):
+        '''
+        Unregister update callback
+
+        Parameters:
+            id -- Callback identifier
+
+        Returns:
+            Un-registration status
+        '''
         if id in self.updateCallbacks_:
             del self.updateCallbacks_[id]
             Logger.debug( "Unregistered callback by id %s" % id )
-        else:
-            Logger.debug( "Unable to unregistered callback: %s not found" % id )
+            return True
+
+        Logger.debug( "Unable to unregistered callback: %s not found" % id )
+        return False
 
     def registerMessageCallback( self, cb ):
+        '''
+        Register message callback
+
+        Parameters:
+            cb -- callback
+
+        Returns:
+            callback identifier
+        '''
         id = str( uuid.uuid1().int )
         self.messageCallbacks_[id] = cb
         Logger.debug( "Registered callback by id %s" % id )
         return id
 
     def unregisterMessageCallback( self, id ):
+        '''
+        Unregister message callback
+
+        Parameters:
+            id -- Callback identifier
+
+        Returns:
+            Un-registration status
+        '''
         if id in self.messageCallbacks_:
             del self.messageCallbacks_[id]
             Logger.debug( "Unregistered callback by id %s" % id )
-        else:
-            Logger.debug( "Unable to unregistered callback: %s not found" % id )
+            return True
+
+        Logger.debug( "Unable to unregistered callback: %s not found" % id )
+        return False
 
     # Play back Functionality (override the non __ ones)
     def __finish( self ):
         self.finish()
         self.state_ = PlayerState.STOPPED
-        Logger.debug( "Finished playing %s" % self.file_ )
+        Logger.debug( "Finished playing %s" % self.id_ )
 
     def finish( self ):
         pass
@@ -143,12 +206,12 @@ class PlayerBase( object ):
         pass
 
     def __stop( self, waitForStop = True ):
-        self._stop()
+        self.stop()
         self.pipeline_.set_state( Gst.State.NULL )
         self.state_ = PlayerState.STOPPED
 
         self.pipeline_.get_state( Gst.CLOCK_TIME_NONE if waitForStop else 0 )
-        Logger.debug( "Stopped playing %s" % self.file_ )
+        Logger.debug( "Stopped playing %s" % self.id_ )
 
     def destroy( self ):
         self.__stop()
@@ -159,7 +222,7 @@ class PlayerBase( object ):
         if self.messageThread_.is_alive():
             Logger.warning( "Unable to stop thread" )
         self.pipeline_ = None
-        Logger.debug( "Destroyed player (%s)" % self.file_ )
+        Logger.debug( "Destroyed player (%s)" % self.id_ )
 
     # Properties (select)
     @property
@@ -183,8 +246,12 @@ class PlayerBase( object ):
         return self.pipeline_.seek_simple( Gst.Format.TIME, Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT, position * Gst.SECOND )
 
     @property
-    def state( self ):
-        return self.state_
+    def state_( self ):
+        return self._state_
+
+    @state_.setter
+    def state_( self, state ):
+        self._state_ = state
 
     @property
     def error( self ):

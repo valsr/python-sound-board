@@ -74,12 +74,12 @@ class WaveformWidget( Widget ):
         # load the wave form.. and get it displayed (maybe wait for it to build)
         wv = Waveform( args[1] )
         self.waveform_ = wv
-        wv.analyse()
+        wv.analyze()
         self.loadWaveFormCallback()
         self.updateCanvas()
 
     def loadWaveFormCallback( self, *args ):
-        if self.waveform_.isReady():
+        if self.waveform_.loaded_():
             self._prepDraw()
         else:
             Clock.schedule_once( self.loadWaveFormCallback, 1 )
@@ -93,7 +93,7 @@ class WaveformWidget( Widget ):
     def _prepDraw( self, *args ):
         self.readyToDraw_ = False
         offset = self.pos
-        if self.waveform_ is not None and self.waveform_.isReady():
+        if self.waveform_ is not None and self.waveform_.loaded_():
             lChannelPoints = []
             rChannelPoints = []
             ampMulti = 1

@@ -57,6 +57,7 @@ class WindowBase( GridLayout ):
         self.label_ = None
         self.controller_ = controller
         self._parent = controller.getUIRoot()
+        self.id_ = uuid.uuid1()
         super().__init__( **kwargs )
 
     def open( self, *largs ):
@@ -76,8 +77,7 @@ class WindowBase( GridLayout ):
         self.create()
         self.window_.add_widget( self )
         self.window_.bind( 
-            on_resize = self._align_center,
-            on_keyboard = self._handle_keyboard )
+            on_resize = self._align_center )
         self.bindActions( self.controller_ )
         self.center = self.window_.center
         self.fbind( 'size', self._update_center )
@@ -109,9 +109,12 @@ class WindowBase( GridLayout ):
         '''
         if self.window_ is None:
             return self
+
         if self.dispatch( 'on_dismiss' ) is True:
             if kwargs.get( 'force', False ) is not True:
                 return self
+
+        self.controller_.onWindowClose( self )
         self._real_remove_widget()
         return self
 
@@ -174,11 +177,6 @@ class WindowBase( GridLayout ):
 
     def on_dismiss( self ):
         pass
-
-    def _handle_keyboard( self, window, key, *largs ):
-        if key == 27 and self.auto_dismiss:
-            self.dismiss()
-            return True
 
     def create( self ):
         if self.ui_ == None:
