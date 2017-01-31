@@ -8,6 +8,7 @@ from kivy.logger import Logger
 import os
 from threading import Thread
 from time import sleep
+from com.valsr.psb.sound.player import PlayerBase
 
 
 class MediaInfoManager( object ):
@@ -54,7 +55,7 @@ class MediaInfoManager( object ):
             # Queue loading
             MediaInfoManager.loading_.append( file )
             loader = MediaInfoLoader( file, MediaInfoManager._loadedInfo )
-            loader.analyze()
+            loader.analyse()
 
         return None
 
@@ -92,7 +93,7 @@ class MediaInfo( object ):
         self.error_ = None
         self.errorDebug_ = None
 
-class MediaInfoLoader( object ):
+class MediaInfoLoader( PlayerBase ):
     '''
     Media loader
     '''
@@ -106,22 +107,13 @@ class MediaInfoLoader( object ):
             kwargs -- Named parameters
         '''
         self.file_ = os.path.abspath( file )
-        self.lChannel_ = []
-        self.rChannel_ = []
-        self.readyToDraw_ = False
-        self.error_ = None
-        self.errorDebug_ = None
-        self.run_ = True
         self._loaded_ = False
         self.duration_ = 0
 
         # player needed items
-        self.pipeline_ = None
-        self.source_ = None
         self.level_ = None
-        self.sink_ = None
-        self.messageThread_ = None
         self.callback_ = callback
+        super().__init__( "info://" + file )
 
     @property
     def loaded_( self ):
@@ -133,14 +125,11 @@ class MediaInfoLoader( object ):
         if loaded and self.callback_:
             self.callback_( self )
 
-    def analyze( self ):
+    def _setUpPipeline( self ):
         '''
         Analyze the media stream
         '''
         if not self.loaded_:
-            # pipeline
-            self.pipeline_ = Gst.Pipeline.new()
-
             # source
             self.source_ = Gst.ElementFactory.make( 'filesrc' )
             self.source_.set_property( 'location', self.file_ )
@@ -167,41 +156,25 @@ class MediaInfoLoader( object ):
             # decoder is dynamic so link at runtime
             self.decode_.connect( 'pad-added', self._decodeSrcCreated )
 
-            self.messageThread_ = Thread( target = self.messageLoop )
-            self.messageThread_.daemon = True
-            self.messageThread_.start()
-            self.pipeline_.set_state( Gst.State.PLAYING )
-
     def _decodeSrcCreated( self, element, pad ):
         '''
         Link decode pad to sink
         '''
         pad.link( self.level_.get_static_pad( 'sink' ) )
 
-    def messageLoop( self, **kwargs ):
-        '''
-        Message loop
-        '''
-        while self.run_:
-            bus = self.pipeline_.get_bus()
-            message = bus.pop()
-            if message is not None:
-                if message.type == Gst.MessageType.EOS:
-                    _, dur = self.pipeline_.query_duration( Gst.Format.TIME )
-                    self.duration_ = dur / Gst.SECOND
-                    self.run_ = False
-                elif message.type == Gst.MessageType.ERROR:
-                    err, debug = Gst.Message.parse_error()
-                    self.error_ = err
-                    self.errorDebug_ = debug
-                    self.run_ = False
-                else:
-                    structure = message.get_structure()
+    def _messageLoop( self, **kwargs ):
+        bus = self.pipeline_.get_bus()
+        message = bus.pop()
+        if message is not None:
+            if message.type == Gst.MessageType.EOS:
+                _, dur = self.pipeline_.query_duration( Gst.Format.TIME )
+                self.duration_ = dur / Gst.SECOND
 
-                    if structure:
-                        if structure.get_name() == 'level':
-                            pass
-
+    def finish( self ):
         self.pipeline_.set_state( Gst.State.NULL )
         Logger.debug( 'Finished loading media information for %s', self.file_ )
         self.loaded_ = True
+
+    def analyse( self ):
+        if not self.loaded_:
+            self.pipeline_.set_state( Gst.State.PLAYING )

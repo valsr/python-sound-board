@@ -40,6 +40,7 @@ class PlayerBase( object ):
         '''
         self.state_ = PlayerState.NOTINIT
         self.error_ = None
+        self.errorDebug_ = None
         self.pipeline_ = None
         self.source_ = None
         self.sink_ = None
@@ -47,7 +48,7 @@ class PlayerBase( object ):
         self.messageCallbacks_ = {}
         self.messageThread_ = None
         self.run_ = True
-        self._lastUpdate = time.time()
+        self._lastUpdate_ = time.time()
         self._init()
 
     def _init( self ):
@@ -92,7 +93,7 @@ class PlayerBase( object ):
         Warning: do not override
         '''
         global _PLAYER_UPDATE_TIMEOUT_
-        nextUpdate = self._lastUpdate + _PLAYER_UPDATE_TIMEOUT_
+        nextUpdate = self._lastUpdate_ + _PLAYER_UPDATE_TIMEOUT_
 
         while self.run_:
             bus = self.pipeline_.get_bus()
@@ -106,8 +107,8 @@ class PlayerBase( object ):
                     self.__finish()
                     self.state_ = PlayerState.ERROR
                     error, debug = message.parse_error()
-                    self.error_ = "Error %s: %s" % ( error, debug )
-
+                    self.error_ = error
+                    self.errorDebug_ = debug
                 for key in self.messageCallbacks_:
                     if self.messageCallbacks_[key]( self, bus, message ):
                         Logger.debug( "Callback %s handled the event." % key )
@@ -120,8 +121,8 @@ class PlayerBase( object ):
                         Logger.debug( "Callback %s handled the event." % key )
                         break
 
-                self._lastUpdate = time.time()
-                nextUpdate = self._lastUpdate + _PLAYER_UPDATE_TIMEOUT_
+                self._lastUpdate_ = time.time()
+                nextUpdate = self._lastUpdate_ + _PLAYER_UPDATE_TIMEOUT_
 
     def registerUpdateCallback( self, cb ):
         '''

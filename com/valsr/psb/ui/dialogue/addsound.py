@@ -102,7 +102,7 @@ class AddSoundDialogue( WindowBase ):
     def onPlay( self ):
         if self.playerId_ is not None:
             p = PlayerManager.getPlayer( self.playerId_ )
-            if p.getState() == PlayerState.PLAYING:
+            if p.state_ == PlayerState.PLAYING:
                 p.pause()
             else:
                 p.play()

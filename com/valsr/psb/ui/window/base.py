@@ -168,8 +168,7 @@ class WindowBase( GridLayout ):
         self.window_.remove_widget( self )
         self.unbindActions( self.controller_ )
         self.window_.unbind( 
-            on_resize = self._align_center,
-            on_keyboard = self._handle_keyboard )
+            on_resize = self._align_center )
         self.window_ = None
 
     def on_open( self ):

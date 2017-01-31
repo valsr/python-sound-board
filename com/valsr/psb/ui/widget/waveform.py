@@ -61,6 +61,7 @@ class WaveformWidget( Widget ):
                 # tracker
                 pps = self.width / self.waveform_.info_.duration_
                 pos = self.position_ if self.position_ != -1 else 0
+                Color( 1, 1, 1, 0.75 )
                 Line( points = [pos * pps + offset[0], offset[1], pos * pps + offset[0], offset[1] + self.height], width = 1 )
 
     def _convertToPoint( self, time, amp ):
@@ -79,7 +80,7 @@ class WaveformWidget( Widget ):
         self.updateCanvas()
 
     def loadWaveFormCallback( self, *args ):
-        if self.waveform_.loaded_():
+        if self.waveform_.loaded_:
             self._prepDraw()
         else:
             Clock.schedule_once( self.loadWaveFormCallback, 1 )
@@ -93,7 +94,7 @@ class WaveformWidget( Widget ):
     def _prepDraw( self, *args ):
         self.readyToDraw_ = False
         offset = self.pos
-        if self.waveform_ is not None and self.waveform_.loaded_():
+        if self.waveform_ is not None and self.waveform_.loaded_:
             lChannelPoints = []
             rChannelPoints = []
             ampMulti = 1

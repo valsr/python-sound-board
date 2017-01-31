@@ -41,8 +41,8 @@ class PSB( App ):
 
     def rebindKeyboard( self ):
         if not self._keyboard_:
-            self._keyboard_ = Window.request_keyboard( self._keyboard_closed, self )
-            self._keyboard_.bind( on_key_down = self._on_keyboard_down )
+            # self._keyboard_ = Window.request_keyboard( self._keyboard_closed, self )
+            # self._keyboard_.bind( on_key_down = self._on_keyboard_down )
             Logger.debug( 'Keyboard bound' )
 
     def openWindow( self, windowClass, **kwargs ):
@@ -82,6 +82,9 @@ class PSB( App ):
 
     def getUIRoot( self ):
         return self.ui_
+
+    def to_window( self, x, y, initial, relative ):
+        return ( x, y )
 
 if __name__ == '__main__':
     from gi.repository import Gst
