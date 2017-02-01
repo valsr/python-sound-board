@@ -93,3 +93,6 @@ ENV/
 /*.wav
 /*.ogg
 /*.flac
+
+# psb files
+*.psb

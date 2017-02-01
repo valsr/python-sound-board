@@ -10,6 +10,7 @@ from kivy.logger import Logger
 from kivy.uix.floatlayout import FloatLayout
 
 from com.valsr.psb import sound
+from com.valsr.psb.tree import TreeNode
 from com.valsr.psb.ui.window import MainWindow
 
 
@@ -26,6 +27,7 @@ class PSB( App ):
         self.windowOrder_ = []
         self._keyboard_ = None
         self.rebindKeyboard()
+        self.audioFiles_ = TreeNode( name = 'root' )
 
     def getAllowedAudioFiles( self ):
         return ['.mp3', '.wav', '.flac', '.ogg', '.mp4']

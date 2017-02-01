@@ -4,6 +4,7 @@ Created on Jan 14, 2017
 @author: radoslav
 '''
 from abc import abstractmethod, ABCMeta
+from enum import Enum
 from kivy.graphics import Rectangle, Color
 from kivy.logger import Logger
 from kivy.properties import *
@@ -14,6 +15,13 @@ import uuid
 
 __all__ = ( 'WindowBase', )
 
+class WindowCloseState( Enum ):
+    CLOSE = 1
+    CANCEL = 2
+    OK = 3
+    YES = 4
+    NO = 5
+    BUTTON_3 = 6
 
 class WindowBase( GridLayout ):
     __metaclass__ = ABCMeta
@@ -58,6 +66,7 @@ class WindowBase( GridLayout ):
         self.controller_ = controller
         self._parent = controller.getUIRoot()
         self.id_ = uuid.uuid1()
+        self._closeState_ = WindowCloseState.CLOSE
         super().__init__( **kwargs )
 
     def open( self, *largs ):
@@ -78,7 +87,6 @@ class WindowBase( GridLayout ):
         self.window_.add_widget( self )
         self.window_.bind( 
             on_resize = self._align_center )
-        self.bindActions( self.controller_ )
         self.center = self.window_.center
         self.fbind( 'size', self._update_center )
         self.dispatch( 'on_open' )
@@ -166,7 +174,6 @@ class WindowBase( GridLayout ):
         if self.window_ is None:
             return
         self.window_.remove_widget( self )
-        self.unbindActions( self.controller_ )
         self.window_.unbind( 
             on_resize = self._align_center )
         self.window_ = None
@@ -218,12 +225,6 @@ class WindowBase( GridLayout ):
     def getRootUI( self ):
         return self.ui_
 
-    def bindActions( self, controller ):
-        pass
-
-    def unbindActions( self, controller ):
-        pass
-
     def getUI( self, uiID ):
         root = self.getRootUI()
 
@@ -231,3 +232,11 @@ class WindowBase( GridLayout ):
             return root.ids[uiID]
 
         return None
+
+    @property
+    def closeState_( self ):
+        return self._closeState_
+
+    @closeState_.setter
+    def closeState_( self, state ):
+        self._closeState_ = state

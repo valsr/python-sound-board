@@ -5,14 +5,12 @@ Created on Jan 14, 2017
 '''
 from gi.repository import Gst
 from kivy.lang import Builder
-from kivy.logger import Logger
 import os
 
-from com.valsr.psb.sound import PlayerState, waveform
+from com.valsr.psb.sound import PlayerState
 from com.valsr.psb.sound.player.manager import PlayerManager
-from com.valsr.psb.sound.waveform.manager import WaveformManager
-from com.valsr.psb.ui.widget.waveform import WaveformWidget
-from com.valsr.psb.ui.window.base import WindowBase
+from com.valsr.psb.ui.widget.waveform import WaveformWidget # Needed by kv file
+from com.valsr.psb.ui.window.base import WindowBase, WindowCloseState
 
 
 class AddSoundDialogue( WindowBase ):
@@ -44,12 +42,14 @@ class AddSoundDialogue( WindowBase ):
         if self.playerId_ is not None:
             PlayerManager.destroyPlayer( self.playerId_ )
 
+        self.closeState_ = WindowCloseState.CANCEL
         self.dismiss()
 
     def uiOpen( self, *args ):
         if self.playerId_ is not None:
             PlayerManager.destroyPlayer( self.playerId_ )
 
+        self.closeState_ = WindowCloseState.OK
         self.dismiss()
 
     def uiFilterFiles( self, folder, file ):
