@@ -11,14 +11,14 @@ from com.valsr.psb.ui.dialogue import popup
 from com.valsr.psb.ui.window.base import WindowBase, WindowCloseState
 
 
-class SaveDialogue( WindowBase ):
+class OpenDialogue( WindowBase ):
     '''
     classdocs
     '''
 
     def __init__( self, **kwargs ):
         WindowBase.__init__( self, **kwargs )
-        self.title = "Save Project"
+        self.title = "Open Project"
         self.cwd_ = os.getcwd()
         self.file_ = None
 
@@ -28,7 +28,7 @@ class SaveDialogue( WindowBase ):
         self.getUI( 'Files' ).filters.append( self.uiFilterFiles )
 
     def createRootUI( self ):
-        return Builder.load_file( "ui/kv/save.kv" )
+        return Builder.load_file( "ui/kv/open.kv" )
 
     def uiCancel( self, *args ):
         if self.playerId_ is not None:
@@ -37,31 +37,17 @@ class SaveDialogue( WindowBase ):
         self.closeState_ = WindowCloseState.CANCEL
         self.dismiss()
 
-    def uiSave( self, *args ):
+    def uiOpen( self, *args ):
         fileName = self.getUI( 'FileName' ).text
-
-        if not fileName:
-            popup.showOkPopup( title = 'Enter name', message = 'Enter a valid project name', button = 'Ok' )
-            return
-
-        if fileName and not fileName.lower().endswith( '.psb' ):
-            fileName += '.psb'
 
         self.file_ = os.path.join( self.getUI( 'Files' ).path, fileName )
 
-        if os.path.exists( self.file_ ):
-            popup.showYesNoPopup( title = 'File Exists', message = 'Fire %s exists. Overwrite file? ' % fileName,
-                                       yesButton = 'Overwrite', noButton = 'Cancel',
-                                       callback = self._saveOverwriteCallback )
+        if not os.path.exists( self.file_ ):
+            popup.showOkPopup( title = 'File Does Not Exists', message = 'File %s does not exist. Select an existing file. ' % fileName, )
             return
 
         self.closeState_ = WindowCloseState.OK
         self.dismiss()
-
-    def _saveOverwriteCallback( self, popup ):
-        if popup.selection_ == WindowCloseState.YES:
-            self.closeState_ = WindowCloseState.OK
-            self.dismiss()
 
     def uiFilterFiles( self, folder, file ):
         if os.path.isdir( file ):

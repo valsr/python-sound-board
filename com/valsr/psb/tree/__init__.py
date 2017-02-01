@@ -1,30 +1,62 @@
 '''
 '''
+from kivy.uix.treeview import TreeViewLabel, TreeView
 
-class TreeNode( object ):
+class TreeNode( TreeViewLabel ):
 
-    def __init__( self, name, label = None, data = None, parent = None ):
+    def __init__( self, name, tree, label = None, data = None, **kwargs ):
         self.name_ = name
-        self.label_ = name if label is None else label
-        self.children_ = []
         self.data_ = data
-        self.parent_ = parent
+        self.tree_ = tree
+        label = name if label is None else label
+        super().__init__( text = label, **kwargs )
 
     def serialize( self ):
         dict = {}
         dict['name'] = self.name_
-        dict['label'] = self.label_
+        dict['label'] = self.text
         dict['data'] = self.data_
-        dict['children'] = [x.serialize() for x in self.children_]
+        dict['children'] = [x.serialize() for x in self.nodes]
 
         return dict
 
-    def deserialize( self, dict ):
+    def deserialize( self, tree, parent, dict ):
         self.name_ = dict['name']
-        self.label_ = dict['label']
+        self.text = dict['label']
         self.data_ = dict['data']
-        self.children_ = []
-        for x in dict['children']:
-            child = TreeNode( name = 'child', parent = self )
-            child.deserialize( x )
-            self.children_.append( child )
+        self.tree_ = tree
+
+        tree.add_node( self, parent )
+        for k, v in dict['children']:
+            child = TreeNode( name = k )
+            child.deserialize( tree, self, v )
+
+    def hasChild( self, name ):
+        for node in self.nodes:
+            if node.name_ == name:
+                return True
+
+        return False
+
+    def getChild( self, name ):
+        for node in self.nodes:
+            if node.name_ == name:
+                return node
+
+        return None
+
+    def addChild ( self, child ):
+        if not self.hasChild( child.name_ ):
+            self.tree_.add_node( child, self )
+            return True
+
+        return False
+
+    def removeSelf( self ):
+        self.tree_.remove_node( self )
+
+    def removeChild( self, name ):
+        node = self.getChild( name )
+
+        if node:
+            node.removeSelf()

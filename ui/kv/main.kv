@@ -28,6 +28,7 @@ GridLayout:
 			height: 30
 			size_hint_y: None
 			label: 'Open'
+			on_press: root.parent.uiOpen()
 			source: 'folder-open'
 		ImageButton:
 			height: 30
@@ -56,6 +57,8 @@ GridLayout:
 				ScrollView:
 					TreeView:
 						hint_y: 1
+						id: uiAudioFiles
+						hide_root: True
 				ImageButton:
 					id: addsound
 					on_press: root.parent.uiAddSound()

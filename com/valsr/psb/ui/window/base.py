@@ -195,7 +195,7 @@ class WindowBase( GridLayout ):
             self.ui_ = self.createRootUI()
             self.ui_.id = str( uuid.uuid1().hex )
             self.add_widget( self.ui_ )
-
+            self.onPostCreate()
         return self
 
     def on_title( self, *args ):
@@ -220,6 +220,9 @@ class WindowBase( GridLayout ):
 
     @abstractmethod
     def createRootUI( self ):
+        pass
+
+    def onPostCreate( self ):
         pass
 
     def getRootUI( self ):

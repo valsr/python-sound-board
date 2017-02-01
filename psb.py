@@ -27,7 +27,6 @@ class PSB( App ):
         self.windowOrder_ = []
         self._keyboard_ = None
         self.rebindKeyboard()
-        self.audioFiles_ = TreeNode( name = 'root' )
 
     def getAllowedAudioFiles( self ):
         return ['.mp3', '.wav', '.flac', '.ogg', '.mp4']

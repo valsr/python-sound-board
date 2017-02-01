@@ -1,0 +1,72 @@
+<ImageButton@Button>:
+	label: ' '
+	source: None
+	size_hint_y: None
+	size_hint_x: None
+	BoxLayout:
+		y: self.parent.y + (self.parent.height - self.height)/2
+		x: self.parent.center_x - self.width/2
+		Image:
+			size: 24, 24
+			source: app.getThemeImageFilename(root.source, 24)
+		Label:
+			text: root.label
+<ImageOnlyButton@Button>:
+	source: None
+	size_hint_y: None
+	size_hint_x: None
+	BoxLayout:
+		size: self.parent.size
+		y: self.parent.y
+		x: self.parent.x
+		Image:
+			size: self.parent.size
+			source: app.getThemeImageFilename(root.source, self.parent.height)	
+
+BoxLayout:
+	id: 'addsound'
+	orientation: 'vertical'
+	TextInput:
+		height: 30
+		size_hint_y: None
+		text: 'Path'
+		id: PathInput
+	BoxLayout:
+		FileChooserIconView:
+			id: Files
+			size_hint_y: 1
+			on_selection: root.parent.fileSelection()
+			dirselect: False
+			show_hidden: True
+
+	BoxLayout:
+		orientation: 'horizontal'
+		size_hint_y: None
+		height: 30
+		BoxLayout:
+			orientation: 'vertical'
+			BoxLayout:
+				orientatin: 'horizontal'
+				TextInput:
+					height: 30
+					size_hint_y: None
+					text: 'Project Name.psb'
+					id: FileName
+					multiline: False
+
+		BoxLayout:
+			orientation: 'vertical'
+			width: 150
+			size_hint_x: None
+			ImageButton:
+				size: 150, 25
+				size_hint: None,None
+				label: 'Open'
+				source: 'folder-open'
+				on_press: root.parent.uiOpen()
+			ImageButton:
+				size: 150, 25
+				size_hint: None,None
+				label: 'Cancel'
+				on_press: root.parent.uiCancel()
+				source: 'ban'
