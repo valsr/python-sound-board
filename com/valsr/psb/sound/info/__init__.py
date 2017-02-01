@@ -4,10 +4,13 @@ Created on Jan 28, 2017
 @author: radoslav
 '''
 from gi.repository import Gst
+import hashlib
 from kivy.logger import Logger
+import math
 import os
 from threading import Thread
 from time import sleep
+
 from com.valsr.psb.sound.player import PlayerBase
 
 
@@ -71,6 +74,7 @@ class MediaInfoManager( object ):
         infoStruc.duration_ = info.duration_
         infoStruc.file_ = info.file_
         infoStruc.error_ = info.error_
+        infoStruc.fingerprint_ = info.fingerprint_
         infoStruc.errorDebug_ = info.errorDebug_
         MediaInfoManager.mediaInfo_[info.file_] = infoStruc
         MediaInfoManager.loading_.remove( infoStruc.file_ )
@@ -92,6 +96,7 @@ class MediaInfo( object ):
         self.file_ = None
         self.error_ = None
         self.errorDebug_ = None
+        self.fingerprint_ = 0
 
 class MediaInfoLoader( PlayerBase ):
     '''
@@ -109,6 +114,8 @@ class MediaInfoLoader( PlayerBase ):
         self.file_ = os.path.abspath( file )
         self._loaded_ = False
         self.duration_ = 0
+        self.fingerprint_ = 0
+        self.md5_ = hashlib.md5()
 
         # player needed items
         self.level_ = None
@@ -166,13 +173,21 @@ class MediaInfoLoader( PlayerBase ):
         bus = self.pipeline_.get_bus()
         message = bus.pop()
         if message is not None:
+            structure = message.get_structure()
+            if structure:
+                if structure.get_name() == 'level':
+                    peak = structure.get_value( 'peak' )
+                    # it seems that the left channel always provide a stable value for audio file (right channel differs each run)
+                    self.md5_.update( str( round( peak[0], 0 ) ).encode( 'utf-8' ) )
+
             if message.type == Gst.MessageType.EOS:
                 _, dur = self.pipeline_.query_duration( Gst.Format.TIME )
                 self.duration_ = dur / Gst.SECOND
+                self.fingerprint_ = self.md5_.hexdigest()
 
     def finish( self ):
         self.pipeline_.set_state( Gst.State.NULL )
-        Logger.debug( 'Finished loading media information for %s', self.file_ )
+        Logger.debug( 'Finished loading media information for %s, fingerprint %s', self.file_, self.fingerprint_ )
         self.loaded_ = True
 
     def analyse( self ):

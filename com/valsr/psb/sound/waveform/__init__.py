@@ -91,7 +91,6 @@ class Waveform( PlayerBase ):
                         self.lChannel_.append( ( startTime / Gst.SECOND, pow( 10, rmsArray[0] / 20 ) ) )
                         self.rChannel_.append( ( startTime / Gst.SECOND, pow( 10, rmsArray[1] / 20 ) ) )
                     else:
-                        print( "Single Channel Only" )
                         self.lChannel_.append( ( startTime / Gst.SECOND, pow( 10, rmsArray[0] / 20 ) ) )
                         self.rChannel_.append( ( startTime / Gst.SECOND, pow( 10, rmsArray[0] / 20 ) ) )
             if message.type == Gst.MessageType.EOS:
