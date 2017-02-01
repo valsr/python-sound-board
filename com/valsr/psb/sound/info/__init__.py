@@ -98,6 +98,18 @@ class MediaInfo( object ):
         self.errorDebug_ = None
         self.fingerprint_ = 0
 
+    def serialize( self ):
+        return self.__dict__
+
+    def update( self, **entries ):
+        self.__dict__.update( entries )
+
+    @staticmethod
+    def deserialize( **entries ):
+        info = MediaInfo()
+        info.update( entries )
+        return info
+
 class MediaInfoLoader( PlayerBase ):
     '''
     Media loader

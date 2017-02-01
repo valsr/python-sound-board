@@ -63,10 +63,10 @@ class AddSoundDialogue( WindowBase ):
 
     def fileSelection( self, *args ):
         files = self.getUI( 'Files' )
-
         file = files.selection[0]
 
         if os.path.isfile( file ):
+            self.file_ = file
             self.autoPlay( file )
             pass
 
@@ -84,7 +84,6 @@ class AddSoundDialogue( WindowBase ):
             p.registerMessageCallback( self.messageCallback )
             p.play()
             self.getUI( 'Waveform' ).player = p
-            # play file
 
     def messageCallback( self, player, bus, message ):
         if message.type == Gst.MessageType.EOS:
