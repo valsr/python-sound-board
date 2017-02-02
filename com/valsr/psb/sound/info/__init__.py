@@ -105,9 +105,10 @@ class MediaInfo( object ):
         self.__dict__.update( entries )
 
     @staticmethod
-    def deserialize( **entries ):
+    def deserialize( entries ):
         info = MediaInfo()
-        info.update( entries )
+        if entries:
+            info.update( **entries )
         return info
 
 class MediaInfoLoader( PlayerBase ):

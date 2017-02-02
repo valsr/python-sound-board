@@ -82,6 +82,8 @@ class MainWindow( WindowBase ):
         with open( self.file_, 'w' ) as f:
             json.dump( dict, f, indent = 2 )
 
+        Logger.info( 'Project successfully saved to file %s', self.file_ )
+
     def uiOpen( self, *args ):
         self.openWindow_ = self.controller_.openWindow( OpenDialogue, windowed = True, size_hint = ( 0.75, 0.75 ) )
         self.openWindow_.bind( on_dismiss = self._openImpl )
@@ -89,5 +91,12 @@ class MainWindow( WindowBase ):
     def _openImpl( self , *args ):
         self.file_ = self.openWindow_.file_
 
-        # serialize
+        self.audioFilesTree_.removeAllChildren()
+
+        # de-serialize
         Logger.info( 'Opening project %s', self.file_ )
+        with open( self.file_, 'r' ) as f:
+            dict = json.load( f )
+
+        self.audioFilesTree_.deserialize( self.audioFilesTree_.tree_, None, dict )
+        Logger.info( 'Project file %s loaded successfully', self.file_ )

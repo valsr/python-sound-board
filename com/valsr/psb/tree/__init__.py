@@ -27,10 +27,11 @@ class TreeNode( TreeViewLabel ):
         self.data_ = MediaInfo.deserialize( dict['data'] )
         self.tree_ = tree
 
-        tree.add_node( self, parent )
-        for k, v in dict['children']:
-            child = TreeNode( id = k )
-            child.deserialize( tree, self, v )
+        if parent:
+            tree.add_node( self, parent )
+        for child in dict['children']:
+            childNode = TreeNode( id = child["id"], tree = tree )
+            childNode.deserialize( tree, self, child )
 
     def hasChild( self, id ):
         for node in self.nodes:
