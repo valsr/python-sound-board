@@ -3,10 +3,11 @@
 from kivy.logger import Logger
 from kivy.uix.treeview import TreeViewLabel, TreeView, TreeViewNode
 
+from com.valsr.psb.callback import CallbackRegister
 from com.valsr.psb.sound.info import MediaInfo
 
 
-class TreeNode( TreeViewLabel ):
+class TreeNode( TreeViewLabel, CallbackRegister ):
 
 
     def __init__( self, id, tree, label = None, data = None, **kwargs ):
@@ -97,14 +98,7 @@ class TreeNode( TreeViewLabel ):
 
     def on_touch_down( self, touch ):
         if self.collide_point( *touch.pos ):
-            if touch.button == 'right':
-                pass
-            if touch.button == 'left':
-                if self.id_ == 'root':
-                    Logger.debug( "Can't drag root" )
-                else:
-                    Logger.debug( 'Grabbed for moving %s', self.id_ )
-                    touch.grab( self )
+            if self.call( 'touch_down', None, True, self, touch ):
                 return True
 
     def on_touch_move( self, touch ):
@@ -112,10 +106,9 @@ class TreeNode( TreeViewLabel ):
             pass
 
     def on_touch_up( self, touch ):
-        if touch.grab_current is self:
-            Logger.debug( 'Un-grabbed %s', self.id_ )
-            touch.ungrab( self )
-            return True
+        if self.collide_point( *touch.pos ):
+            if self.call( 'touch_up', None, True, self, touch ):
+                return True
 
     def detach( self ):
         return self.removeSelf()
@@ -127,3 +120,9 @@ class TreeNode( TreeViewLabel ):
         self.tree_ = tree
         print( "attaching to tree" )
         tree.add_node( self )
+
+    def walk( self ):
+        yield self, self.nodes
+
+        for node in self.nodes:
+            yield from node.walk()

@@ -112,19 +112,15 @@ class PlayerBase( CallbackRegister ):
                     error, debug = message.parse_error()
                     self.error_ = error
                     self.errorDebug_ = debug
-                cbs = self.getCallbacks( 'message' )
-                for key in cbs:
-                    if cbs[key]( self, bus, message ):
-                        Logger.debug( "Callback %s handled the event." % key )
-                        break
+                ret = self.call( 'message', None, True, player = self, bus = bus, message = message )
+                if ret:
+                    Logger.debug( "Callback %s handled the event." % ret )
 
             # call the update callbacks
             if time.time() > nextUpdate:
-                cbs = self.getCallbacks( 'update' )
-                for key in cbs:
-                    if cbs[key]( self, 0 ):
-                        Logger.debug( "Callback %s handled the event." % key )
-                        break
+                ret = self.call( 'update', None, True, player = self, delta = 0 )
+                if ret:
+                    Logger.debug( "Callback %s handled the event." % ret )
 
                 self._lastUpdate_ = time.time()
                 nextUpdate = self._lastUpdate_ + _PLAYER_UPDATE_TIMEOUT_

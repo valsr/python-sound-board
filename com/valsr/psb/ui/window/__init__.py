@@ -34,6 +34,7 @@ class MainWindow( WindowBase ):
     def onPostCreate( self ):
         self.audioFilesTree_ = TreeNode( id = 'root', tree = self.getUI( 'uiAudioFiles' ) )
         self.getUI( 'uiAudioFiles' ).add_node( self.audioFilesTree_ )
+        self.audioFilesTree_.registerCallback( 'touch_up', self.uiFileTreeTouchUp )
 
     def uiAddSound( self, *args ):
         self.addSoundWindow_ = self.controller_.openWindow( AddSoundDialogue, windowed = True, size_hint = ( 0.75, 0.75 ) )
@@ -92,6 +93,10 @@ class MainWindow( WindowBase ):
         self.audioFilesTree_ = tree
         self.audioFilesTree_.attachTo( treeRoot )
 
+        # walk the tree and set the touch up
+        for node, _ in self.audioFilesTree_.walk():
+            node.registerCallback( 'touch_up', self.uiFileTreeTouchUp )
+
     def uiAddTreeCategory( self, *args ):
         treeUI = self.getUI( 'uiAudioFiles' )
 
@@ -117,3 +122,10 @@ class MainWindow( WindowBase ):
             node = TreeNode( id = text, tree = parentNode.tree_ )
             parentNode.addChild( node )
             node.openParents()
+            node.registerCallback( 'touch_up', self.uiFileTreeTouchUp )
+
+    def uiFileTreeTouchUp( self, fileNode, touch ):
+        Logger.debug( 'Touch up from %s', fileNode.text )
+        if touch.button == 'left':
+            # create menu
+            pass

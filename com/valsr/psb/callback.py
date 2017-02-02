@@ -40,6 +40,15 @@ class CallbackRegister( object ):
 
         return {}
 
+    def call( self, t, id = None, exitOnTrue = False, *args, **kwargs ):
+        cbs = self.getCallbacks( t )
+        for key in cbs:
+            if id == None or id == key:
+                ret = cbs[key]( *args, **kwargs )
+                if exitOnTrue and ret:
+                    return key
+
+        return None
     @staticmethod
     def genCallbackId():
         return uuid.uuid1().int
