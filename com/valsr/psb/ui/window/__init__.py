@@ -100,3 +100,29 @@ class MainWindow( WindowBase ):
 
         self.audioFilesTree_.deserialize( self.audioFilesTree_.tree_, None, dict )
         Logger.info( 'Project file %s loaded successfully', self.file_ )
+
+    def uiAddTreeCategory( self, *args ):
+        treeUI = self.getUI( 'uiAudioFiles' )
+
+        selectedNode = treeUI.selected_node
+
+        if not selectedNode or not isinstance( selectedNode, TreeNode ):
+            selectedNode = self.audioFilesTree_
+
+        # now open the dialogue
+        popup.showTextInputPopup( title = 'New Category', message = 'Enter Category Name', inputMessage = 'Category',
+                                  yesButton = 'Create', noButton = 'Cancel', parent = self,
+                                  callback = lambda x: self._completeNewCategory( x.selection_, selectedNode, x.text_ ) )
+        return
+
+    def _completeNewCategory( self, button, parentNode, text ):
+        if button == WindowCloseState.YES:
+            Logger.trace( 'Adding %s node to %s', text, parentNode.id_ )
+            if parentNode.hasChild( text ):
+                Logger.trace( 'Node already exists', text, parentNode.id_ )
+                popup.showOkPopup( 'New Category', message = 'Category \'%s\' already exists within \'%s\'' % ( text, parentNode.id_ ) )
+                return
+
+            node = TreeNode( id = text, tree = parentNode.tree_ )
+            parentNode.addChild( node )
+            node.openParents()

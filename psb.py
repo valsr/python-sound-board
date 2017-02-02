@@ -5,6 +5,7 @@ Created on Jan 13, 2017
 '''
 import gi
 from kivy.app import App
+from kivy.config import Config
 from kivy.core.window import Window
 from kivy.logger import Logger
 from kivy.uix.floatlayout import FloatLayout
@@ -90,6 +91,7 @@ class PSB( App ):
 if __name__ == '__main__':
     from gi.repository import Gst
     version = Gst.version()
+    Config.set( 'input', 'mouse', 'mouse,multitouch_on_demand' )
     Logger.info( "GStreamer version %d.%d.%d.%d" % version )
     sound.initAudio()
     PSB().run()

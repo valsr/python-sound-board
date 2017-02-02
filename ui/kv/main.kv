@@ -6,7 +6,7 @@
 		y: self.parent.y + (self.parent.height - self.height)/2
 		x: self.parent.center_x - self.width/2
 		Image:
-			size: 30, 24
+			size: 24, 24
 			source: app.getThemeImageFilename(root.source, 24)
 		Label:
 			text: root.label
@@ -59,6 +59,13 @@ GridLayout:
 						hint_y: 1
 						id: uiAudioFiles
 						hide_root: True
+				ImageButton:
+					id: addcategory
+					on_press: root.parent.uiAddTreeCategory()
+					label: 'Add Category'
+					source: 'folder'
+					height: 30
+					size_hint_y: None		
 				ImageButton:
 					id: addsound
 					on_press: root.parent.uiAddSound()

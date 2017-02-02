@@ -7,6 +7,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
+from kivy.uix.textinput import TextInput
+import uuid
 
 from com.valsr.psb.ui.window.base import WindowCloseState
 
@@ -23,9 +25,15 @@ class PopupDialogue( Popup ):
         self.selection_ = None
         self.dismissed_ = False
         self.bind( on_dismiss = self.dismissed )
+        self.text_ = None
         self.cb_ = callback
 
     def onButton( self, button ):
+        self.selection_ = button
+        self.dismiss()
+
+    def onTextButton( self, text, button ):
+        self.text_ = text
         self.selection_ = button
         self.dismiss()
 
@@ -52,4 +60,18 @@ def showYesNoPopup( title = 'Title Message', message = 'Message', yesButton = 'O
     topBox.add_widget( hbox )
     p.content = topBox
     p.open()
+
+def showTextInputPopup( title = 'Title Message', message = 'Message', inputMessage = 'Enter value here', yesButton = 'Proceed', noButton = 'Cancel', parent = None , **kwargs ):
+    p = PopupDialogue( title = title, attach_to = parent , **kwargs )
+    topBox = BoxLayout( orientation = 'vertical' )
+    topBox.add_widget( Label( text = message ) )
+    textInput = TextInput( text = message, multiline = False )
+    topBox.add_widget( textInput )
+    hbox = BoxLayout( orientation = 'horizontal' )
+    hbox.add_widget( Button( text = yesButton , on_press = lambda x: p.onTextButton( textInput.text, WindowCloseState.YES ), size_hint = ( 1, None ), height = 35 ) )
+    hbox.add_widget( Button( text = noButton , on_press = lambda x: p.onTextButton( textInput.text, WindowCloseState.NO ), size_hint = ( 1, None ), height = 35 ) )
+    topBox.add_widget( hbox )
+    p.content = topBox
+    p.open()
+
 
