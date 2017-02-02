@@ -8,6 +8,7 @@ from com.valsr.psb.sound.info import MediaInfo
 
 class TreeNode( TreeViewLabel ):
 
+
     def __init__( self, id, tree, label = None, data = None, **kwargs ):
         self.id_ = id
         self.data_ = data

@@ -13,12 +13,13 @@ from threading import Thread
 import time
 import uuid
 
+from com.valsr.psb.callback import CallbackRegister
 from com.valsr.psb.sound import PlayerState
 
 
 _PLAYER_UPDATE_TIMEOUT_ = 0.2 # Update timetout (for update callbacks)
 
-class PlayerBase( object ):
+class PlayerBase( CallbackRegister ):
     '''
     Base class for all player objects
     '''
@@ -31,6 +32,8 @@ class PlayerBase( object ):
             id -- Player identifier
         '''
         self.id_ = id
+        super().__init__()
+
         self.__init()
         self.__setUpPipeline()
 
@@ -109,15 +112,17 @@ class PlayerBase( object ):
                     error, debug = message.parse_error()
                     self.error_ = error
                     self.errorDebug_ = debug
-                for key in self.messageCallbacks_:
-                    if self.messageCallbacks_[key]( self, bus, message ):
+                cbs = self.getCallbacks( 'message' )
+                for key in cbs:
+                    if cbs[key]( self, bus, message ):
                         Logger.debug( "Callback %s handled the event." % key )
                         break
 
             # call the update callbacks
             if time.time() > nextUpdate:
-                for key in self.updateCallbacks_:
-                    if self.updateCallbacks_[key]( self, 0 ):
+                cbs = self.getCallbacks( 'update' )
+                for key in cbs:
+                    if cbs[key]( self, 0 ):
                         Logger.debug( "Callback %s handled the event." % key )
                         break
 
@@ -134,10 +139,7 @@ class PlayerBase( object ):
         Returns:
             callback identifier
         '''
-        id = str( uuid.uuid1().int )
-        self.updateCallbacks_[id] = cb
-        Logger.debug( "Registered callback by id %s" % id )
-        return id
+        return self.registerCallback( 'update', cb )
 
     def unregisterUpdateCallback( self, id ):
         '''
@@ -149,13 +151,7 @@ class PlayerBase( object ):
         Returns:
             Un-registration status
         '''
-        if id in self.updateCallbacks_:
-            del self.updateCallbacks_[id]
-            Logger.debug( "Unregistered callback by id %s" % id )
-            return True
-
-        Logger.debug( "Unable to unregistered callback: %s not found" % id )
-        return False
+        return self.unregisterCallback( 'update', id )
 
     def registerMessageCallback( self, cb ):
         '''
@@ -167,10 +163,7 @@ class PlayerBase( object ):
         Returns:
             callback identifier
         '''
-        id = str( uuid.uuid1().int )
-        self.messageCallbacks_[id] = cb
-        Logger.debug( "Registered callback by id %s" % id )
-        return id
+        return self.registerCallback( 'message', cb )
 
     def unregisterMessageCallback( self, id ):
         '''
@@ -182,13 +175,7 @@ class PlayerBase( object ):
         Returns:
             Un-registration status
         '''
-        if id in self.messageCallbacks_:
-            del self.messageCallbacks_[id]
-            Logger.debug( "Unregistered callback by id %s" % id )
-            return True
-
-        Logger.debug( "Unable to unregistered callback: %s not found" % id )
-        return False
+        return self.unregisterCallback( 'message', id )
 
     # Play back Functionality (override the non __ ones)
     def __finish( self ):
