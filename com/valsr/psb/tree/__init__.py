@@ -1,6 +1,8 @@
 '''
 '''
-from kivy.uix.treeview import TreeViewLabel, TreeView
+from kivy.logger import Logger
+from kivy.uix.treeview import TreeViewLabel, TreeView, TreeViewNode
+
 from com.valsr.psb.sound.info import MediaInfo
 
 
@@ -21,17 +23,16 @@ class TreeNode( TreeViewLabel ):
 
         return dict
 
-    def deserialize( self, tree, parent, dict ):
+    def deserialize( self, tree, dict ):
         self.id_ = dict['id']
         self.text = dict['label']
         self.data_ = MediaInfo.deserialize( dict['data'] )
         self.tree_ = tree
 
-        if parent:
-            tree.add_node( self, parent )
         for child in dict['children']:
-            childNode = TreeNode( id = child["id"], tree = tree )
-            childNode.deserialize( tree, self, child )
+            childNode = TreeNode( id = child["id"], tree = None )
+            childNode.deserialize( tree, child )
+            self.addChild( childNode )
 
     def hasChild( self, id ):
         for node in self.nodes:
@@ -55,8 +56,8 @@ class TreeNode( TreeViewLabel ):
         return None
 
     def removeSelf( self ):
-        self.removeAllChildren()
-        self.tree_.remove_node( self )
+        if self.tree_:
+            self.tree_.remove_node( self )
         return self
 
     def removeChild( self, id ):
@@ -92,3 +93,36 @@ class TreeNode( TreeViewLabel ):
                 return found
 
         return None
+
+    def on_touch_down( self, touch ):
+        if self.collide_point( *touch.pos ):
+            if touch.button == 'right':
+                pass
+            if touch.button == 'left':
+                if self.id_ == 'root':
+                    Logger.debug( "Can't drag root" )
+                else:
+                    Logger.debug( 'Grabbed for moving %s', self.id_ )
+                    touch.grab( self )
+                return True
+
+    def on_touch_move( self, touch ):
+        if touch.grab_current is self:
+            pass
+
+    def on_touch_up( self, touch ):
+        if touch.grab_current is self:
+            Logger.debug( 'Un-grabbed %s', self.id_ )
+            touch.ungrab( self )
+            return True
+
+    def detach( self ):
+        return self.removeSelf()
+
+    def attachTo( self, tree ):
+        if self.tree_:
+            self.detach()
+
+        self.tree_ = tree
+        print( "attaching to tree" )
+        tree.add_node( self )

@@ -9,6 +9,7 @@ from kivy.lang import Builder
 from kivy.logger import Logger
 import os
 
+from com.valsr.psb import utility
 from com.valsr.psb.sound.info import MediaInfoManager
 from com.valsr.psb.tree import TreeNode
 from com.valsr.psb.ui.dialogue import popup
@@ -31,7 +32,7 @@ class MainWindow( WindowBase ):
         return Builder.load_file( "ui/kv/main.kv" )
 
     def onPostCreate( self ):
-        self.audioFilesTree_ = TreeNode( 'root', self.getUI( 'uiAudioFiles' ) )
+        self.audioFilesTree_ = TreeNode( id = 'root', tree = self.getUI( 'uiAudioFiles' ) )
         self.getUI( 'uiAudioFiles' ).add_node( self.audioFilesTree_ )
 
     def uiAddSound( self, *args ):
@@ -75,14 +76,7 @@ class MainWindow( WindowBase ):
     def _saveImpl( self, fromDialogue = False ):
         if fromDialogue:
             self.file_ = self.saveWindow_.file_
-
-        # serialize
-        Logger.info( 'Saving project to %s', self.file_ )
-        dict = self.audioFilesTree_.serialize()
-        with open( self.file_, 'w' ) as f:
-            json.dump( dict, f, indent = 2 )
-
-        Logger.info( 'Project successfully saved to file %s', self.file_ )
+        utility.saveProject( self.file_, self.audioFilesTree_, None )
 
     def uiOpen( self, *args ):
         self.openWindow_ = self.controller_.openWindow( OpenDialogue, windowed = True, size_hint = ( 0.75, 0.75 ) )
@@ -91,15 +85,12 @@ class MainWindow( WindowBase ):
     def _openImpl( self , *args ):
         self.file_ = self.openWindow_.file_
 
+        tree, _ = utility.loadProject( self.file_ )
+        treeRoot = self.getUI( 'uiAudioFiles' )
         self.audioFilesTree_.removeAllChildren()
-
-        # de-serialize
-        Logger.info( 'Opening project %s', self.file_ )
-        with open( self.file_, 'r' ) as f:
-            dict = json.load( f )
-
-        self.audioFilesTree_.deserialize( self.audioFilesTree_.tree_, None, dict )
-        Logger.info( 'Project file %s loaded successfully', self.file_ )
+        self.audioFilesTree_.detach()
+        self.audioFilesTree_ = tree
+        self.audioFilesTree_.attachTo( treeRoot )
 
     def uiAddTreeCategory( self, *args ):
         treeUI = self.getUI( 'uiAudioFiles' )
