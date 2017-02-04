@@ -55,10 +55,10 @@ GridLayout:
 					size_hint_y: None
 					text: 'Search'
 				ScrollView:
-					TreeView:
+					DraggableTreeView:
 						hint_y: 1
 						id: uiAudioFiles
-						hide_root: True
+						hide_root: False
 				ImageButton:
 					id: addcategory
 					on_press: root.parent.uiAddTreeCategory()

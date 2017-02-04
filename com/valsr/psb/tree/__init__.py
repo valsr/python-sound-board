@@ -118,7 +118,6 @@ class TreeNode( TreeViewLabel, CallbackRegister ):
             self.detach()
 
         self.tree_ = tree
-        print( "attaching to tree" )
         tree.add_node( self )
 
     def walk( self ):

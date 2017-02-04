@@ -69,6 +69,8 @@ class PSB( App ):
         self.rebindKeyboard()
 
         return window
+    def onWindowOpen( self, window ):
+        self.windowOrder_.append( window.id_ )
 
     def onWindowClose( self, window ):
         self.windowOrder_.remove( window.id_ )
@@ -79,7 +81,10 @@ class PSB( App ):
 
     def build( self ):
         self.ui_ = FloatLayout()
-        self.openWindow( MainWindow, draggable = 'None', title = 'PSB' )
+        window = MainWindow( controller = self )
+        window.draggable = 'None'
+        window.title = 'PSB'
+        window.open()
         return self.ui_
 
     def getUIRoot( self ):

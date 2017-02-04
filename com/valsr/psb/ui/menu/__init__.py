@@ -15,7 +15,8 @@ class SimpleMenuItem( Button, MenuItem ):
 class Menu( WindowBase ):
     def __init__( self, **kwargs ):
         super().__init__( **kwargs )
+        self.ui_ = BoxLayout()
 
     def addMenuItem( self, child ):
-        self.add_widget( child )
+        self.ui_.add_widget( child )
         child.menu_ = self

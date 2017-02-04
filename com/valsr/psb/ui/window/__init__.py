@@ -12,10 +12,12 @@ import os
 from com.valsr.psb import utility
 from com.valsr.psb.sound.info import MediaInfoManager
 from com.valsr.psb.tree import TreeNode
-from com.valsr.psb.ui.dialogue import popup
+from com.valsr.psb.ui.dialogue import popup, addsound
 from com.valsr.psb.ui.dialogue.addsound import AddSoundDialogue
 from com.valsr.psb.ui.dialogue.open import OpenDialogue
 from com.valsr.psb.ui.dialogue.save import SaveDialogue
+from com.valsr.psb.ui.menu import SimpleMenuItem, Menu
+from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeView, DraggableTreeViewNode
 from com.valsr.psb.ui.window.base import WindowBase, WindowCloseState
 
 
@@ -32,19 +34,22 @@ class MainWindow( WindowBase ):
         return Builder.load_file( "ui/kv/main.kv" )
 
     def onPostCreate( self ):
-        self.audioFilesTree_ = TreeNode( id = 'root', tree = self.getUI( 'uiAudioFiles' ) )
-        self.getUI( 'uiAudioFiles' ).add_node( self.audioFilesTree_ )
-        self.audioFilesTree_.registerCallback( 'touch_up', self.uiFileTreeTouchUp )
+        self.audioFilesTree_ = self.getUI( 'uiAudioFiles' )
+        node = self.audioFilesTree_.add_node( DraggableTreeViewNode( text = 'First level' ) )
+        node = node.add_node( DraggableTreeViewNode( text = 'Second Level' ) )
+        node = node.add_node( DraggableTreeViewNode( text = 'Third Level' ) )
+        node.open( True )
+        node.disabled = True
 
     def uiAddSound( self, *args ):
-        self.addSoundWindow_ = self.controller_.openWindow( AddSoundDialogue, windowed = True, size_hint = ( 0.75, 0.75 ) )
+        self.addSoundWindow_ = AddSoundDialogue( controller = self.controller_ , size_hint = ( 0.75, 0.75 ) )
         self.addSoundWindow_.bind( on_dismiss = self.uiAddSoundDismiss )
+        self.addSoundWindow_.open()
 
     def uiAddSoundDismiss( self, *args ):
         if self.addSoundWindow_.closeState_ == WindowCloseState.OK:
             if not self.audioFilesTree_.hasChild( 'uncategorized' ):
-                self.audioFilesTree_.addChild( TreeNode( id = 'uncategorized', tree = self.audioFilesTree_.tree_ ) )
-                self.audioFilesTree_.getChild( 'uncategorized' ).openParents()
+                self.audioFilesTree_.addChild( DraggableTreeViewNode( text = 'Uncategorized' ) )
 
             self._addFileImpl( self.addSoundWindow_.file_ )
         else:
@@ -62,9 +67,7 @@ class MainWindow( WindowBase ):
             return
 
         Logger.debug( "Adding to %s to collection", file )
-        node = TreeNode( id = info.fingerprint_, label = os.path.basename( file ) , data = info, tree = self.audioFilesTree_.tree_ )
-        self.audioFilesTree_.getChild( 'uncategorized' ).addChild( node )
-        node.openParents()
+        node = DraggableTreeViewNode( text = os.path.basename( file ) )
 
     def uiSave( self, *args ):
         if self.file_ is None:
@@ -98,12 +101,10 @@ class MainWindow( WindowBase ):
             node.registerCallback( 'touch_up', self.uiFileTreeTouchUp )
 
     def uiAddTreeCategory( self, *args ):
-        treeUI = self.getUI( 'uiAudioFiles' )
+        selectedNode = self.audioFilesTree_.selected_node
 
-        selectedNode = treeUI.selected_node
-
-        if not selectedNode or not isinstance( selectedNode, TreeNode ):
-            selectedNode = self.audioFilesTree_
+        if selectedNode == None:
+            selectedNode = self.audioFilesTree_.root
 
         # now open the dialogue
         popup.showTextInputPopup( title = 'New Category', message = 'Enter Category Name', inputMessage = 'Category',
@@ -113,19 +114,22 @@ class MainWindow( WindowBase ):
 
     def _completeNewCategory( self, button, parentNode, text ):
         if button == WindowCloseState.YES:
-            Logger.trace( 'Adding %s node to %s', text, parentNode.id_ )
-            if parentNode.hasChild( text ):
-                Logger.trace( 'Node already exists', text, parentNode.id_ )
-                popup.showOkPopup( 'New Category', message = 'Category \'%s\' already exists within \'%s\'' % ( text, parentNode.id_ ) )
+            Logger.trace( 'Adding %s node to %s', text, parentNode.id )
+            # find if we have the node by text
+            if parentNode.find_node( lambda x: x.text == text, False ):
+                Logger.trace( 'Node by %s already exists', text )
+                popup.showOkPopup( 'New Category', message = 'Category \'%s\' already exists within \'%s\'' % ( text, parentNode.id ) )
                 return
 
-            node = TreeNode( id = text, tree = parentNode.tree_ )
-            parentNode.addChild( node )
-            node.openParents()
-            node.registerCallback( 'touch_up', self.uiFileTreeTouchUp )
+            node = DraggableTreeViewNode( text = text )
+            parentNode.add_node( node ).open( True )
 
     def uiFileTreeTouchUp( self, fileNode, touch ):
-        Logger.debug( 'Touch up from %s', fileNode.text )
         if touch.button == 'left':
             # create menu
+            Logger.debug( 'Touch up from %s', fileNode.text )
+            m = Menu( controller = self.controller_ )
+            m.addMenuItem( SimpleMenuItem( text = 'test' ) )
+            m.addMenuItem( SimpleMenuItem( text = 'test2' ) )
+            m.open()
             pass

@@ -55,7 +55,7 @@ class WindowBase( GridLayout ):
     '''
     title = StringProperty( "Window" )
     # Internals properties used for graphical representation.
-    window_ = ObjectProperty( None, allownone = True )
+    _parent = ObjectProperty( None, allownone = True )
     draggable = OptionProperty( "Top", options = ["All", "Top", "None"] )
 
     def __init__( self, controller, **kwargs ):
@@ -67,55 +67,38 @@ class WindowBase( GridLayout ):
         self._parent = controller.getUIRoot()
         self.id_ = uuid.uuid1()
         self._closeState_ = WindowCloseState.CLOSE
+        self.opened_ = False
         super().__init__( **kwargs )
 
     def open( self, *largs ):
-        '''Show the view window from the :attr:`attach_to` widget. If set, it
-        will attach to the nearest window. If the widget is not attached to any
-        window, the view will attach to the global
-        :class:`~kivy.core.window.Window`.
-        '''
-        if self.window_ is not None:
+        if self.opened_:
             Logger.warning( 'WindowBase: you can only open once.' )
             return self
-        # search window
-        self.window_ = self.controller_.getUIRoot() # self._search_window()
-        if not self.window_:
+
+        if not self._parent:
             Logger.warning( 'WindowBase: cannot open view, no window found.' )
             return self
+
         self.create()
-        self.window_.add_widget( self )
-        self.window_.bind( 
+        self._parent.add_widget( self )
+        self._parent.bind( 
             on_resize = self._align_center )
-        self.center = self.window_.center
+        self.center = self._parent.center
         self.fbind( 'size', self._update_center )
+        self.controller_.onWindowOpen( self )
         self.dispatch( 'on_open' )
         return self
 
     def _update_center( self, *args ):
-        if not self.window_:
+        if not self._parent:
             return
         # XXX HACK DONT REMOVE OR FOUND AND FIX THE ISSUE
         # It seems that if we don't access to the center before assigning a new
         # value, no dispatch will be done >_>
-        self.center = self.window_.center
+        self.center = self._parent.center
 
     def dismiss( self, *largs, **kwargs ):
-        '''Close the view if it is open. If you really want to close the
-        view, whatever the on_dismiss event returns, you can use the *force*
-        argument:
-        ::
-
-            view = WindowBase(...)
-            view.dismiss(force=True)
-
-        When the view is dismissed, it will be faded out before being
-        removed from the parent. If you don't want animation, use::
-
-            view.dismiss(animation=False)
-
-        '''
-        if self.window_ is None:
+        if self._parent is None:
             return self
 
         if self.dispatch( 'on_dismiss' ) is True:
@@ -131,12 +114,12 @@ class WindowBase( GridLayout ):
         self.drawBackground()
 
     def _align_center( self, *l ):
-        if self.window_:
-            self.center = self.window_.center
+        if self._parent:
+            self.center = self._parent.center
             # hack to resize dark background on window resize
-            window = self.window_
-            self.window_ = None
-            self.window_ = window
+            window = self._parent
+            self._parent = None
+            self._parent = window
 
     def on_touch_down( self, touch ):
         if self.draggable is not "None":
@@ -167,16 +150,16 @@ class WindowBase( GridLayout ):
         return True
 
     def on__anim_alpha( self, instance, value ):
-        if value == 0 and self.window_ is not None:
+        if value == 0 and self._parent is not None:
             self._real_remove_widget()
 
     def _real_remove_widget( self ):
-        if self.window_ is None:
+        if self._parent is None:
             return
-        self.window_.remove_widget( self )
-        self.window_.unbind( 
+        self._parent.remove_widget( self )
+        self._parent.unbind( 
             on_resize = self._align_center )
-        self.window_ = None
+        self._parent = None
 
     def on_open( self ):
         pass
