@@ -31,9 +31,6 @@ class SaveDialogue( WindowBase ):
         return Builder.load_file( "ui/kv/save.kv" )
 
     def uiCancel( self, *args ):
-        if self.playerId_ is not None:
-            PlayerManager.destroyPlayer( self.playerId_ )
-
         self.closeState_ = WindowCloseState.CANCEL
         self.dismiss()
 
