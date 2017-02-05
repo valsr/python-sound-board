@@ -74,6 +74,8 @@ class MainWindow( WindowBase ):
 
     def _saveImpl( self, fromDialogue = False ):
         if fromDialogue:
+            if self.saveWindow_.closeState_ != WindowCloseState.OK:
+                return
             self.file_ = self.saveWindow_.file_
         utility.saveProject( self.file_, self.audioFilesTree_, None )
         self.title = "PSB: " + self.file_
@@ -84,8 +86,8 @@ class MainWindow( WindowBase ):
 
     def _openImpl( self , *args ):
         self.file_ = self.openWindow_.file_
-
-        utility.loadProject( self.file_, self.audioFilesTree_ )
+        if self.openWindow_.closeState_ == WindowCloseState.OK:
+            utility.loadProject( self.file_, self.audioFilesTree_ )
 
     def uiAddTreeCategory( self, *args ):
         selectedNode = self.audioFilesTree_.selected_node
