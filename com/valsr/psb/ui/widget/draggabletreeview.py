@@ -67,6 +67,10 @@ class DraggableTreeView( TreeView, Droppable ):
 
         super().remove_node( node )
 
+    def remove_all_nodes( self ):
+        for n in self.root.nodes:
+            self.remove_node( n )
+
     def find_node( self, cb ):
         return self.root.find_node( cb, True )
 

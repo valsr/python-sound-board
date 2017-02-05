@@ -35,13 +35,6 @@ class MainWindow( WindowBase ):
 
     def onPostCreate( self ):
         self.audioFilesTree_ = self.getUI( 'uiAudioFiles' )
-        node = self.audioFilesTree_.add_node( DraggableTreeViewNode( label = 'First level' ) )
-        node = node.add_node( DraggableTreeViewNode( label = 'Second Level' ) )
-        node = node.add_node( DraggableTreeViewNode( label = 'Third Level' ) )
-        node = node.add_node( DraggableTreeViewNode( label = 'Fourth and very long long Level' ) )
-        node = node.add_node( DraggableTreeViewNode( label = 'Fifth and multiline\n Level' ) )
-        node.open( True )
-        node.disabled = True
 
     def uiAddSound( self, *args ):
         self.addSoundWindow_ = AddSoundDialogue( controller = self.controller_ , size_hint = ( 0.75, 0.75 ) )
@@ -83,6 +76,7 @@ class MainWindow( WindowBase ):
         if fromDialogue:
             self.file_ = self.saveWindow_.file_
         utility.saveProject( self.file_, self.audioFilesTree_, None )
+        self.title = "PSB: " + self.file_
 
     def uiOpen( self, *args ):
         self.openWindow_ = self.controller_.openWindow( OpenDialogue, windowed = True, size_hint = ( 0.75, 0.75 ) )
@@ -91,16 +85,7 @@ class MainWindow( WindowBase ):
     def _openImpl( self , *args ):
         self.file_ = self.openWindow_.file_
 
-        tree, _ = utility.loadProject( self.file_ )
-        treeRoot = self.getUI( 'uiAudioFiles' )
-        self.audioFilesTree_.removeAllChildren()
-        self.audioFilesTree_.detach()
-        self.audioFilesTree_ = tree
-        self.audioFilesTree_.attachTo( treeRoot )
-
-        # walk the tree and set the touch up
-        for node, _ in self.audioFilesTree_.walk():
-            node.registerCallback( 'touch_up', self.uiFileTreeTouchUp )
+        utility.loadProject( self.file_, self.audioFilesTree_ )
 
     def uiAddTreeCategory( self, *args ):
         selectedNode = self.audioFilesTree_.selected_node
