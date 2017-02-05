@@ -68,25 +68,26 @@ class Draggable( Widget ):
             Logger.debug( 'grab ended' )
             touch.ungrab( self )
 
-            # find what is under
-            dropped = False
-            parent = self.parent
-            self.parent.remove_widget( self )
-            for widget in parent.walk():
-                if isinstance( widget, Droppable ):
-                    x, y = widget.to_widget( *touch.pos )
-                    if widget.collide_point( x, y ):
-                        if widget._drag_drop( self, touch ):
-                            dropped = True
-                            break
+            if self._detached:
+                # find what is under
+                dropped = False
+                parent = self.parent
+                self.parent.remove_widget( self )
+                for widget in parent.walk():
+                    if isinstance( widget, Droppable ):
+                        x, y = widget.to_widget( *touch.pos )
+                        if widget.collide_point( x, y ):
+                            if widget._drag_drop( self, touch ):
+                                dropped = True
+                                break
 
-            # if not, drop back to original parent
-            if not dropped:
-                Logger.debug( 'No drop recepients, returning to original parent' )
-                if not self._original_parent._drag_drop( self, touch ):
-                    raise RuntimeError( 'Previous parent rejected us!!!' )
+                # if not, drop back to original parent
+                if not dropped:
+                    Logger.debug( 'No drop recepients, returning to original parent' )
+                    if not self._original_parent._drag_drop( self, touch ):
+                        raise RuntimeError( 'Previous parent rejected us!!!' )
 
-            self._detached = False
+                self._detached = False
 
     def _findRootWiget( self ):
         if self.draggableBoundWindow:

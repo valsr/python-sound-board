@@ -35,9 +35,11 @@ class MainWindow( WindowBase ):
 
     def onPostCreate( self ):
         self.audioFilesTree_ = self.getUI( 'uiAudioFiles' )
-        node = self.audioFilesTree_.add_node( DraggableTreeViewNode( text = 'First level' ) )
-        node = node.add_node( DraggableTreeViewNode( text = 'Second Level' ) )
-        node = node.add_node( DraggableTreeViewNode( text = 'Third Level' ) )
+        node = self.audioFilesTree_.add_node( DraggableTreeViewNode( label = 'First level' ) )
+        node = node.add_node( DraggableTreeViewNode( label = 'Second Level' ) )
+        node = node.add_node( DraggableTreeViewNode( label = 'Third Level' ) )
+        node = node.add_node( DraggableTreeViewNode( label = 'Fourth and very long long Level' ) )
+        node = node.add_node( DraggableTreeViewNode( label = 'Fifth and multiline\n Level' ) )
         node.open( True )
         node.disabled = True
 
@@ -49,7 +51,7 @@ class MainWindow( WindowBase ):
     def uiAddSoundDismiss( self, *args ):
         if self.addSoundWindow_.closeState_ == WindowCloseState.OK:
             if not self.audioFilesTree_.hasChild( 'uncategorized' ):
-                self.audioFilesTree_.addChild( DraggableTreeViewNode( text = 'Uncategorized' ) )
+                self.audioFilesTree_.addChild( DraggableTreeViewNode( label = 'Uncategorized' ) )
 
             self._addFileImpl( self.addSoundWindow_.file_ )
         else:
@@ -67,7 +69,7 @@ class MainWindow( WindowBase ):
             return
 
         Logger.debug( "Adding to %s to collection", file )
-        node = DraggableTreeViewNode( text = os.path.basename( file ) )
+        node = DraggableTreeViewNode( label = os.path.basename( file ) )
 
     def uiSave( self, *args ):
         if self.file_ is None:
@@ -116,12 +118,12 @@ class MainWindow( WindowBase ):
         if button == WindowCloseState.YES:
             Logger.trace( 'Adding %s node to %s', text, parentNode.id )
             # find if we have the node by text
-            if parentNode.find_node( lambda x: x.text == text, False ):
+            if parentNode.find_node( lambda x: x.ui.text == text, False ):
                 Logger.trace( 'Node by %s already exists', text )
                 popup.showOkPopup( 'New Category', message = 'Category \'%s\' already exists within \'%s\'' % ( text, parentNode.id ) )
                 return
 
-            node = DraggableTreeViewNode( text = text )
+            node = DraggableTreeViewNode( label = text )
             parentNode.add_node( node ).open( True )
 
     def uiFileTreeTouchUp( self, fileNode, touch ):

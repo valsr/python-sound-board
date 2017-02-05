@@ -6,9 +6,15 @@ Created on Feb 4, 2017
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.core.window.window_sdl2 import WindowSDL
+from kivy.graphics import Color, Rectangle, Line
 from kivy.logger import Logger
 from kivy.properties import StringProperty, ObjectProperty, BooleanProperty, NumericProperty
-from kivy.uix.treeview import TreeView, TreeViewLabel, TreeViewException
+from kivy.uix import label
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.uix.stacklayout import StackLayout
+from kivy.uix.treeview import TreeView, TreeViewLabel, TreeViewException, TreeViewNode
 from kivy.uix.widget import Widget
 import math
 import uuid
@@ -35,7 +41,7 @@ class DraggableTreeView( TreeView, Droppable ):
                 raise TreeViewException( 
                     'The node must be a subclass of DraggableTreeViewNode' )
         else: # convert root nod to DraggabreTreeViewNode
-            rootNode = DraggableTreeViewNode( text = 'root', is_open = True, level = 0 )
+            rootNode = DraggableTreeViewNode( label = 'root', is_open = True, level = 0 )
             for key, value in self.root_options.items():
                 setattr( rootNode, key, value )
             node = rootNode
@@ -81,18 +87,49 @@ class DraggableTreeView( TreeView, Droppable ):
 
         self.select_node( node )
 
-class DraggableTreeViewNode( TreeViewLabel, Draggable ):
+class DraggableTreeViewNode( TreeViewNode, BoxLayout, Draggable ):
     id = StringProperty( allownone = False )
     data = ObjectProperty( defaultvalue = None )
     _tree = ObjectProperty( defaultvalue = None, allownone = True )
+    ui = ObjectProperty( defaultvalue = None, allownone = True )
 
-    def __init__( self, id = None, data = None, **kwargs ):
+    def __init__( self, id = None, data = None, label = None, **kwargs ):
+        super().__init__( **kwargs )
         if id == None:
             id = str( uuid.uuid1().hex )
 
         self.id = id
         self.data = data
-        super().__init__( **kwargs )
+
+        # create a label for us
+        self._label = Label( text = label )
+        self._label.width = self.width
+        self._label.shorten = True
+        self._label.max_lines = 1
+        self._label.shorten_from = 'right'
+        self._label.texture_update()
+
+        # add label to ui component
+        self.ui = self._label
+        self.add_widget( self.ui )
+
+        # fix component height
+        self.height = self._label.texture_size[1] + 16
+        self._label.text_size = ( self._label.texture_size[0], self._label.texture_size[1] )
+
+    def do_layout( self, *largs ):
+        # fix the alignment due to size not being calculated in the init method
+        if self.ui is self._label:
+            self._label.text_size[0] = self.width
+        return BoxLayout.do_layout( self, *largs )
+    def updateCanvas( self, *args ):
+        # self.canvas.clear()
+        self.ui.size = self.size
+        with self.canvas:
+            # background
+            pass
+            # Color( 0, 1, 0, 0.05 )
+            # Rectangle( pos = self.ui.pos, size = self.ui.size )
 
     def add_node( self, node ):
         return self._tree.add_node( node, self )
