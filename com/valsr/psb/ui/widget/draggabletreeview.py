@@ -105,7 +105,7 @@ class DraggableTreeView( TreeView, Droppable ):
         return True
 
     def _drop_acceptable( self, node ):
-        return not node.is_leaf
+        return node.data is None
 
 class DraggableTreeViewNode( TreeViewNode, BoxLayout, Draggable ):
     id = StringProperty( allownone = False )
@@ -142,14 +142,6 @@ class DraggableTreeViewNode( TreeViewNode, BoxLayout, Draggable ):
         if self.ui is self._label:
             self._label.text_size[0] = self.width
         return BoxLayout.do_layout( self, *largs )
-    def updateCanvas( self, *args ):
-        # self.canvas.clear()
-        self.ui.size = self.size
-        with self.canvas:
-            # background
-            pass
-            # Color( 0, 1, 0, 0.05 )
-            # Rectangle( pos = self.ui.pos, size = self.ui.size )
 
     def add_node( self, node ):
         return self._tree.add_node( node, self )

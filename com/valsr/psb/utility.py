@@ -54,7 +54,7 @@ def serializeNodeStructure( node ):
 
 def deserializeNodeStructure( d, parent ):
     node = DraggableTreeViewNode( id = d['id'], data = d['data'], label = d['label'] )
-
+    node.is_open = True
     parent.add_node( node )
     if 'children' in d:
         for child in d['children']:

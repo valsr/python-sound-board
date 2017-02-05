@@ -35,6 +35,7 @@ class MainWindow( WindowBase ):
 
     def onPostCreate( self ):
         self.audioFilesTree_ = self.getUI( 'uiAudioFiles' )
+        utility.loadProject( 'test.psb', self.audioFilesTree_ )
 
     def uiAddSound( self, *args ):
         self.addSoundWindow_ = AddSoundDialogue( controller = self.controller_ , size_hint = ( 0.75, 0.75 ) )
@@ -43,8 +44,8 @@ class MainWindow( WindowBase ):
 
     def uiAddSoundDismiss( self, *args ):
         if self.addSoundWindow_.closeState_ == WindowCloseState.OK:
-            if not self.audioFilesTree_.hasChild( 'uncategorized' ):
-                self.audioFilesTree_.addChild( DraggableTreeViewNode( label = 'Uncategorized' ) )
+            if not self.audioFilesTree_.root.find_node( lambda x: x._label.text.lower() == 'uncategorized' ):
+                self.audioFilesTree_.add_node( DraggableTreeViewNode( label = 'Uncategorized' ) )
 
             self._addFileImpl( self.addSoundWindow_.file_ )
         else:
@@ -57,12 +58,13 @@ class MainWindow( WindowBase ):
             Clock.schedule_once( lambda x: self._addFileImpl( file ) , 0.1 )
             return
 
-        if self.audioFilesTree_.findNodeByFingerprint( info.fingerprint_ ):
+        if self.audioFilesTree_.root.find_node( lambda x: x.data is not None and x.data.fingerprint_ == info.fingerprint_ ):
             popup.showOkPopup( 'File Already Added', 'File by similar fingerprint has already been added', parent = self )
             return
 
         Logger.debug( "Adding to %s to collection", file )
-        node = DraggableTreeViewNode( label = os.path.basename( file ) )
+        parent = self.audioFilesTree_.root.find_node( lambda x: x._label.text.lower() == 'uncategorized', False )
+        parent.add_node( DraggableTreeViewNode( id = file, label = os.path.basename( file ) ) )
 
     def uiSave( self, *args ):
         if self.file_ is None:

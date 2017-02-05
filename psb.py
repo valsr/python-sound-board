@@ -6,12 +6,10 @@ Created on Jan 13, 2017
 import gi
 from kivy.app import App
 from kivy.config import Config
-from kivy.core.window import Window
 from kivy.logger import Logger
 from kivy.uix.floatlayout import FloatLayout
 
 from com.valsr.psb import sound
-from com.valsr.psb.tree import TreeNode
 from com.valsr.psb.ui.window import MainWindow
 
 
