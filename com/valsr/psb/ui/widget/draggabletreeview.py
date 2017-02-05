@@ -29,11 +29,13 @@ class DraggableTreeView( TreeView, Droppable ):
     '''
     draggable = BooleanProperty( True )
     draggable_offset = NumericProperty( 30 )
+    drop_acceptable_cb = ObjectProperty( None )
     def __init__( self, **kwargs ):
         '''
         Constructor
         '''
         super().__init__( **kwargs )
+        self.drop_acceptable_cb = self._drop_acceptable
 
     def add_node( self, node, parent = None ):
         if self._root != None: # allow adding different nodes during tree initalization
@@ -70,22 +72,36 @@ class DraggableTreeView( TreeView, Droppable ):
 
     def on_drag_drop( self, draggable, touch ):
         if isinstance( draggable, DraggableTreeViewNode ):
-            node = self.get_node_at_pos( touch.pos )
+            node = self.get_node_at_pos( self.to_widget( *touch.pos ) )
             if not node:
                 node = self.root
 
-            self.select_node( node )
-            self.add_node( draggable, self.root )
+            Logger.debug( 'Selected node %s', node._label.text )
+            afterNode = node
+            while not self.drop_acceptable_cb( node ):
+                node = node.parent_node
+
+            Logger.debug( 'Adding %s to %s', draggable._label.text, node._label.text )
+            # add before
+            self.add_node( draggable, node )
             return True
 
         return False
 
     def on_drag_over( self, draggable, touch ):
         node = self.get_node_at_pos( self.to_widget( *touch.pos ) )
+
         if not node:
             node = self.root
 
-        self.select_node( node )
+        # figure if we can drop here
+        afterNode = node
+        while not self.drop_acceptable_cb( node ):
+            node = node.parent_node
+        return True
+
+    def _drop_acceptable( self, node ):
+        return not node.is_leaf
 
 class DraggableTreeViewNode( TreeViewNode, BoxLayout, Draggable ):
     id = StringProperty( allownone = False )
