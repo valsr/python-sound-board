@@ -53,7 +53,8 @@ def serializeNodeStructure( node ):
     return d
 
 def deserializeNodeStructure( d, parent ):
-    node = DraggableTreeViewNode( id = d['id'], data = d['data'], label = d['label'] )
+    data = MediaInfo.deserialize( d['data'] ) if d['data'] else None
+    node = DraggableTreeViewNode( id = d['id'], data = data , label = d['label'] )
     node.is_open = True
     parent.add_node( node )
     if 'children' in d:

@@ -7,6 +7,7 @@ from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.core.window.window_sdl2 import WindowSDL
 from kivy.graphics import Color, Rectangle, Line
+from kivy.input.motionevent import MotionEvent
 from kivy.logger import Logger
 from kivy.properties import StringProperty, ObjectProperty, BooleanProperty, NumericProperty
 from kivy.uix import label
@@ -17,10 +18,13 @@ from kivy.uix.stacklayout import StackLayout
 from kivy.uix.treeview import TreeView, TreeViewLabel, TreeViewException, TreeViewNode
 from kivy.uix.widget import Widget
 import math
+from matplotlib.backend_bases import MouseEvent
 import uuid
 
+from com.valsr.psb.ui.menu import Menu, SimpleMenuItem
 from com.valsr.psb.ui.widget.draggable import Draggable
 from com.valsr.psb.ui.widget.droppable import Droppable
+from com.valsr.psb.ui.window.base import WindowBase
 
 
 class DraggableTreeView( TreeView, Droppable ):
@@ -87,7 +91,7 @@ class DraggableTreeView( TreeView, Droppable ):
 
             Logger.debug( 'Adding %s to %s', draggable._label.text, node._label.text )
             # add before
-            self.add_node( draggable, node )
+            self.select_node( self.add_node( draggable, node ) )
             return True
 
         return False
@@ -102,6 +106,8 @@ class DraggableTreeView( TreeView, Droppable ):
         afterNode = node
         while not self.drop_acceptable_cb( node ):
             node = node.parent_node
+
+        self.select_node( node )
         return True
 
     def _drop_acceptable( self, node ):
@@ -190,3 +196,17 @@ class DraggableTreeViewNode( TreeViewNode, BoxLayout, Draggable ):
 
     def toggle( self ):
         self._tree.toggle_node( self )
+
+    def on_touch_down( self, touch ):
+        if touch.grab_current is not self:
+            if touch.button == 'right':
+                Logger.debug( 'Open menu' )
+                m = Menu()
+                m.add_menu_item( SimpleMenuItem( text = '1' ) )
+                m.add_menu_item( SimpleMenuItem( text = '1' ) )
+                m.add_menu_item( SimpleMenuItem( text = '2' ) )
+                m.add_menu_item( SimpleMenuItem( text = '3' ) )
+                x, y = self.to_window( *touch.pos )
+                m.show( x, y, self )
+                return True
+        return super().on_touch_down( touch )

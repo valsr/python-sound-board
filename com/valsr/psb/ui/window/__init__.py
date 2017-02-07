@@ -64,7 +64,7 @@ class MainWindow( WindowBase ):
 
         Logger.debug( "Adding to %s to collection", file )
         parent = self.audioFilesTree_.root.find_node( lambda x: x._label.text.lower() == 'uncategorized', False )
-        parent.add_node( DraggableTreeViewNode( id = file, label = os.path.basename( file ) ) )
+        parent.add_node( DraggableTreeViewNode( id = file, label = os.path.basename( file ), data = info ) )
 
     def uiSave( self, *args ):
         if self.file_ is None:

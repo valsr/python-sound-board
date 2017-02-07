@@ -8,6 +8,7 @@ from enum import Enum
 from kivy.graphics import Rectangle, Color
 from kivy.logger import Logger
 from kivy.properties import *
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 import uuid
@@ -23,7 +24,7 @@ class WindowCloseState( Enum ):
     NO = 5
     BUTTON_3 = 6
 
-class WindowBase( GridLayout ):
+class WindowBase( FloatLayout ):
     __metaclass__ = ABCMeta
     '''WindowBase class. See module documentation for more information.
 
