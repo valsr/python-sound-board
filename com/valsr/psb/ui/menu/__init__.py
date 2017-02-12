@@ -32,9 +32,7 @@ class MenuItem( Widget ):
         super().__init__( **kwargs )
 
     def on_hover( self, pos ):
-        print( 'On hover for ', self.id )
         if self.menu:
-            print( 'Open submenu', self.menu )
             self.menu.show( self.pos[0] + self.width - 10, self.pos[1] + self.height - 10, self )
 
         if self.hover_cb:
@@ -168,8 +166,6 @@ class Menu( BoxLayout ):
             for child in self.items:
                 self.add_widget( child )
 
-            print( self, self.size, self.pos )
-
     def _draw_background( self ):
         self.canvas.clear()
 
@@ -208,16 +204,12 @@ class Menu( BoxLayout ):
             return True
 
     def pos_in_submenu( self, pos, item ):
-        print( 'Checking if ', pos, ' is in item', item )
         if item and item.menu and item.menu.visible:
             if item.menu.collide_point( pos ):
-                print( 'Position is in submenu' )
                 return True
             else:
-                print( 'Checking if submenu item at y pos has the pos' )
                 return item.menu.pos_in_submenu( pos, item.menu.item_at_y_pos( pos[1] ) )
 
-        print( 'Item has no menu' )
         return False
 
     def collide_point( self, pos, selfOnly = True ):
@@ -274,58 +266,27 @@ class Menu( BoxLayout ):
                             oActive = self.active_item
                             self.active_item = None
                             oActive.on_hover_out( pos )
-                            print( 'De-activated menu item:', oActive.id )
+                            Logger.debug( '%s: De-activated menu item: %s' % ( self, oActive.id ) )
                             self._trigger_layout()
 
                         if not self.active_item:
                             self.active_item = item
                             item.on_hover( pos )
                             self._trigger_layout()
-                            print( 'Activated menu item:', item.id )
+                            Logger.debug( '%s: Activated menu item: %s' % ( self, item.id ) )
                 else:
                     return False
-#                 leafItem = item
-#                 while item not in self.items:
-#                     item = item.menu.parent_menu_item
-#
-#                 # child menu item and leaf item are the same
-#                 if leafItem.id is item.id:
-#                     pass
-#
-#                 if item.menu:
-#                     item.menu.on_mouse_move( window, pos )
-#                 if self.active_item: # check if we are in a child overlap
-#                     if self.collide_point( pos ):
-#                         return self.active_item.menu.on_mouse_move( window, pos )
-#
-#                 nActive = self.item_at_pos( pos )
-#                 if nActive: # could be in a boundary
-#
-#                     if not self.active_item or self.active_item.id is not nActive.id:
-#                         if self.active_item:
-#                             oActive = self.active_item
-#                             Logger.debug( "Deactivate item %s", oActive.id )
-#                             self.active_item = None
-#                             oActive.on_hover_out( pos )
-#                         Logger.debug( "Activate item %s", nActive.id )
-#                         self.active_item = nActive
-#                         r = self.active_item.on_hover( pos )
-#                         self._do_layout()
-#                         return r
             else:
                 if not self.parent_menu_item or not self.parent_menu_item._is_active():
-                    Logger.debug( 'Parent menu item is not active or mouse is outside us' )
-                    print( self )
+                    Logger.debug( '%s: Parent menu item is not active or mouse is outside us' % self )
                     hide = True
 
             if hide:
-                Logger.debug( 'Hide the menu' )
-                print( self )
+                Logger.debug( '%s: Hide the menu' % self )
                 self.hide()
                 return True
         else:
-            print( "Unbind us... now" )
-            print( self )
+            Logger.debug( "%s: Unbind windows event" % self )
             Window.unbind( mouse_pos = self.on_mouse_move )
 
     def show( self, x, y, widget ):
@@ -334,7 +295,6 @@ class Menu( BoxLayout ):
                 self.visible = True
                 if not self.root_widget:
                     self.root_widget = self._findRootWiget( widget )
-                print( 'root widget', self.root_widget )
                 self.root_widget.add_widget( self )
                 self._do_layout()
                 self.pos = ( x - 10, y - self.height + 10 )
