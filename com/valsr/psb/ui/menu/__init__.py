@@ -82,6 +82,9 @@ class SimpleMenuItem( Label, MenuItem ):
         return ( self.texture_size[0], self.texture_size[1] + 12 )
 
 class Menu( BoxLayout ):
+    #
+    # Properties
+    #
     color = ListProperty( [0.3, 0.3, 0.3, 0.75] )
     active_color = ListProperty( [0.6, 0.6, 0.6, 0.85] )
     border_color = ListProperty( [0.75, 0.75, 0.75, 1] )
@@ -103,6 +106,9 @@ class Menu( BoxLayout ):
         self.fbind( 'size', trigger )
         trigger()
 
+    #
+    # Common Functions
+    #
     def add_menu_item( self, menu ):
         if not isinstance( menu, MenuItem ):
             raise RuntimeError( 
@@ -131,6 +137,36 @@ class Menu( BoxLayout ):
             menu.funbind( 'size', self._trigger_layout )
             self._trigger_layout()
 
+    def show( self, x, y, widget ):
+        if not self.visible:
+            if len( self.items ) > 0:
+                Logger.debug( '%s: Open menu', self )
+                self.visible = True
+                if not self.root_widget:
+                    self.root_widget = self._findRootWiget( widget )
+                self.root_widget.add_widget( self )
+                self._do_layout()
+                self.pos = ( x - 10, y - self.height + 10 )
+                Logger.debug( "%s: Bind windows event" , self )
+                Window.bind( mouse_pos = self.on_mouse_move )
+            else:
+                Logger.debug( '%s: No menu items in menu! Will not open', self )
+        else:
+            Logger.debug( '%s: Menu already visible', self )
+
+    def hide( self ):
+        if self.visible:
+            self.visible = False
+            Window.unbind( mouse_pos = self.on_mouse_move )
+            self.root_widget.remove_widget( self )
+            # hide child submenus
+            for item in self.items:
+                if item.menu:
+                    item.menu.hide()
+
+    #
+    # Position query
+    #
     def item_at_pos( self, pos ):
         if self.x <= pos[0] <= self.right:
             return self.item_at_y_pos( pos[1] )
@@ -140,6 +176,99 @@ class Menu( BoxLayout ):
             if item.y <= y <= item.top:
                 return item
 
+    def collide_point( self, pos, selfOnly = True ):
+        if self.x <= pos[0] <= self.right and self.y <= pos[1] <= self.top:
+            return True
+        else:
+            # loop through all children and through their children's children
+            for i in self.items:
+                if i.menu and i.menu.visible:
+                    if i.menu.collide_item( pos, selfOnly = False ):
+                        return True
+
+        return False
+
+    def collide_item( self, pos, selfOnly = True ): # returns menu_item or menu
+        item = None # the item corresponding at that position (either menu item or menu)
+
+        # does any sub child element overshadow the current position
+        for i in self.items:
+            if i.menu and i.menu.visible:
+                child = i.menu.collide_item( pos, selfOnly = False )
+                if child:
+                    item = child
+
+        if not item: # check self for item at position
+            if self.x <= pos[0] <= self.right and self.y <= pos[1] <= self.top:
+                item = self.item_at_y_pos( pos[1] )
+                if not item: # still no item but within self
+                    item = self
+
+        return item
+    #
+    # Mouse Events
+    #
+    def on_mouse_move( self, window, pos ):
+        if self.visible:
+            hide = False
+            inBound = self.collide_point( pos )
+
+            if inBound or self.collide_point( pos, False ): # within visible menus bounds
+                item = self.collide_item( pos, False )
+                selfOnly = False
+                if isinstance( item, Menu ): # either self or child menu
+                    selfOnly = item is self
+                else:
+                    selfOnly = item in self.items
+
+                if selfOnly:
+                    if isinstance( item, Menu ):
+                        if self.active_item:
+                            oActive = self.active_item
+                            self.active_item = None
+                            oActive.on_hover_out( pos )
+                    else:
+                        if self.active_item and self.active_item.id is not item.id:
+                            oActive = self.active_item
+                            self.active_item = None
+                            oActive.on_hover_out( pos )
+                            Logger.debug( '%s: De-activated menu item: %s' , self, oActive.id )
+                            self._trigger_layout()
+
+                        if not self.active_item:
+                            self.active_item = item
+                            item.on_hover( pos )
+                            self._trigger_layout()
+                            Logger.debug( '%s: Activated menu item: %s' , self, item.id )
+                else:
+                    return False
+            else:
+                if not self.parent_menu_item or not self.parent_menu_item._is_active():
+                    Logger.debug( '%s: Parent menu item is not active or mouse is outside us' , self )
+                    hide = True
+
+            if hide:
+                Logger.debug( '%s: Hide the menu' , self )
+                self.hide()
+                return True
+        else:
+            Logger.debug( "%s: Unbind windows event" , self )
+            Window.unbind( mouse_pos = self.on_mouse_move )
+
+    def on_touch_down( self, touch ):
+        if self.visible:
+            ret = True
+
+            node = self.item_at_pos( touch.pos )
+            self.selected_item = node
+            if node:
+                ret = node.on_select( touch )
+            self.hide()
+
+            return ret
+    #
+    # DRAWING/LAYOUT Functions
+    #
     def _do_layout( self, *largs ):
         if self.visible:
             self.clear_widgets()
@@ -193,128 +322,9 @@ class Menu( BoxLayout ):
                 sepHeight -= self.spacing
                 Rectangle( pos = ( self.pos[0] + self.padding[0], self.pos[1] + sepHeight ),
                            size = ( self.size[0], self.spacing ) )
-
-    def on_touch_down( self, touch ):
-        if self.visible:
-            self.hide()
-            node = self.item_at_pos( touch.pos )
-            if node:
-                return node.on_select( touch )
-
-            return True
-
-    def pos_in_submenu( self, pos, item ):
-        if item and item.menu and item.menu.visible:
-            if item.menu.collide_point( pos ):
-                return True
-            else:
-                return item.menu.pos_in_submenu( pos, item.menu.item_at_y_pos( pos[1] ) )
-
-        return False
-
-    def collide_point( self, pos, selfOnly = True ):
-        if self.x <= pos[0] <= self.right and self.y <= pos[1] <= self.top:
-            return True
-        else:
-            # loop through all children and through their children's children
-            for i in self.items:
-                if i.menu and i.menu.visible:
-                    if i.menu.collide_item( pos, selfOnly = False ):
-                        return True
-
-        return False
-
-    def collide_item( self, pos, selfOnly = True ): # returns menu_item or menu
-        item = None # the item corresponding at that position (either menu item or menu)
-
-        # does any sub child element overshadow the current position
-        for i in self.items:
-            if i.menu and i.menu.visible:
-                child = i.menu.collide_item( pos, selfOnly = False )
-                if child:
-                    item = child
-
-        if not item: # check self for item at position
-            if self.x <= pos[0] <= self.right and self.y <= pos[1] <= self.top:
-                item = self.item_at_y_pos( pos[1] )
-                if not item: # still no item but within self
-                    item = self
-
-        return item
-
-    def on_mouse_move( self, window, pos ):
-        if self.visible:
-            hide = False
-            inBound = self.collide_point( pos )
-
-            if inBound or self.collide_point( pos, False ): # within visible menus bounds
-                item = self.collide_item( pos, False )
-                selfOnly = False
-                if isinstance( item, Menu ): # either self or child menu
-                    selfOnly = item is self
-                else:
-                    selfOnly = item in self.items
-
-                if selfOnly:
-                    if isinstance( item, Menu ):
-                        if self.active_item:
-                            oActive = self.active_item
-                            self.active_item = None
-                            oActive.on_hover_out( pos )
-                    else:
-                        if self.active_item and self.active_item.id is not item.id:
-                            oActive = self.active_item
-                            self.active_item = None
-                            oActive.on_hover_out( pos )
-                            Logger.debug( '%s: De-activated menu item: %s' % ( self, oActive.id ) )
-                            self._trigger_layout()
-
-                        if not self.active_item:
-                            self.active_item = item
-                            item.on_hover( pos )
-                            self._trigger_layout()
-                            Logger.debug( '%s: Activated menu item: %s' % ( self, item.id ) )
-                else:
-                    return False
-            else:
-                if not self.parent_menu_item or not self.parent_menu_item._is_active():
-                    Logger.debug( '%s: Parent menu item is not active or mouse is outside us' % self )
-                    hide = True
-
-            if hide:
-                Logger.debug( '%s: Hide the menu' % self )
-                self.hide()
-                return True
-        else:
-            Logger.debug( "%s: Unbind windows event" % self )
-            Window.unbind( mouse_pos = self.on_mouse_move )
-
-    def show( self, x, y, widget ):
-        if not self.visible:
-            if len( self.items ) > 0:
-                self.visible = True
-                if not self.root_widget:
-                    self.root_widget = self._findRootWiget( widget )
-                self.root_widget.add_widget( self )
-                self._do_layout()
-                self.pos = ( x - 10, y - self.height + 10 )
-                Logger.debug( 'Opening menu at position' )
-                Window.bind( mouse_pos = self.on_mouse_move )
-            else:
-                Logger.debug( 'No menu items in menu! Will not open' )
-        else:
-            Logger.debug( 'Menu already visible' )
-
-    def hide( self ):
-        if self.visible:
-            self.visible = False
-            Window.unbind( mouse_pos = self.on_mouse_move )
-            self.root_widget.remove_widget( self )
-            # hide child submenus
-            for item in self.items:
-                if item.menu:
-                    item.menu.hide()
-
+    #
+    # Misc
+    #
     def _findRootWiget( self, start_widget = None ):
         if self.root_widget is None:
             widget = start_widget
