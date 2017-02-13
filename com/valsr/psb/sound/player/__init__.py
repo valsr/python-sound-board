@@ -5,9 +5,6 @@ Created on Jan 17, 2017
 '''
 from abc import ABC, ABCMeta, abstractmethod
 from gi.repository import Gst, GObject
-from kivy.clock import Clock
-from kivy.logger import Logger
-from numpy.distutils.environment import __metaclass__
 import os
 from threading import Thread
 import time
@@ -15,6 +12,8 @@ import uuid
 
 from com.valsr.psb.callback import CallbackRegister
 from com.valsr.psb.sound import PlayerState
+from kivy.clock import Clock
+from kivy.logger import Logger
 
 
 _PLAYER_UPDATE_TIMEOUT_ = 0.2 # Update timetout (for update callbacks)

@@ -4,13 +4,13 @@ Created on Jan 13, 2017
 @author: radoslav
 '''
 import gi
+
+from com.valsr.psb import sound
+from com.valsr.psb.ui.window import MainWindow
 from kivy.app import App
 from kivy.config import Config
 from kivy.logger import Logger
 from kivy.uix.floatlayout import FloatLayout
-
-from com.valsr.psb import sound
-from com.valsr.psb.ui.window import MainWindow
 
 
 gi.require_version( 'Gst', '1.0' )
@@ -93,8 +93,8 @@ class PSB( App ):
 
 if __name__ == '__main__':
     from gi.repository import Gst
+    sound.initAudio()
     version = Gst.version()
     Config.set( 'input', 'mouse', 'mouse,multitouch_on_demand' )
     Logger.info( "GStreamer version %d.%d.%d.%d" % version )
-    sound.initAudio()
     PSB().run()

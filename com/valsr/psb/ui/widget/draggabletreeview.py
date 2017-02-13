@@ -3,6 +3,13 @@ Created on Feb 4, 2017
 
 @author: radoslav
 '''
+import math
+import uuid
+
+from com.valsr.psb.ui.menu import Menu, SimpleMenuItem
+from com.valsr.psb.ui.widget.draggable import Draggable
+from com.valsr.psb.ui.widget.droppable import Droppable
+from com.valsr.psb.ui.window.base import WindowBase
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.core.window.window_sdl2 import WindowSDL
@@ -17,14 +24,6 @@ from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.treeview import TreeView, TreeViewLabel, TreeViewException, TreeViewNode
 from kivy.uix.widget import Widget
-import math
-from matplotlib.backend_bases import MouseEvent
-import uuid
-
-from com.valsr.psb.ui.menu import Menu, SimpleMenuItem
-from com.valsr.psb.ui.widget.draggable import Draggable
-from com.valsr.psb.ui.widget.droppable import Droppable
-from com.valsr.psb.ui.window.base import WindowBase
 
 
 class DraggableTreeView( TreeView, Droppable ):

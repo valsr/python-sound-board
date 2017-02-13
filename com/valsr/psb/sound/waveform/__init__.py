@@ -3,10 +3,7 @@ Created on Jan 17, 2017
 
 @author: radoslav
 '''
-from OpenGL.arrays import lists
 from gi.repository import Gst, GObject
-from kivy.clock import Clock
-from kivy.logger import Logger
 import math
 import os
 from threading import Thread
@@ -14,6 +11,8 @@ from time import sleep
 
 from com.valsr.psb.sound.info import MediaInfoManager
 from com.valsr.psb.sound.player import PlayerBase
+from kivy.clock import Clock
+from kivy.logger import Logger
 
 
 class Waveform( PlayerBase ):
