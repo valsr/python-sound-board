@@ -124,3 +124,5 @@ class MainWindow( WindowBase ):
             m.addMenuItem( SimpleMenuItem( text = 'test2' ) )
             m.open()
             pass
+
+    # def on_

@@ -196,29 +196,3 @@ class DraggableTreeViewNode( TreeViewNode, BoxLayout, Draggable ):
 
     def toggle( self ):
         self._tree.toggle_node( self )
-
-    def on_touch_down( self, touch ):
-        if touch.grab_current is not self:
-            if touch.button == 'right':
-                Logger.debug( 'Open menu' )
-                m = Menu()
-                item = m.add_menu_item( SimpleMenuItem( text = '1' ) )
-                m2 = Menu()
-                item2 = m2.add_menu_item( SimpleMenuItem( text = '1' ) )
-                m2.add_menu_item( SimpleMenuItem( text = '1' ) )
-                m2.add_menu_item( SimpleMenuItem( text = '2' ) )
-                m2.add_menu_item( SimpleMenuItem( text = '3' ) )
-                item.set_menu( m2 )
-                m3 = Menu()
-                m3.add_menu_item( SimpleMenuItem( text = '1' ) )
-                m3.add_menu_item( SimpleMenuItem( text = '1' ) )
-                m3.add_menu_item( SimpleMenuItem( text = '2' ) )
-                m3.add_menu_item( SimpleMenuItem( text = '3' ) )
-                item2.set_menu( m3 )
-                m.add_menu_item( SimpleMenuItem( text = '1' ) )
-                m.add_menu_item( SimpleMenuItem( text = '2' ) )
-                m.add_menu_item( SimpleMenuItem( text = '3' ) )
-                x, y = self.to_window( *touch.pos )
-                m.show( x, y, self )
-                return True
-        return super().on_touch_down( touch )
