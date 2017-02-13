@@ -48,7 +48,7 @@ class MenuItem( Widget ):
         if self.select_cb:
             return self.select_cb( touch )
 
-        return False
+        return True
 
     @abstractmethod
     def _calculate_minimum_size( self ):
@@ -177,18 +177,55 @@ class Menu( BoxLayout ):
                 return item
 
     def collide_point( self, pos, selfOnly = True ):
-        if self.x <= pos[0] <= self.right and self.y <= pos[1] <= self.top:
-            return True
-        else:
-            # loop through all children and through their children's children
-            for i in self.items:
-                if i.menu and i.menu.visible:
-                    if i.menu.collide_item( pos, selfOnly = False ):
-                        return True
+        '''
+        Check if given position is within the visible menu.
+        
+        Parameters:
+            pos -- Position tuple (x,y)
+            selfOnly -- Restrict checking to only self (see note).
+        
+        Returns:
+            boolean -- if position is within the menu (see note)
+        
+        Note: if selfOnly is false then the function will check if the position is within itself and all visible 
+        children menu's (recursing of course). If selfOnly is true, then the check will only return true if the 
+        position is within it self but not within any children visible menus (i.e. the mouse pointer is uncovered and
+        within the menu boundaries) 
+        '''
+        collide = False
 
-        return False
+        # loop through all children and through their children's children
+        for i in self.items:
+            if i.menu and i.menu.visible:
+                if i.menu.collide_item( pos, selfOnly = False ):
+                    collide = True
+                    break
 
-    def collide_item( self, pos, selfOnly = True ): # returns menu_item or menu
+        if not collide:
+            if self.x <= pos[0] <= self.right and self.y <= pos[1] <= self.top:
+                collide = True
+        elif selfOnly:
+            collide = False
+
+        return collide
+
+    def collide_item( self, pos, selfOnly = True ):
+        '''
+        Obtain the item that collides at the given position.
+        
+        Parameters:
+            pos -- Position tuple (x,y)
+            selfOnly -- Restrict checking to only self (see note).
+        
+        Returns:
+            MeunItem or Menu -- the item at the given position (Menu is returned when the position is within a 
+            separator)
+        
+        Note: if selfOnly is false then the function will check if the position is within itself and all visible 
+        children menu's (recursing of course). If selfOnly is true, then the check will only return true if the 
+        position is within it self but not within any children visible menus (i.e. the mouse pointer is uncovered and
+        within the menu boundaries) 
+        '''
         item = None # the item corresponding at that position (either menu item or menu)
 
         # does any sub child element overshadow the current position
@@ -203,6 +240,8 @@ class Menu( BoxLayout ):
                 item = self.item_at_y_pos( pos[1] )
                 if not item: # still no item but within self
                     item = self
+        elif selfOnly: # child covering us, so position does not collide
+            item = None
 
         return item
     #
@@ -211,17 +250,10 @@ class Menu( BoxLayout ):
     def on_mouse_move( self, window, pos ):
         if self.visible:
             hide = False
-            inBound = self.collide_point( pos )
 
-            if inBound or self.collide_point( pos, False ): # within visible menus bounds
-                item = self.collide_item( pos, False )
-                selfOnly = False
-                if isinstance( item, Menu ): # either self or child menu
-                    selfOnly = item is self
-                else:
-                    selfOnly = item in self.items
-
-                if selfOnly:
+            item = self.collide_item( pos, False )
+            if item: # within visible menus bounds
+                if self.collide_point( pos, True ):
                     if isinstance( item, Menu ):
                         if self.active_item:
                             oActive = self.active_item
@@ -243,9 +275,10 @@ class Menu( BoxLayout ):
                 else:
                     return False
             else:
-                if not self.parent_menu_item or not self.parent_menu_item._is_active():
-                    Logger.debug( '%s: Parent menu item is not active or mouse is outside us' , self )
-                    hide = True
+                hide = True
+                if self.parent_menu_item and self.parent_menu_item._is_active():
+                    Logger.trace( '%s: Parent menu item is active - prevent hiding' , self )
+                    hide = False
 
             if hide:
                 Logger.debug( '%s: Hide the menu' , self )
@@ -257,15 +290,21 @@ class Menu( BoxLayout ):
 
     def on_touch_down( self, touch ):
         if self.visible:
-            ret = True
 
-            node = self.item_at_pos( touch.pos )
-            self.selected_item = node
-            if node:
-                ret = node.on_select( touch )
-            self.hide()
+            item = self.collide_item( touch.pos, True )
+            if item:
+                Logger.debug( '%s: Item selected %s', self, item.id )
 
-            return ret
+                if item.on_select( touch ):
+                    # find the top-most menu parent
+                    topMost = self
+                    while topMost.parent_menu_item:
+                        topMost = topMost.parent_menu_item.parent_menu
+
+                    topMost.selected_item = item
+                    topMost.hide()
+
+            return True
     #
     # DRAWING/LAYOUT Functions
     #
