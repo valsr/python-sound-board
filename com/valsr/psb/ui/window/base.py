@@ -117,6 +117,7 @@ class WindowBase( FloatLayout ):
     def _align_center( self, *l ):
         if self._parent:
             self.center = self._parent.center
+            self.ui_.pos = self.pos
             # hack to resize dark background on window resize
             window = self._parent
             self._parent = None
@@ -179,6 +180,7 @@ class WindowBase( FloatLayout ):
             self.ui_ = self.createRootUI()
             self.ui_.id = str( uuid.uuid1().hex )
             self.add_widget( self.ui_ )
+            print( self.pos )
             self.onPostCreate()
         return self
 
@@ -190,6 +192,7 @@ class WindowBase( FloatLayout ):
         pass
 
     def drawBackground( self ):
+        self.ui_.pos = self.pos
         self.canvas.before.clear()
         with self.canvas.before:
             Color( *self.background_color, mode = 'rgba' )
