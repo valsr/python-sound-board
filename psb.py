@@ -4,48 +4,51 @@ Created on Jan 13, 2017
 @author: radoslav
 '''
 import gi
-
-from com.valsr.psb import sound
-from com.valsr.psb.ui.window import MainWindow
 from kivy.app import App
 from kivy.config import Config
 from kivy.logger import Logger
 from kivy.uix.floatlayout import FloatLayout
+
+from com.valsr.psb import sound
+from com.valsr.psb.ui.window import MainWindow
 
 
 gi.require_version( 'Gst', '1.0' )
 
 
 class PSB( App ):
+    '''
+    Main application
+    '''
 
     def __init__( self, **kwargs ):
         App.__init__( self, **kwargs )
-        self.theme_ = 'white'
-        self.ui_ = None
-        self.activeWindow_ = []
-        self.windowOrder_ = []
-        self._keyboard_ = None
-        self.rebindKeyboard()
+        self.theme = 'white'
+        self.ui = None
+        self.active_window = []
+        self.window_order = []
+        self._keyboard = None
+        self.rebind_keyboard()
 
-    def getAllowedAudioFiles( self ):
+    def allowed_audio_files( self ):
         return ['.mp3', '.wav', '.flac', '.ogg', '.mp4']
 
     def _keyboard_closed( self ):
-        self._keyboard_.unbind( on_key_down = self._on_keyboard_down )
-        self._keyboard_ = None
+        self._keyboard.unbind( on_key_down = self._on_keyboard_down )
+        self._keyboard = None
         Logger.debug( 'Keyboard closed' )
 
     def _on_keyboard_down( self, keyboard, keycode, text, modifiers ):
         print( keycode )
         return True
 
-    def rebindKeyboard( self ):
-        if not self._keyboard_:
-            # self._keyboard_ = Window.request_keyboard( self._keyboard_closed, self )
-            # self._keyboard_.bind( on_key_down = self._on_keyboard_down )
+    def rebind_keyboard( self ):
+        if not self._keyboard:
+            # self._keyboard = Window.request_keyboard( self._keyboard_closed, self )
+            # self._keyboard.bind( on_key_down = self._on_keyboard_down )
             Logger.debug( 'Keyboard bound' )
 
-    def openWindow( self, windowClass, **kwargs ):
+    def open_window( self, windowClass, **kwargs ):
         window = windowClass( controller = self )
 
         if 'size_hint' in kwargs:
@@ -61,32 +64,32 @@ class PSB( App ):
             window.windowed = kwargs['windowed']
 
         # add to order
-        self.windowOrder_.append( window.id_ )
+        self.window_order.append( window.id_ )
         window.open()
 
-        self.rebindKeyboard()
+        self.rebind_keyboard()
 
         return window
-    def onWindowOpen( self, window ):
-        self.windowOrder_.append( window.id_ )
+    def on_window_open( self, window ):
+        self.window_order.append( window.id_ )
 
-    def onWindowClose( self, window ):
-        self.windowOrder_.remove( window.id_ )
-        self.rebindKeyboard()
+    def on_window_close( self, window ):
+        self.window_order.remove( window.id_ )
+        self.rebind_keyboard()
 
-    def getThemeImageFilename( self, name, size ):
-        return "ui/fontawesome/%s/png/%d/%s.png" % ( self.theme_, size, name )
+    def theme_image_filename( self, name, size ):
+        return "ui/fontawesome/%s/png/%d/%s.png" % ( self.theme, size, name )
 
     def build( self ):
-        self.ui_ = FloatLayout()
+        self.ui = FloatLayout()
         window = MainWindow( controller = self )
         window.draggable = 'None'
         window.title = 'PSB'
         window.open()
-        return self.ui_
+        return self.ui
 
-    def getUIRoot( self ):
-        return self.ui_
+    def get_uiroot( self ):
+        return self.ui
 
     def to_window( self, x, y, initial, relative ):
         return ( x, y )

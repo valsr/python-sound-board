@@ -78,3 +78,6 @@ def loadProject( file, tree ):
     Logger.info( 'Project file %s loaded successfully', file )
 
     return ( nodes, stream )
+
+def allowedAudioFormats():
+    return ['.mp3', '.wav', '.flac', '.ogg', '.mp4']

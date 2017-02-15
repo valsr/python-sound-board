@@ -7,7 +7,7 @@
 		x: self.parent.center_x - self.width/2
 		Image:
 			size: 24, 24
-			source: app.getThemeImageFilename(root.source, 24)
+			source: app.theme_image_filename(root.source, 24)
 		Label:
 			text: root.label
 	
@@ -56,7 +56,8 @@ GridLayout:
 					text: 'Search'
 				ScrollView:
 					DraggableTreeView:
-						hint_y: 1
+						size_hint_y: None
+						size_hint_x: 1
 						id: uiAudioFiles
 						hide_root: False
 				ImageButton:
@@ -76,11 +77,8 @@ GridLayout:
 		BoxLayout:
 			orientation: 'vertical'
 			BoxLayout:
+				id: test
 				orientation: 'vertical'
-				ImageButton:
-					hint_size_y: 1
-					label: 'Newer'
-					source: 'file'
 			Splitter:
 				sizable_from: 'top'
 				min_size: 150

@@ -59,7 +59,7 @@ class AddSoundDialogue( WindowBase ):
         if self.getUI( 'PathInput' ).text is not folder:
             self.getUI( 'PathInput' ).text = folder
         ext = os.path.splitext( file )[1]
-        return ext.lower() in self.controller_.getAllowedAudioFiles()
+        return ext.lower() in self.controller_.allowed_audio_files()
 
     def fileSelection( self, *args ):
         files = self.getUI( 'Files' )

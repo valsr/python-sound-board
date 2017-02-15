@@ -17,6 +17,9 @@ import uuid
 __all__ = ( 'WindowBase', )
 
 class WindowCloseState( Enum ):
+    '''
+    Window Close State
+    '''
     CLOSE = 1
     CANCEL = 2
     OK = 3
@@ -25,9 +28,10 @@ class WindowCloseState( Enum ):
     BUTTON_3 = 6
 
 class WindowBase( FloatLayout ):
-    __metaclass__ = ABCMeta
-    '''WindowBase class. See module documentation for more information.
-
+    '''
+    Base class for all windows (other than the main window). Note that the base class inherits
+    from the FloatLayout.
+    
     :Events:
         `on_open`:
             Fired when the WindowBase is opened.
@@ -35,9 +39,12 @@ class WindowBase( FloatLayout ):
             Fired when the WindowBase is closed. If the callback returns True,
             the dismiss will be canceled.
     '''
+    __metaclass__ = ABCMeta
     __events__ = ( 'on_open', 'on_dismiss' )
+
     background_color = ListProperty( [0, 0, 0, .8] )
-    '''Background color in the format (r, g, b, a).
+    '''
+    Background color in the format (r, g, b, a).
     
     :attr:`background_color` is a :class:`~kivy.properties.ListProperty` and
     defaults to [0, 0, 0, .7].
@@ -62,10 +69,10 @@ class WindowBase( FloatLayout ):
     def __init__( self, controller, **kwargs ):
         self.windowed = False
         self.grabOffset_ = ( 0, 0 )
-        self.ui_ = None
+        self.ui = None
         self.label_ = None
         self.controller_ = controller
-        self._parent = controller.getUIRoot()
+        self._parent = controller.get_uiroot()
         self.id_ = uuid.uuid1()
         self._closeState_ = WindowCloseState.CLOSE
         self.opened_ = False
@@ -86,7 +93,7 @@ class WindowBase( FloatLayout ):
             on_resize = self._align_center )
         self.center = self._parent.center
         self.fbind( 'size', self._update_center )
-        self.controller_.onWindowOpen( self )
+        self.controller_.on_window_open( self )
         self.dispatch( 'on_open' )
         return self
 
@@ -106,7 +113,7 @@ class WindowBase( FloatLayout ):
             if kwargs.get( 'force', False ) is not True:
                 return self
 
-        self.controller_.onWindowClose( self )
+        self.controller_.on_window_close( self )
         self._real_remove_widget()
         return self
 
@@ -117,7 +124,7 @@ class WindowBase( FloatLayout ):
     def _align_center( self, *l ):
         if self._parent:
             self.center = self._parent.center
-            self.ui_.pos = self.pos
+            self.ui.pos = self.pos
             # hack to resize dark background on window resize
             window = self._parent
             self._parent = None
@@ -170,16 +177,16 @@ class WindowBase( FloatLayout ):
         pass
 
     def create( self ):
-        if self.ui_ == None:
+        if self.ui == None:
             self.cols = 1
             self.label_ = Label( text = self.title, height = 30, size_hint_y = None, id = '_windowTop' )
             if self.windowed:
                 self.label_.text = self.title
                 self.padding = ( self.border[3], self.border[0], self.border[1], self.border[2] )
             self.add_widget( self.label_ )
-            self.ui_ = self.createRootUI()
-            self.ui_.id = str( uuid.uuid1().hex )
-            self.add_widget( self.ui_ )
+            self.ui = self.createRootUI()
+            self.ui.id = str( uuid.uuid1().hex )
+            self.add_widget( self.ui )
             print( self.pos )
             self.onPostCreate()
         return self
@@ -192,7 +199,7 @@ class WindowBase( FloatLayout ):
         pass
 
     def drawBackground( self ):
-        self.ui_.pos = self.pos
+        self.ui.pos = self.pos
         self.canvas.before.clear()
         with self.canvas.before:
             Color( *self.background_color, mode = 'rgba' )
@@ -213,7 +220,7 @@ class WindowBase( FloatLayout ):
         pass
 
     def getRootUI( self ):
-        return self.ui_
+        return self.ui
 
     def getUI( self, uiID ):
         root = self.getRootUI()

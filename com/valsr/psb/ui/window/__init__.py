@@ -7,6 +7,9 @@ import json
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.logger import Logger
+from kivy.uix.button import Button
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.scrollview import ScrollView
 import os
 
 from com.valsr.psb import utility
@@ -36,6 +39,17 @@ class MainWindow( WindowBase ):
     def onPostCreate( self ):
         self.audioFilesTree_ = self.getUI( 'uiAudioFiles' )
         utility.loadProject( 'test.psb', self.audioFilesTree_ )
+
+        root = self.getUI( 'test' )
+        layout = GridLayout( cols = 1, spacing = 10, size_hint_y = None )
+        # Make sure the height is such that there is something to scroll.
+        layout.bind( minimum_height = layout.setter( 'height' ) )
+        for i in range( 30 ):
+            btn = Button( text = str( i ), size_hint_y = None, height = 40 )
+            layout.add_widget( btn )
+        sv = ScrollView( size_hint = ( None, 1 ) )
+        sv.add_widget( layout )
+        root.add_widget( sv )
 
     def uiAddSound( self, *args ):
         self.addSoundWindow_ = AddSoundDialogue( controller = self.controller_ , size_hint = ( 0.75, 0.75 ) )
@@ -69,7 +83,7 @@ class MainWindow( WindowBase ):
     def uiSave( self, *args ):
         if self.file_ is None:
             # open file to save assert
-            self.saveWindow_ = self.controller_.openWindow( SaveDialogue, windowed = True, size_hint = ( 0.75, 0.75 ) )
+            self.saveWindow_ = self.controller_.open_window( SaveDialogue, windowed = True, size_hint = ( 0.75, 0.75 ) )
             self.saveWindow_.bind( on_dismiss = lambda x: self._saveImpl( fromDialogue = True ) )
         else:
             self._saveImpl()
@@ -83,7 +97,7 @@ class MainWindow( WindowBase ):
         self.title = "PSB: " + self.file_
 
     def uiOpen( self, *args ):
-        self.openWindow_ = self.controller_.openWindow( OpenDialogue, windowed = True, size_hint = ( 0.75, 0.75 ) )
+        self.openWindow_ = self.controller_.open_window( OpenDialogue, windowed = True, size_hint = ( 0.75, 0.75 ) )
         self.openWindow_.bind( on_dismiss = self._openImpl )
 
     def _openImpl( self , *args ):
