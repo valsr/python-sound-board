@@ -1,46 +1,59 @@
-'''
+"""
 Created on Feb 2, 2017
 
-@author: radoslav
-'''
-from Crypto.Protocol.AllOrNothing import isInt
+@author: valsr <valsr@valsr.com>
+"""
 import json
 from kivy.logger import Logger
-from kivy.uix.treeview import TreeView
 
 from com.valsr.psb.sound.info import MediaInfo
-from com.valsr.psb.tree import TreeNode
-from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeViewNode
 
 
-def saveProject( file, treeFileStructure = None, streamList = None ):
-    Logger.info( 'Saving project to %s', file )
+def save_project(file, tree_file_structure=None, stream_list=None):
+    """Save project
 
-    jsonDict = {}
+    Args:
+        file: File path
+        tree_file_structure: Tree files
+        stream_list: List of stream objects
+    """
+    Logger.info('Saving project to %s', file)
+
+    json_dict = {}
     files = []
-    if treeFileStructure:
-        for child in treeFileStructure.root.nodes:
-            files.append( serializeNodeStructure( child ) )
-        jsonDict['files'] = files
+    if tree_file_structure:
+        for child in tree_file_structure.root.nodes:
+            files.append(serialize_node_structure(child))
+        json_dict['files'] = files
 
-    if streamList:
-        jsonDict['streams'] = streamList.seralize()
+    if stream_list:
+        json_dict['streams'] = stream_list.seralize()
 
-    with open( file, 'w' ) as f:
-        json.dump( jsonDict, f, indent = 2 )
+    with open(file, 'w') as f:
+        json.dump(json_dict, f, indent=2)
 
-    Logger.info( 'Project successfully saved to file %s', file )
+    Logger.info('Project successfully saved to file %s', file)
 
-def serializeNodeStructure( node ):
 
-    if not isinstance( node, DraggableTreeViewNode ):
-        raise RuntimeError( "Can only serialize DraggableTreeViewNodes" )
+def serialize_node_structure(node):
+    """Serialize node structure to a string
+
+    Args:
+        node: Starting root (node)
+
+    Returns:
+        String: serialized object
+    """
+    from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeViewNode
+
+    if not isinstance(node, DraggableTreeViewNode):
+        raise RuntimeError("Can only serialize DraggableTreeViewNodes")
 
     d = {}
     d['id'] = node.id
     d['label'] = node._label.text
 
-    if isinstance( node.data, MediaInfo ):
+    if isinstance(node.data, MediaInfo):
         d['data'] = node.data.serialize()
     else:
         d['data'] = None
@@ -48,36 +61,58 @@ def serializeNodeStructure( node ):
     # serialize children
     d['children'] = []
     for child in node.nodes:
-        d['children'].append( serializeNodeStructure( child ) )
+        d['children'].append(serialize_node_structure(child))
 
     return d
 
-def deserializeNodeStructure( d, parent ):
-    data = MediaInfo.deserialize( d['data'] ) if d['data'] else None
-    node = DraggableTreeViewNode( id = d['id'], data = data , label = d['label'] )
+
+def deserialize_node_structure(d, parent):
+    """Deserialize node structure
+
+    Args:
+        d: Dictionary to deserialize
+        parent: Parent root node
+    """
+    from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeViewNode
+
+    data = MediaInfo.deserialize(d['data']) if d['data'] else None
+    node = DraggableTreeViewNode(id=d['id'], data=data, label=d['label'])
     node.is_open = True
-    parent.add_node( node )
+    parent.add_node(node)
     if 'children' in d:
         for child in d['children']:
-            deserializeNodeStructure( child, node )
+            deserialize_node_structure(child, node)
 
-def loadProject( file, tree ):
-    Logger.info( 'Opening project %s', file )
-    with open( file, 'r' ) as f:
-        jsonDict = json.load( f )
+
+def load_project(file, tree):
+    """Load project file
+
+    Args:
+        file: File path to load
+        tree: Tree node
+    """
+    Logger.info('Opening project %s', file)
+    with open(file, 'r') as f:
+        json_dict = json.load(f)
 
     # clear up the files tree
     tree.remove_all_nodes()
 
     nodes = None
     stream = None
-    if 'files' in jsonDict:
-        for n in jsonDict['files']:
-            deserializeNodeStructure( n, tree.root )
+    if 'files' in json_dict:
+        for n in json_dict['files']:
+            deserialize_node_structure(n, tree.root)
 
-    Logger.info( 'Project file %s loaded successfully', file )
+    Logger.info('Project file %s loaded successfully', file)
 
-    return ( nodes, stream )
+    return (nodes, stream)
 
-def allowedAudioFormats():
+
+def allowed_audio_formats():
+    """Return the list of acceptable file formats
+
+    Returns:
+        List
+    """
     return ['.mp3', '.wav', '.flac', '.ogg', '.mp4']

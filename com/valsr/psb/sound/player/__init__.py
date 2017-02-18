@@ -16,27 +16,29 @@ from kivy.clock import Clock
 from kivy.logger import Logger
 
 
-_PLAYER_UPDATE_TIMEOUT_ = 0.2 # Update timetout (for update callbacks)
+_PLAYER_UPDATE_TIMEOUT_ = 0.2  # Update timetout (for update callbacks)
 
-class PlayerBase( CallbackRegister ):
+
+class PlayerBase(CallbackRegister):
     '''
     Base class for all player objects
     '''
     __metaclass__ = ABCMeta
-    def __init__( self, id ):
+
+    def __init__(self, id):
         '''
         Constructor
 
         Parameters:
             id -- Player identifier
         '''
-        self.id_ = id
+        self.id = id
         super().__init__()
 
         self.__init()
         self.__setUpPipeline()
 
-    def __init( self ):
+    def __init(self):
         '''
         Initialize all variables to their default state.
         '''
@@ -53,14 +55,14 @@ class PlayerBase( CallbackRegister ):
         self._lastUpdate_ = time.time()
         self._init()
 
-    def _init( self ):
+    def _init(self):
         '''
         Initialize all variables to their default state (overriding classes)
         '''
         pass
 
     @abstractmethod
-    def _setUpPipeline( self ):
+    def _setUpPipeline(self):
         '''
         Set up the pipeline (overriding classes). This method is called once self.pipeline_ has been initialized and 
         before the main loop is started.
@@ -68,28 +70,28 @@ class PlayerBase( CallbackRegister ):
         '''
         pass
 
-    def __setUpPipeline( self ):
+    def __setUpPipeline(self):
         '''
         Set up the pipeline
         '''
-        self.pipeline_ = Gst.Pipeline.new( self.id_ + '_player' )
+        self.pipeline_ = Gst.Pipeline.new(self.id + '_player')
 
         self._setUpPipeline()
 
         self.state_ = PlayerState.READY
 
-        self.messageThread_ = Thread( target = self.__messageLoop )
+        self.messageThread_ = Thread(target=self.__messageLoop)
         self.messageThread_.daemon = True
         self.messageThread_.start()
 
     @abstractmethod
-    def _messageLoop( self ):
+    def _messageLoop(self):
         '''
         Message loop (overreding classes).
         '''
         pass
 
-    def __messageLoop( self, **kwargs ):
+    def __messageLoop(self, **kwargs):
         '''
         Message loop. Will call callbacks. 
         Warning: do not override
@@ -101,7 +103,7 @@ class PlayerBase( CallbackRegister ):
             bus = self.pipeline_.get_bus()
             message = bus.peek()
 
-            self._messageLoop() # call child loop
+            self._messageLoop()  # call child loop
             if message:
                 if message.type == Gst.MessageType.EOS:
                     self.__finish()
@@ -111,20 +113,20 @@ class PlayerBase( CallbackRegister ):
                     error, debug = message.parse_error()
                     self.error_ = error
                     self.errorDebug_ = debug
-                ret = self.call( 'message', None, True, player = self, bus = bus, message = message )
+                ret = self.call('message', None, True, player=self, bus=bus, message=message)
                 if ret:
-                    Logger.debug( "Callback %s handled the event." % ret )
+                    Logger.debug("Callback %s handled the event." % ret)
 
             # call the update callbacks
             if time.time() > nextUpdate:
-                ret = self.call( 'update', None, True, player = self, delta = 0 )
+                ret = self.call('update', None, True, player=self, delta=0)
                 if ret:
-                    Logger.debug( "Callback %s handled the event." % ret )
+                    Logger.debug("Callback %s handled the event." % ret)
 
                 self._lastUpdate_ = time.time()
                 nextUpdate = self._lastUpdate_ + _PLAYER_UPDATE_TIMEOUT_
 
-    def registerUpdateCallback( self, cb ):
+    def registerUpdateCallback(self, cb):
         '''
         Register update callback
 
@@ -134,9 +136,9 @@ class PlayerBase( CallbackRegister ):
         Returns:
             callback identifier
         '''
-        return self.registerCallback( 'update', cb )
+        return self.register_callback('update', cb)
 
-    def unregisterUpdateCallback( self, id ):
+    def unregisterUpdateCallback(self, id):
         '''
         Unregister update callback
 
@@ -146,9 +148,9 @@ class PlayerBase( CallbackRegister ):
         Returns:
             Un-registration status
         '''
-        return self.unregisterCallback( 'update', id )
+        return self.unregister_callback(id, callback_type='update')
 
-    def registerMessageCallback( self, cb ):
+    def registerMessageCallback(self, cb):
         '''
         Register message callback
 
@@ -158,9 +160,9 @@ class PlayerBase( CallbackRegister ):
         Returns:
             callback identifier
         '''
-        return self.registerCallback( 'message', cb )
+        return self.register_callback('message', cb)
 
-    def unregisterMessageCallback( self, id ):
+    def unregisterMessageCallback(self, id):
         '''
         Unregister message callback
 
@@ -170,31 +172,31 @@ class PlayerBase( CallbackRegister ):
         Returns:
             Un-registration status
         '''
-        return self.unregisterCallback( 'message', id )
+        return self.unregister_callback(id, callback_type='message')
 
     # Play back Functionality (override the non __ ones)
-    def __finish( self ):
+    def __finish(self):
         '''
         Called when the stream finishes.
         Warning: do not override.
         '''
         self.finish()
         self.state_ = PlayerState.STOPPED
-        Logger.debug( "Finished playing %s" % self.id_ )
+        Logger.debug("Finished playing %s" % self.id)
 
-    def finish( self ):
+    def finish(self):
         pass
 
-    def play( self ):
+    def play(self):
         pass
 
-    def pause( self ):
+    def pause(self):
         pass
 
-    def stop( self ):
+    def stop(self):
         pass
 
-    def __stop( self, waitForStop = True ):
+    def __stop(self, waitForStop=True):
         '''
         Called to stop the stream (usually due to error). Note: will call stop() method first.
 
@@ -202,64 +204,66 @@ class PlayerBase( CallbackRegister ):
             waitForStop -- Whether to wait for the player thread to exit or not (max 5 seconds)
         '''
         self.stop()
-        self.pipeline_.set_state( Gst.State.NULL )
+        self.pipeline_.set_state(Gst.State.NULL)
         self.state_ = PlayerState.STOPPED
 
-        self.pipeline_.get_state( Gst.CLOCK_TIME_NONE if waitForStop else 0 )
-        Logger.debug( "Stopped playing %s" % self.id_ )
+        self.pipeline_.get_state(Gst.CLOCK_TIME_NONE if waitForStop else 0)
+        Logger.debug("Stopped playing %s" % self.id)
 
-    def destroy( self ):
+    def destroy(self):
         '''
         Called to terminate the player and free resources.
         '''
         self.__stop()
         self.run_ = False
         if self.messageThread_.is_alive():
-            self.messageThread_.join( timeout = 2 )
+            self.messageThread_.join(timeout=2)
 
         if self.messageThread_.is_alive():
-            Logger.warning( "Unable to stop thread" )
+            Logger.warning("Unable to stop thread")
         self.pipeline_ = None
-        Logger.debug( "Destroyed player (%s)" % self.id_ )
+        Logger.debug("Destroyed player (%s)" % self.id)
 
     # Properties (select)
     @property
-    def duration( self ):
+    def duration(self):
         if self.state_ is PlayerState.PAUSED or self.state_ is PlayerState.PLAYING or self.state_ is PlayerState.READY or self.state_ is PlayerState.STOPPED:
-            _, duration = self.pipeline_.query_duration( Gst.Format.TIME )
+            _, duration = self.pipeline_.query_duration(Gst.Format.TIME)
             return duration / Gst.SECOND
 
         return -1
 
     @property
-    def position( self ):
+    def position(self):
         if self.state_ is PlayerState.PAUSED or self.state_ is PlayerState.PLAYING or self.state_ is PlayerState.READY or self.state_ is PlayerState.STOPPED:
-            _, position = self.pipeline_.query_position( Gst.Format.TIME )
+            _, position = self.pipeline_.query_position(Gst.Format.TIME)
             return position / Gst.SECOND
 
         return -1
 
     @position.setter
-    def position( self, position ):
-        return self.pipeline_.seek_simple( Gst.Format.TIME, Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT, position * Gst.SECOND )
+    def position(self, position):
+        return self.pipeline_.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH | Gst.SeekFlags.KEY_UNIT, position * Gst.SECOND)
 
     @property
-    def state_( self ):
+    def state_(self):
         return self._state_
 
     @state_.setter
-    def state_( self, state ):
+    def state_(self, state):
         self._state_ = state
 
     @property
-    def error( self ):
+    def error(self):
         return self.error_
 
-class FilePlayer( PlayerBase ):
+
+class FilePlayer(PlayerBase):
     '''
     File player
     '''
-    def __init__( self, id, file ):
+
+    def __init__(self, id, file):
         '''
         Constructor
 
@@ -267,55 +271,55 @@ class FilePlayer( PlayerBase ):
             id -- Player identifier
             file -- File (path) to play
         '''
-        self.file_ = os.path.abspath( file )
-        super().__init__( id )
+        self.file_ = os.path.abspath(file)
+        super().__init__(id)
 
-    def _setUpPipeline( self ):
+    def _setUpPipeline(self):
         # source
-        self.source_ = Gst.ElementFactory.make( "filesrc", self.id_ + "_source" )
-        self.source_.set_property( "location", self.file_ )
-        self.pipeline_.add( self.source_ )
+        self.source_ = Gst.ElementFactory.make("filesrc", self.id + "_source")
+        self.source_.set_property("location", self.file_)
+        self.pipeline_.add(self.source_)
 
         # decoder
-        self.decode_ = Gst.ElementFactory.make( "decodebin", self.id_ + "_decodebin" )
-        self.pipeline_.add( self.decode_ )
+        self.decode_ = Gst.ElementFactory.make("decodebin", self.id + "_decodebin")
+        self.pipeline_.add(self.decode_)
 
         # sink
-        self.sink_ = Gst.ElementFactory.make( "autoaudiosink", self.id_ + "_sink" )
-        self.pipeline_.add( self.sink_ )
+        self.sink_ = Gst.ElementFactory.make("autoaudiosink", self.id + "_sink")
+        self.pipeline_.add(self.sink_)
 
         # link static elements
-        self.source_.link( self.decode_ )
+        self.source_.link(self.decode_)
 
         # decoder is dynamic so link at runtime
-        self.decode_.connect( "pad-added", self._decodeSrcCreated )
+        self.decode_.connect("pad-added", self._decodeSrcCreated)
 
-    def _decodeSrcCreated( self, element, pad ):
-        pad.link( self.sink_.get_static_pad( 'sink' ) )
+    def _decodeSrcCreated(self, element, pad):
+        pad.link(self.sink_.get_static_pad('sink'))
 
-    def _messageLoop( self ):
+    def _messageLoop(self):
         pass
 
-    def play( self ):
+    def play(self):
         if self.state_ is PlayerState.READY or self.state_ is PlayerState.PAUSED or self.state_ is PlayerState.STOPPED:
-            self.pipeline_.set_state( Gst.State.PLAYING )
-            Logger.debug( "Playing %s" % self.file_ )
+            self.pipeline_.set_state(Gst.State.PLAYING)
+            Logger.debug("Playing %s" % self.file_)
             self.state_ = PlayerState.PLAYING
         elif self.state_ is PlayerState.PLAYING:
-            Logger.debug( "Already playing %s" % self.file_ )
+            Logger.debug("Already playing %s" % self.file_)
         else:
-            Logger.debug( "Not in a state to play - %s" % self.state_.name )
+            Logger.debug("Not in a state to play - %s" % self.state_.name)
 
-    def pause( self ):
+    def pause(self):
         if self.state_ is PlayerState.PLAYING:
-            self.pipeline_.set_state( Gst.State.PAUSED )
+            self.pipeline_.set_state(Gst.State.PAUSED)
             self.state_ = PlayerState.PAUSED
         else:
-            Logger.debug( "Unable to pause since we are not playing" )
+            Logger.debug("Unable to pause since we are not playing")
 
-    def stop( self, waitForStop = True ):
-        self.pipeline_.set_state( Gst.State.NULL )
+    def stop(self, waitForStop=True):
+        self.pipeline_.set_state(Gst.State.NULL)
         self.state_ = PlayerState.STOPPED
 
-        self.pipeline_.get_state( Gst.CLOCK_TIME_NONE if waitForStop else 0 )
-        Logger.debug( "Stopped playing %s" % self.file_ )
+        self.pipeline_.get_state(Gst.CLOCK_TIME_NONE if waitForStop else 0)
+        Logger.debug("Stopped playing %s" % self.file_)

@@ -11,14 +11,14 @@ class TreeNode( TreeViewLabel, CallbackRegister ):
 
 
     def __init__( self, id, tree, label = None, data = None, **kwargs ):
-        self.id_ = id
+        self.id = id
         self.data_ = data
         self.tree_ = tree
         super().__init__( text = label if label else id, **kwargs )
 
     def serialize( self ):
         dict = {}
-        dict['id'] = self.id_
+        dict['id'] = self.id
         dict['label'] = self.text
         dict['data'] = self.data_.serialize() if self.data_ else None
         dict['children'] = [x.serialize() for x in self.nodes]
@@ -26,7 +26,7 @@ class TreeNode( TreeViewLabel, CallbackRegister ):
         return dict
 
     def deserialize( self, tree, dict ):
-        self.id_ = dict['id']
+        self.id = dict['id']
         self.text = dict['label']
         self.data_ = MediaInfo.deserialize( dict['data'] )
         self.tree_ = tree
@@ -38,20 +38,20 @@ class TreeNode( TreeViewLabel, CallbackRegister ):
 
     def hasChild( self, id ):
         for node in self.nodes:
-            if node.id_ == id:
+            if node.id == id:
                 return True
 
         return False
 
     def getChild( self, id ):
         for node in self.nodes:
-            if node.id_ == id:
+            if node.id == id:
                 return node
 
         return None
 
     def addChild ( self, child ):
-        if not self.hasChild( child.id_ ):
+        if not self.hasChild( child.id ):
             self.tree_.add_node( child, self )
             return child
 

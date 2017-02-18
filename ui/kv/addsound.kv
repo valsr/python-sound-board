@@ -8,7 +8,7 @@
 		x: self.parent.center_x - self.width/2
 		Image:
 			size: 24, 24
-			source: app.getThemeImageFilename(root.source, 24)
+			source: app.theme_image_file(root.source, 24)	
 		Label:
 			text: root.label
 <ImageOnlyButton@Button>:
@@ -21,7 +21,7 @@
 		x: self.parent.x
 		Image:
 			size: self.parent.size
-			source: app.getThemeImageFilename(root.source, self.parent.height)	
+			source: app.theme_image_file(root.source, self.parent.height)	
 
 BoxLayout:
 	id: 'addsound'
