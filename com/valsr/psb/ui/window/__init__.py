@@ -83,7 +83,7 @@ class MainWindow(WindowBase):
         parent = self.audioFilesTree_.root.find_node(lambda x: x._label.text.lower() == 'uncategorized', False)
         parent.add_node(DraggableTreeViewNode(id=file, label=os.path.basename(file), data=info))
 
-    def uiSave(self, *args):
+    def ui_save(self, *args):
         if self.file is None:
             # open file to save assert
             self.saveWindow_ = self.controller_.open_window(SaveDialogue, windowed=True, size_hint=(0.75, 0.75))
@@ -99,7 +99,7 @@ class MainWindow(WindowBase):
         utility.save_project(self.file, self.audioFilesTree_, None)
         self.title = "PSB: " + self.file
 
-    def uiOpen(self, *args):
+    def ui_open(self, *args):
         self.openWindow_ = WindowManager.create_window(
             OpenDialogue, parent=None, create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
         self.openWindow_.bind(on_dismiss=self._openImpl)

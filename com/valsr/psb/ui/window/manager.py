@@ -13,8 +13,7 @@ class WrongWindowBaseException(Exception):
     """Wrong class base exception"""
 
     def __init__(self, window_class):
-        super().__init__(
-            "%s does not derive from com.valsr.psb.ui.window.WindowBase" % window_class)
+        super().__init__("%s does not derive from com.valsr.psb.ui.window.WindowBase" % window_class)
 
 
 class WindowManager(object):

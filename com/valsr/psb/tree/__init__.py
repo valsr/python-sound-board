@@ -1,5 +1,9 @@
-'''
-'''
+"""
+Created on Jan 17, 2017
+
+@author: valsr <valsr@valsr.com>
+"""
+import uuid
 from kivy.logger import Logger
 from kivy.uix.treeview import TreeViewLabel, TreeView, TreeViewNode
 
@@ -8,88 +12,171 @@ from com.valsr.psb.sound.info import MediaInfo
 
 
 class TreeNode(TreeViewLabel, CallbackRegister):
+    """Node structure. Provides enhancements to kivy's TreeViewLabel to make it easier to work with."""
 
-    def __init__(self, id, tree, label=None, data=None, **kwargs):
-        self.id = id
-        self.data_ = data
-        self.tree_ = tree
-        super().__init__(text=label if label else id, **kwargs)
+    def __init__(self, tree, label=None, data=None, **kwargs):
+        """Constructor
+
+        Args:
+            tree: Parent tree for this node
+            label: Label for the node
+            data: Data
+            kwargs: Named parameters to pass to super classes
+        """
+        self.node_id = int(uuid.uuid1())
+        self.data = data
+        self.tree = tree
+        super().__init__(text=label if label else node_id, **kwargs)
 
     def serialize(self):
-        dict = {}
-        dict['id'] = self.id
-        dict['label'] = self.text
-        dict['data'] = self.data_.serialize() if self.data_ else None
-        dict['children'] = [x.serialize() for x in self.nodes]
+        """Serialize the node and child nodes to a dictionary.
 
-        return dict
+        Returns:
+            Dictionary of serialized data
 
-    def deserialize(self, tree, dict):
-        self.id = dict['id']
-        self.text = dict['label']
-        self.data_ = MediaInfo.deserialize(dict['data'])
-        self.tree_ = tree
+        Note:
+            data argument must have a serialize method
+        """
+        data_dict = {}
+        data_dict['id'] = self.node_id
+        data_dict['label'] = self.text
+        data_dict['data'] = self.data.serialize() if self.data else None
+        data_dict['children'] = [x.serialize() for x in self.nodes]
 
-        for child in dict['children']:
-            childNode = TreeNode(id=child["id"], tree=None)
-            childNode.deserialize(tree, child)
-            self.addChild(childNode)
+        return data_dict
 
-    def hasChild(self, id):
+    def deserialize(self, tree, data_dict):
+        """Deserialize node data. Will deserialize child nodes as well.
+
+        Args:
+            tree: Tree to attach node to
+            data_dict: Dictionary with data
+
+        Note:
+            Currently data is deserialized as MediaInfo object
+        """
+        self.node_id = data_dict['id']
+        self.text = data_dict['label']
+        self.data = MediaInfo.deserialize(data_dict['data'])
+        self.tree = tree
+
+        for child in data_dict['children']:
+            node = TreeNode(id=child["id"], tree=None)
+            node.deserialize(tree, child)
+            self.add_child(node)
+
+    def has_child(self, node_id):
+        """Check if a child by given id exists
+
+        Args:
+            node_id: Node identifier
+
+        Returns:
+            Boolean
+        """
         for node in self.nodes:
-            if node.id == id:
+            if node.node_id == node_id:
                 return True
 
         return False
 
-    def getChild(self, id):
+    def child(self, node_id):
+        """Obtain child by given node identifier
+
+        Args:
+            node_id: Node identifier
+
+        Returns:
+            TreeNode or None
+        """
         for node in self.nodes:
-            if node.id == id:
+            if node.node_id == node_id:
                 return node
 
         return None
 
-    def addChild(self, child):
-        if not self.hasChild(child.id):
-            self.tree_.add_node(child, self)
+    def add_child(self, child):
+        """Add child to this node
+
+        Args:
+            child: Child node
+
+        Returns:
+            TreeNode: The added node, or
+            None
+        """
+        if not self.has_child(child.node_id):
+            self.tree.add_node(child, self)
             return child
 
         return None
 
-    def removeSelf(self):
-        if self.tree_:
-            self.tree_.remove_node(self)
+    def detach(self):
+        """Detach self from the tree.
+
+        Returns:
+            self
+        """
+        if self.tree:
+            self.tree.remove_node(self)
         return self
 
-    def removeChild(self, id):
-        node = self.getChild(id)
+    def remove_child(self, node_id):
+        """Remove child node by given id
+
+        Args:
+            node_id: Child node identifier
+
+        Returns:
+            self
+        """
+        node = self.child(node_id)
 
         if node:
-            node.removeSelf()
+            node.detach()
 
         return self
 
-    def removeAllChildren(self):
+    def remove_children(self):
+        """Remove/detach all child nodes
+
+        Returns:
+            self
+        """
         for child in self.nodes:
-            child.removeSelf()
+            child.detach()
 
         return self
 
-    def openParents(self):
+    def open_parents(self):
+        """Open all parent nodes up to the root
+
+        Returns:
+            self
+        """
         if self.parent_node:
             if not self.parent_node.is_open:
-                self.tree_.toggle_node(self.parent_node)
+                self.tree.toggle_node(self.parent_node)
             if isinstance(self.parent_node, TreeNode):
-                self.parent_node.openParents()
+                self.parent_node.open_parents()
         return self
 
-    def findNodeByFingerprint(self, fingerprint):
-        if self.data_:
-            if self.data_.fingerprint == fingerprint:
+    def find_node_by_fingerprint(self, fingerprint):
+        """Find node by given MediaInfo fingerprint
+
+        Args:
+            fingerprint: Fingerprint identifier
+
+        Returns:
+            TreeNode: Found node, or
+            None
+        """
+        if self.data:
+            if self.data.fingerprint == fingerprint:
                 return self
 
         for child in self.nodes:
-            found = child.findNodeByFingerprint(fingerprint)
+            found = child.find_node_by_fingerprint(fingerprint)
             if found:
                 return found
 
@@ -109,15 +196,19 @@ class TreeNode(TreeViewLabel, CallbackRegister):
             if self.call('touch_up', None, True, self, touch):
                 return True
 
-    def detach(self):
-        return self.removeSelf()
+    def attach_to(self, tree):
+        """Attach node to tree
 
-    def attachTo(self, tree):
-        if self.tree_:
-            self.detach()
+        Args:
+            tree: Tree to attach to
+        """
 
-        self.tree_ = tree
-        tree.add_node(self)
+        if self.tree is not tree:
+            if self.tree:
+                self.detach()
+
+            self.tree = tree
+            tree.add_node(self)
 
     def walk(self):
         yield self, self.nodes

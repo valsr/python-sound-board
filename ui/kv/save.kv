@@ -35,7 +35,7 @@ BoxLayout:
 		FileChooserIconView:
 			id: Files
 			size_hint_y: 1
-			on_selection: root.parent.fileSelection()
+			on_selection: root.parent.file_selection()
 			dirselect: False
 			show_hidden: True
 
@@ -63,10 +63,10 @@ BoxLayout:
 				size_hint: None,None
 				label: 'Save'
 				source: 'save'
-				on_press: root.parent.uiSave()
+				on_press: root.parent.ui_save()
 			ImageButton:
 				size: 150, 25
 				size_hint: None,None
 				label: 'Cancel'
-				on_press: root.parent.uiCancel()
+				on_press: root.parent.ui_cancel()
 				source: 'ban'

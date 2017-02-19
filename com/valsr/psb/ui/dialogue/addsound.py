@@ -1,11 +1,11 @@
-'''
+"""
 Created on Jan 14, 2017
 
-@author: radoslav
-'''
+@author: valsr <valsr@valsr.com>
+"""
+import os
 from gi.repository import Gst
 from kivy.lang import Builder
-import os
 
 from com.valsr.psb import utility
 from com.valsr.psb.sound import PlayerState
@@ -15,45 +15,56 @@ from com.valsr.psb.ui.window.base import WindowBase, WindowCloseState
 
 
 class AddSoundDialogue(WindowBase):
-    '''
-    classdocs
-    '''
+    """Add sound dialogue"""
 
     def __init__(self, **kwargs):
         WindowBase.__init__(self, **kwargs)
         self.title = "Add Audio File"
-        self.cwd_ = os.getcwd()
+        self.cwd = os.getcwd()
         self.file = None
-        self.playerId_ = None
+        self.player_id = None
 
     def on_open(self, **kwargs):
-        self.get_ui('Files').path = self.cwd_
-        self.get_ui('PathInput').text = self.cwd_
-        self.get_ui('Files').filters.append(self.uiFilterFiles)
+        """Perform dialogue opening actions"""
+        self.get_ui('Files').path = self.cwd
+        self.get_ui('PathInput').text = self.cwd
+        self.get_ui('Files').filters.append(self.ui_filter_files)
 
     def create_root_ui(self):
         return Builder.load_file("ui/kv/addsound.kv")
 
-    def uiAutoplayLabel(self, touch):
+    def ui_autoplay_label(self, touch):
+        """Handles clicking on the auto-play label"""
         label = self.get_ui('AutoPlayLabel')
         if label.collide_point(*touch.pos):
             self.get_ui('AutoPlayButton').active = not self.get_ui('AutoPlayButton').active
 
-    def uiCancel(self, *args):
-        if self.playerId_ is not None:
-            PlayerManager.destroy_player(self.playerId_)
+    def ui_on_cancel(self, *args):
+        """Handles cancel button action"""
+        if self.player_id is not None:
+            PlayerManager.destroy_player(self.player_id)
 
         self.close_state = WindowCloseState.CANCEL
         self.dismiss()
 
-    def uiOpen(self, *args):
-        if self.playerId_ is not None:
-            PlayerManager.destroy_player(self.playerId_)
+    def ui_on_open(self, *args):
+        """Handles open button action"""
+        if self.player_id is not None:
+            PlayerManager.destroy_player(self.player_id)
 
         self.close_state = WindowCloseState.OK
         self.dismiss()
 
-    def uiFilterFiles(self, folder, file):
+    def ui_filter_files(self, folder, file):
+        """Filters to filter non-audio files
+
+        Args:
+            folder: Folder path
+            file: File path (in folder)
+
+        Returns:
+            Boolean (whether file is acceptable)
+        """
         if os.path.isdir(file):
             return True
 
@@ -62,46 +73,62 @@ class AddSoundDialogue(WindowBase):
         ext = os.path.splitext(file)[1]
         return ext.lower() in utility.allowed_audio_formats()
 
-    def fileSelection(self, *args):
+    def on_file_selection(self, *args):
+        """Handles selecting files in the file selection list"""
         files = self.get_ui('Files')
         file = files.selection[0]
 
         if os.path.isfile(file):
             self.file = file
-            self.autoPlay(file)
-            pass
+            self.handle_auto_play(file)
 
         return True
 
-    def autoPlay(self, file):
+    def handle_auto_play(self, file):
+        """Handle auto-play files"""
         if self.get_ui('AutoPlayButton').active:
-            if self.playerId_ is not None:
-                PlayerManager.destroy_player(self.playerId_)
+            if self.player_id is not None:
+                PlayerManager.destroy_player(self.player_id)
 
-            (id, p) = PlayerManager.create_player(file)
+            (player_id, p) = PlayerManager.create_player(file)
             self.get_ui('Waveform').file = file
-            self.playerId_ = id
-            p.register_update_callback(self.updateUI)
-            p.register_message_callback(self.messageCallback)
+            self.player_id = player_id
+            p.register_update_callback(self.update_ui)
+            p.register_message_callback(self.message_callback)
             p.play()
             self.get_ui('Waveform').waveform = p
 
-    def messageCallback(self, waveform, bus, message):
-        if message.type == Gst.MessageType.EOS:
-            self.onStop()
+    def message_callback(self, player, bus, message):
+        """Message callback for the player
 
-    def updateUI(self, waveform, delta):
-        pos = waveform.position
+        Args:
+            player: Audio player
+            bus: Message bus
+            message: Message event
+        """
+        if message.type == Gst.MessageType.EOS:
+            self.stop()
+
+    def update_ui(self, player, delta):
+        """Handles player
+
+        Args:
+            player: Player
+            delta: Time change
+        """
+        pos = player.position
         self.get_ui('Waveform').position_ = pos
 
-    def onStop(self):
-        if self.playerId_ is not None:
-            p = PlayerManager.waveform(self.playerId_)
+    def stop(self):
+        """Handles stopping current player (either via stop button or code)"""
+        if self.player_id is not None:
+            p = PlayerManager.waveform(self.player_id)
             p.stop()
 
-    def onPlay(self):
-        if self.playerId_ is not None:
-            p = PlayerManager.waveform(self.playerId_)
+    def play(self):
+        """Handles starting/pausing current player (either via play button or code)"""
+        if self.player_id is not None:
+            p = PlayerManager.waveform(self.player_id)
             if p.state == PlayerState.PLAYING:
                 p.pause()
             else:

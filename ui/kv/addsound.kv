@@ -35,7 +35,7 @@ BoxLayout:
 		FileChooserIconView:
 			id: Files
 			size_hint_y: 1
-			on_selection: root.parent.fileSelection()
+			on_selection: root.parent.on_file_selection()
 			dirselect: False
 			show_hidden: True
 
@@ -55,12 +55,12 @@ BoxLayout:
 					source: 'play'
 					size: 48, 24
 					size_hint: None, None
-					on_press: root.parent.onPlay()
+					on_press: root.parent.play()
 				ImageOnlyButton:
 					source: 'stop'
 					size: 48, 24
 					size_hint: None, None
-					on_press: root.parent.onStop()
+					on_press: root.parent.stop()
 				BoxLayout:
 					width: 100
 					size_hint_x: None
@@ -73,7 +73,7 @@ BoxLayout:
 					Label:
 						id: AutoPlayLabel
 						text: 'Auto-play'
-						on_touch_down: root.parent.uiAutoplayLabel(args[1])
+						on_touch_down: root.parent.ui_on_autoplay_label(args[1])
 		BoxLayout:
 			orientation: 'vertical'
 			width: 150
@@ -83,10 +83,10 @@ BoxLayout:
 				size_hint: None,None
 				label: 'Open'
 				source: 'folder-open'
-				on_press: root.parent.uiOpen()
+				on_press: root.parent.ui_on_open()
 			ImageButton:
 				size: 150, 25
 				size_hint: None,None
 				label: 'Cancel'
-				on_press: root.parent.uiCancel()
+				on_press: root.parent.ui_on_cancel()
 				source: 'ban'

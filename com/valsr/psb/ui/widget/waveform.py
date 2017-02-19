@@ -1,30 +1,31 @@
-'''
+"""
 Created on Jan 22, 2017
 
-@author: radoslav
-'''
+@author: valsr <valsr@valsr.com>
+"""
+from math import floor
 from kivy.clock import Clock
 from kivy.graphics import Color, Rectangle, Line
 from kivy.logger import Logger
-from kivy.properties import *
+from kivy.properties import StringProperty, NumericProperty, BooleanProperty
 from kivy.uix.widget import Widget
-from math import floor
 
 from com.valsr.psb.sound.waveform import Waveform
 
 
 class WaveformWidget(Widget):
-    '''
-    classdocs
-    '''
+    """Widget to display a waveform for audio file"""
     file = StringProperty("")
+    """Audio file"""
+
     position_ = NumericProperty(0.0)
+    """Current position for the play indicator"""
+
     autoscale_ = BooleanProperty(True)
+    """Whether to autoscale the peaks"""
 
     def __init__(self, **kwargs):
-        '''
-        Constructor
-        '''
+        """Constructor"""
         Widget.__init__(self, **kwargs)
         self._init()
         self.bind(pos=self._prepDraw)
@@ -32,12 +33,13 @@ class WaveformWidget(Widget):
         self.updateCanvas()
 
     def _init(self):
-        self.waveform_ = None
-        self.maxAmp_ = None
+        """Initialize variables"""
+        self._waveform = None
+        self.max_amp = None
         self.ready_to_draw = False
-        self.lPoints_ = []
-        self.rPoints_ = []
-        self.player_ = None
+        self.left_points = []
+        self.right_points = []
+        self.player = None
 
     def updateCanvas(self, *args):
         self.canvas.clear()
@@ -56,33 +58,34 @@ class WaveformWidget(Widget):
 
             if self.ready_to_draw:
                 Color(0.203, 0.396, 0.643, 1)
-                Line(points=self.lPoints_)
-                Line(points=self.rPoints_)
+                Line(points=self.left_points)
+                Line(points=self.right_points)
 
                 # tracker
-                pps = self.width / self.waveform_.info.duration
+                pps = self.width / self._waveform.info.duration
                 pos = self.position_ if self.position_ != -1 else 0
                 Color(1, 1, 1, 0.75)
                 Line(
                     points=[pos * pps + offset[0], offset[1], pos * pps + offset[0], offset[1] + self.height], width=1)
 
     def _convertToPoint(self, time, amp):
-        x = time * self.width / self.waveform_.info.duration
+        x = time * self.width / self._waveform.info.duration
         y = amp * floor((self.height - 1) / 2)
 
         return (x, y)
 
     def on_file_(self, *args):
         self._init()
+
         # load the wave form.. and get it displayed (maybe wait for it to build)
         wv = Waveform(args[1])
-        self.waveform_ = wv
+        self._waveform = wv
         wv.analyze()
         self.loadWaveFormCallback()
         self.updateCanvas()
 
     def loadWaveFormCallback(self, *args):
-        if self.waveform_.loaded:
+        if self._waveform.loaded:
             self._prepDraw()
         else:
             Clock.schedule_once(self.loadWaveFormCallback, 1)
@@ -96,26 +99,26 @@ class WaveformWidget(Widget):
     def _prepDraw(self, *args):
         self.ready_to_draw = False
         offset = self.pos
-        if self.waveform_ is not None and self.waveform_.loaded:
+        if self._waveform is not None and self._waveform.loaded:
             lChannelPoints = []
             rChannelPoints = []
             ampMulti = 1
 
             # figure out max amplitude
-            if self.maxAmp_ == None:
+            if self.max_amp == None:
                 ampList = []
-                for i in range(0, self.waveform_.num_points()):
-                    wavePoint = self.waveform_.point(i)
+                for i in range(0, self._waveform.num_points()):
+                    wavePoint = self._waveform.point(i)
                     ampList.append(wavePoint[1])
                     ampList.append(wavePoint[2])
-                    self.maxAmp_ = max(ampList)
+                    self.max_amp = max(ampList)
 
-            if self.autoscale_ and self.maxAmp_:
-                ampMulti = 1 / self.maxAmp_
+            if self.autoscale_ and self.max_amp:
+                ampMulti = 1 / self.max_amp
 
             midHeightOffset = offset[1] + self.height / 2
-            for i in range(0, self.waveform_.num_points()):
-                wavePoint = self.waveform_.point(i)
+            for i in range(0, self._waveform.num_points()):
+                wavePoint = self._waveform.point(i)
                 pt = self._convertToPoint(wavePoint[0], wavePoint[1])
                 lChannelPoints.append(pt[0] + offset[0])
                 lChannelPoints.append(midHeightOffset)
@@ -128,8 +131,8 @@ class WaveformWidget(Widget):
                 rChannelPoints.append(pt[0] + offset[0])
                 rChannelPoints.append(-pt[1] * ampMulti + midHeightOffset)
 
-            self.lPoints_ = lChannelPoints
-            self.rPoints_ = rChannelPoints
+            self.left_points = lChannelPoints
+            self.right_points = rChannelPoints
 
             Logger.debug("Canvas ready for drawing")
             self.ready_to_draw = True
@@ -137,21 +140,21 @@ class WaveformWidget(Widget):
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
-            if self.player_ and self.waveform_.info:
+            if self.player and self._waveform.info:
                 x = touch.pos[0] - self.pos[0]
 
                 # convert x to position and seek to that position
-                pps = self.width / self.waveform_.info.duration
+                pps = self.width / self._waveform.info.duration
                 toPosition = x / pps
 
-                self.player_.position = toPosition
+                self.player.position = toPosition
             return True
 
     @property
     def waveform(self):
-        return self.player_
+        return self.player
 
     @waveform.setter
     def waveform(self, waveform):
-        self.player_ = waveform
+        self.player = waveform
         # reset all the shit...

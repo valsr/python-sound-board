@@ -1,81 +1,95 @@
-'''
+"""
 Created on Jan 14, 2017
 
-@author: radoslav
-'''
-from kivy.lang import Builder
+@author: valsr <valsr@valsr.com>
+"""
 import os
+from kivy.lang import Builder
 
-from com.valsr.psb.sound.player.manager import PlayerManager
 from com.valsr.psb.ui.dialogue import popup
 from com.valsr.psb.ui.window.base import WindowBase, WindowCloseState
 
 
-class SaveDialogue( WindowBase ):
-    '''
-    classdocs
-    '''
+class SaveDialogue(WindowBase):
+    """Save project dialogue"""
 
-    def __init__( self, **kwargs ):
-        WindowBase.__init__( self, **kwargs )
+    def __init__(self, **kwargs):
+        WindowBase.__init__(self, **kwargs)
         self.title = "Save Project"
-        self.cwd_ = os.getcwd()
+        self.cwd = os.getcwd()
         self.file = None
 
-    def on_open( self, **kwargs ):
-        self.get_ui( 'Files' ).path = self.cwd_
-        self.get_ui( 'PathInput' ).text = self.cwd_
-        self.get_ui( 'Files' ).filters.append( self.uiFilterFiles )
+    def on_open(self, **kwargs):
+        """Perform post open configuration"""
+        self.get_ui('Files').path = self.cwd
+        self.get_ui('PathInput').text = self.cwd
+        self.get_ui('Files').filters.append(self.ui_filter_files)
 
-    def create_root_ui( self ):
-        return Builder.load_file( "ui/kv/save.kv" )
+    def create_root_ui(self):
+        return Builder.load_file("ui/kv/save.kv")
 
-    def uiCancel( self, *args ):
+    def ui_cancel(self, *args):
+        """Handle cancel button action"""
         self.close_state = WindowCloseState.CANCEL
         self.dismiss()
 
-    def uiSave( self, *args ):
-        fileName = self.get_ui( 'FileName' ).text
+    def ui_save(self, *args):
+        """Handle save button action"""
+        file_name = self.get_ui('FileName').text
 
-        if not fileName:
-            popup.showOkPopup( title = 'Enter name', message = 'Enter a valid project name', button = 'Ok' )
+        if not file_name:
+            popup.showOkPopup(title='Enter name', message='Enter a valid project name', button='Ok')
             return
 
-        if fileName and not fileName.lower().endswith( '.psb' ):
-            fileName += '.psb'
+        if file_name and not file_name.lower().endswith('.psb'):
+            file_name += '.psb'
 
-        self.file = os.path.join( self.get_ui( 'Files' ).path, fileName )
+        self.file = os.path.join(self.get_ui('Files').path, file_name)
 
-        if os.path.exists( self.file ):
-            popup.showYesNoPopup( title = 'File Exists', message = 'Fire %s exists. Overwrite file? ' % fileName,
-                                       yesButton = 'Overwrite', noButton = 'Cancel',
-                                       callback = self._saveOverwriteCallback )
+        if os.path.exists(self.file):
+            popup.showYesNoPopup(title='File Exists', message='Fire %s exists. Overwrite file? ' % file_name,
+                                 yesButton='Overwrite', noButton='Cancel',
+                                 callback=self._save_overwrite_callback)
             return
 
         self.close_state = WindowCloseState.OK
         self.dismiss()
 
-    def _saveOverwriteCallback( self, popup ):
+    def _save_overwrite_callback(self, popup):
+        """Callback to handle save overwrite action
+
+        Args:
+            popup: Overwrite popup
+        """
         if popup.selection_ == WindowCloseState.YES:
             self.close_state = WindowCloseState.OK
             self.dismiss()
 
-    def uiFilterFiles( self, folder, file ):
-        if os.path.isdir( file ):
+    def ui_filter_files(self, folder, file):
+        """Filter used to filter only project files
+
+        Args:
+            folder: Current folder to filter
+            file: Current file (in folder) to apply filter
+
+        Returns:
+            Boolean to filter file in (True) or out (False)
+        """
+        if os.path.isdir(file):
             return True
 
-        if self.get_ui( 'PathInput' ).text is not folder:
-            self.get_ui( 'PathInput' ).text = folder
-        ext = os.path.splitext( file )[1]
+        if self.get_ui('PathInput').text is not folder:
+            self.get_ui('PathInput').text = folder
+        ext = os.path.splitext(file)[1]
         return ext.lower() == '.psb'
 
-    def fileSelection( self, *args ):
-        files = self.get_ui( 'Files' )
+    def on_file_selection(self, *args):
+        """Handle selecting files in file view"""
+        files = self.get_ui('Files')
 
         if files.selection:
             file = files.selection[0]
 
-            # get the base name
-            self.get_ui( 'FileName' ).text = os.path.basename( file )
+            self.get_ui('FileName').text = os.path.basename(file)
 
         return True
