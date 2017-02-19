@@ -20,7 +20,7 @@ class OpenDialogue( WindowBase ):
         WindowBase.__init__( self, **kwargs )
         self.title = "Open Project"
         self.cwd_ = os.getcwd()
-        self.file_ = None
+        self.file = None
 
     def on_open( self, **kwargs ):
         self.get_ui( 'Files' ).path = self.cwd_
@@ -37,9 +37,9 @@ class OpenDialogue( WindowBase ):
     def uiOpen( self, *args ):
         fileName = self.get_ui( 'FileName' ).text
 
-        self.file_ = os.path.join( self.get_ui( 'Files' ).path, fileName )
+        self.file = os.path.join( self.get_ui( 'Files' ).path, fileName )
 
-        if not os.path.exists( self.file_ ):
+        if not os.path.exists( self.file ):
             popup.showOkPopup( title = 'File Does Not Exists', message = 'File %s does not exist. Select an existing file. ' % fileName, )
             return
 

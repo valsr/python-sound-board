@@ -35,7 +35,7 @@ class PSB(App):
         return WindowManager.theme_image_file(name=name, size=size, theme=theme)
 
 if __name__ == '__main__':
-    sound.initAudio()
+    sound.init_audio()
     Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
     Logger.info("GStreamer version %d.%d.%d.%d" % Gst.version())
     PSB().run()

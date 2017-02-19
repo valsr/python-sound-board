@@ -20,7 +20,7 @@ class SaveDialogue( WindowBase ):
         WindowBase.__init__( self, **kwargs )
         self.title = "Save Project"
         self.cwd_ = os.getcwd()
-        self.file_ = None
+        self.file = None
 
     def on_open( self, **kwargs ):
         self.get_ui( 'Files' ).path = self.cwd_
@@ -44,9 +44,9 @@ class SaveDialogue( WindowBase ):
         if fileName and not fileName.lower().endswith( '.psb' ):
             fileName += '.psb'
 
-        self.file_ = os.path.join( self.get_ui( 'Files' ).path, fileName )
+        self.file = os.path.join( self.get_ui( 'Files' ).path, fileName )
 
-        if os.path.exists( self.file_ ):
+        if os.path.exists( self.file ):
             popup.showYesNoPopup( title = 'File Exists', message = 'Fire %s exists. Overwrite file? ' % fileName,
                                        yesButton = 'Overwrite', noButton = 'Cancel',
                                        callback = self._saveOverwriteCallback )

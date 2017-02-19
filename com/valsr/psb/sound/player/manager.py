@@ -1,69 +1,63 @@
-'''
+"""
 Created on Jan 19, 2017
 
-@author: radoslav
-'''
+@author: valsr <valsr@valsr.com>
+"""
 from kivy.logger import Logger
-import uuid
 
 from com.valsr.psb.sound.player import FilePlayer
 
+
 class PlayerManager:
-    '''
-    Manages all players allowing for creation, storage, retrieval by given identifier. All methods are static 
+    """Manages all players allowing for creation, storage, retrieval by given identifier. All methods are static
     eliminating the need for object creation.
-    '''
-    _PLAYERS_ = {}
-    def __init__( self ):
-        '''
-        Constructor
-        '''
+    """
+    players = {}
+
+    def __init__(self):
+        """Constructor"""
         super().__init__()
 
     @staticmethod
-    def getPlayer( id ):
-        '''
-        Obtain player by given identifier
+    def waveform(player_id):
+        """Obtain waveform by given identifier
 
-        Parameters:
-            id -- Player identifier
+        Args:
+            player_id: Player identifier
 
         Returns:
             PlayerBase or None
-        '''
-        if id in PlayerManager._PLAYERS_:
-            return PlayerManager._PLAYERS_[id]
+        """
+        if player_id in PlayerManager.players:
+            return PlayerManager.players[player_id]
 
         return None
 
     @staticmethod
-    def createPlayer( filePath ):
-        '''
-        Create player for given path
+    def create_player(file_path):
+        """Create waveform for given path
 
-        Parameters:
-            filePath -- Path to media file
+        Args:
+            file_path: Path to media file
 
         Returns:
-            id, p -- Player id and the player it self
-        '''
-        id = str( uuid.uuid1().int )
-        p = FilePlayer( id, filePath )
-        PlayerManager._PLAYERS_[id] = p
+            id, p: Player id and the waveform it self
+        """
+        p = FilePlayer(file_path)
+        PlayerManager.players[p.id] = p
 
-        Logger.debug( "Number of active players %d" , len( PlayerManager._PLAYERS_ ) )
-        return ( id, p )
+        Logger.debug("Number of active players %d", len(PlayerManager.players))
+        return (p.id, p)
 
     @staticmethod
-    def destroyPlayer( id ):
-        '''
-        Destroy given player and free resources
-        
-        Parameters:
-            id -- Player id
-        '''
-        p = PlayerManager._PLAYERS_.pop( id, None )
-        Logger.debug( "Number of active players %d" , len( PlayerManager._PLAYERS_ ) )
+    def destroy_player(player_id):
+        """Destroy given waveform and free resources
+
+        Args:
+            player_id: Player player_id
+        """
+        p = PlayerManager.players.pop(player_id, None)
+        Logger.debug("Number of active players %d", len(PlayerManager.players))
         if p is not None:
             p.stop()
             p.destroy()

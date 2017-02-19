@@ -1,208 +1,220 @@
-'''
+"""
 Created on Jan 28, 2017
 
-@author: radoslav
-'''
-from gi.repository import Gst
+@author: valsr <valsr@valsr.com>
+"""
 import hashlib
-from kivy.logger import Logger
 import math
 import os
 from threading import Thread
 from time import sleep
+from gi.repository import Gst
+from kivy.logger import Logger
 
 from com.valsr.psb.sound.player import PlayerBase
 
 
-class MediaInfoManager( object ):
-    '''
-    Manages all MediaInformation objects - including loading/creating and keeping in memory. Most of the methods are 
+class MediaInfoManager(object):
+    """Manages all MediaInformation objects - including loading/creating and keeping in memory. Most of the methods are
     static and no object creation is necessary. When working with the manager keep in mind that information is done
-    in a background thread.
-    '''
+    in a background thread."""
 
-    mediaInfo_ = {} # Information objects
-    loading_ = [] # Objects currently being loaded (by key)
-    def __init__( self, *args, **kwargs ):
-        '''
-        Constructor
+    media_info = {}  # Information objects
+    loading = []  # Objects currently being loaded (by key)
 
-        Parameters:
-            args -- Positional arguments
-            kwargs -- Named parameters
-        '''
+    def __init__(self, *args, **kwargs):
+        """Constructor
+
+        Args:
+            args: Positional arguments
+            kwargs: Named parameters
+        """
         super().__init__()
 
     @staticmethod
-    def getInfoForMedia( file, reloadOnError = False ):
-        '''
-        Obtain info for given media. If information is not found, this will create a thread to load it 
+    def get_media_info(file, reload_on_error=False):
+        """Obtain info for given media. If information is not found, this will create a thread to load it
         (MediaInfoLoader) and will return None. Note that returning None does not mean that no media info is found,
         it could mean that the MediaInfoLoader is currently loading information.
 
-        Parameters:
-            file -- File path (key)
-            reloadOnError -- Reload if the loader had an error
+        Args:
+            file: File path (key)
+            reload_on_error: Reload if the loader had an error
 
         Returns:
             MediaInfo (loaded media info, even on error) or None
-        '''
-        if file not in MediaInfoManager.loading_:
-            if file in MediaInfoManager.mediaInfo_:
-                info = MediaInfoManager.mediaInfo_[file]
-                if not ( info.error_ and reloadOnError ):
-                    return MediaInfoManager.mediaInfo_[file]
+        """
+        if file not in MediaInfoManager.loading:
+            if file in MediaInfoManager.media_info:
+                info = MediaInfoManager.media_info[file]
+                if not (info.error and reload_on_error):
+                    return MediaInfoManager.media_info[file]
 
-            Logger.debug( 'No media information found for %s', file )
+            Logger.debug('No media information found for %s', file)
 
             # Queue loading
-            MediaInfoManager.loading_.append( file )
-            loader = MediaInfoLoader( file, MediaInfoManager._loadedInfo )
-            loader.analyse()
+            MediaInfoManager.loading.append(file)
+            loader = MediaInfoLoader(file, MediaInfoManager._loaded_info)
+            loader.analyze()
 
         return None
 
     @staticmethod
-    def _loadedInfo( info ):
-        '''
-        Private callback called when the MediaLoader has finished loading. It finalizes the loading
+    def _loaded_info(info):
+        """Private callback called when the MediaLoader has finished loading. It finalizes the loading
 
-        Parameters:
-            info -- Loaded info
-        '''
-        infoStruc = MediaInfo()
-        infoStruc.duration_ = info.duration_
-        infoStruc.file_ = info.file_
-        infoStruc.error_ = info.error_
-        infoStruc.fingerprint_ = info.fingerprint_
-        infoStruc.errorDebug_ = info.errorDebug_
-        MediaInfoManager.mediaInfo_[info.file_] = infoStruc
-        MediaInfoManager.loading_.remove( infoStruc.file_ )
+        Args:
+            info: Loaded info
+        """
+        info_struc = MediaInfo()
+        info_struc.duration = info.duration
+        info_struc.file = info.file
+        info_struc.error = info.error
+        info_struc.fingerprint = info.fingerprint
+        info_struc.error_debug = info.error_debug
+        MediaInfoManager.media_info[info.file] = info_struc
+        MediaInfoManager.loading.remove(info_struc.file)
 
-class MediaInfo( object ):
-    '''
-    Media information structure. All parameters are accessed directly.
-    '''
-    def __init__( self, *args, **kwargs ):
-        '''
-        Constructor
 
-        Parameters:
-            args -- Positional arguments
-            kwargs -- Named parameters
-        '''
-        super().__init__( *args, **kwargs )
-        self.duration_ = 0
-        self.file_ = None
-        self.error_ = None
-        self.errorDebug_ = None
-        self.fingerprint_ = 0
+class MediaInfo(object):
+    """Media information structure. All parameters are accessed directly."""
 
-    def serialize( self ):
+    def __init__(self, *args, **kwargs):
+        """Constructor
+
+        Args:
+            args: Positional arguments
+            kwargs: Named parameters
+        """
+        super().__init__(*args, **kwargs)
+        self.duration = 0
+        self.file = None
+        self.error = None
+        self.error_debug = None
+        self.fingerprint = 0
+
+    def serialize(self):
+        """Serialize it self
+
+        Returns:
+            Object dictionary
+        """
         return self.__dict__
 
-    def update( self, **entries ):
-        self.__dict__.update( entries )
+    def update(self, **entries):
+        """Update object dictionary
+
+        Args:
+            entries: Dictionary entries to update
+        """
+        self.__dict__.update(entries)
 
     @staticmethod
-    def deserialize( entries ):
+    def deserialize(entries):
+        """Deserialize a dictionary into a MediaInfo object
+
+        Args:
+            entries: Dictionary to deserialize
+
+        Returns:
+            MedioInfo
+        """
         info = MediaInfo()
         if entries:
-            info.update( **entries )
+            info.update(**entries)
         return info
 
-class MediaInfoLoader( PlayerBase ):
-    '''
-    Media loader
-    '''
-    def __init__( self, file, callback, **kwargs ):
-        '''
-        Constructor
 
-        Parameters:
-            file -- File (path) to analyze
-            callback -- Function to call once analysis completed
-            kwargs -- Named parameters
-        '''
-        self.file_ = os.path.abspath( file )
-        self._loaded_ = False
-        self.duration_ = 0
-        self.fingerprint_ = 0
-        self.md5_ = hashlib.md5()
+class MediaInfoLoader(PlayerBase):
+    """Media loader"""
+
+    def __init__(self, file, callback, **kwargs):
+        """Constructor
+
+        Args:
+            file: File (path) to analyze
+            callback: Function to call once analysis completed
+            kwargs: Named parameters
+        """
+        self.file = os.path.abspath(file)
+        self._loaded = False
+        self.duration = 0
+        self.fingerprint = 0
+        self.md5 = hashlib.md5()
 
         # player needed items
-        self.level_ = None
-        self.callback_ = callback
-        super().__init__( "info://" + file )
+        self.level = None
+        self.callback = callback
+        super().__init__("info://" + file)
 
     @property
-    def loaded_( self ):
-        return self._loaded_
+    def loaded(self):
+        """Getter for loaded property"""
+        return self._loaded
 
-    @loaded_.setter
-    def loaded_( self, loaded ):
-        self._loaded_ = loaded
-        if loaded and self.callback_:
-            self.callback_( self )
+    @loaded.setter
+    def loaded(self, loaded):
+        """Setter for loaded property"""
+        self._loaded = loaded
+        if loaded and self.callback:
+            self.callback(self)
 
-    def _setUpPipeline( self ):
-        '''
-        Analyze the media stream
-        '''
-        if not self.loaded_:
+    def _set_up_pipeline(self):
+        """Analyze the media stream"""
+        if not self.loaded:
             # source
-            self.source_ = Gst.ElementFactory.make( 'filesrc' )
-            self.source_.set_property( 'location', self.file_ )
-            self.pipeline_.add( self.source_ )
+            self.source = Gst.ElementFactory.make('filesrc')
+            self.source.set_property('location', self.file)
+            self.pipeline.add(self.source)
 
             # decoder
-            self.decode_ = Gst.ElementFactory.make( 'decodebin' )
-            self.pipeline_.add( self.decode_ )
+            self.decode = Gst.ElementFactory.make('decodebin')
+            self.pipeline.add(self.decode)
 
             # level
-            self.level_ = Gst.ElementFactory.make( 'level' )
-            self.level_.set_property( 'post-messages', True )
-            self.level_.set_property( 'interval', 100 * Gst.MSECOND )
-            self.pipeline_.add( self.level_ )
+            self.level = Gst.ElementFactory.make('level')
+            self.level.set_property('post-messages', True)
+            self.level.set_property('interval', 100 * Gst.MSECOND)
+            self.pipeline.add(self.level)
 
             # sink
-            self.sink_ = Gst.ElementFactory.make( 'fakesink' )
-            self.pipeline_.add( self.sink_ )
+            self.sink = Gst.ElementFactory.make('fakesink')
+            self.pipeline.add(self.sink)
 
             # link pad-always elements
-            self.source_.link( self.decode_ )
-            self.level_.link( self.sink_ )
+            self.source.link(self.decode)
+            self.level.link(self.sink)
 
             # decoder is dynamic so link at runtime
-            self.decode_.connect( 'pad-added', self._decodeSrcCreated )
+            self.decode.connect('pad-added', self._decode_src_created)
 
-    def _decodeSrcCreated( self, element, pad ):
-        '''
-        Link decode pad to sink
-        '''
-        pad.link( self.level_.get_static_pad( 'sink' ) )
+    def _decode_src_created(self, element, pad):
+        """Link decode pad to sink"""
+        pad.link(self.level.get_static_pad('sink'))
 
-    def _messageLoop( self, **kwargs ):
-        bus = self.pipeline_.get_bus()
+    def _message_loop(self, **kwargs):
+        bus = self.pipeline.get_bus()
         message = bus.pop()
         if message is not None:
             structure = message.get_structure()
             if structure:
                 if structure.get_name() == 'level':
-                    peak = structure.get_value( 'peak' )
-                    # it seems that the left channel always provide a stable value for audio file (right channel differs each run)
-                    self.md5_.update( str( round( peak[0], 0 ) ).encode( 'utf-8' ) )
+                    peak = structure.get_value('peak')
+                    # it seems that the left channel always provide a stable value for audio
+                    # file (right channel differs each run)
+                    self.md5.update(str(round(peak[0], 0)).encode('utf-8'))
 
             if message.type == Gst.MessageType.EOS:
-                _, dur = self.pipeline_.query_duration( Gst.Format.TIME )
-                self.duration_ = dur / Gst.SECOND
-                self.fingerprint_ = self.md5_.hexdigest()
+                _, dur = self.pipeline.query_duration(Gst.Format.TIME)
+                self.duration = dur / Gst.SECOND
+                self.fingerprint = self.md5.hexdigest()
 
-    def finish( self ):
-        self.pipeline_.set_state( Gst.State.NULL )
-        Logger.debug( 'Finished loading media information for %s, fingerprint %s', self.file_, self.fingerprint_ )
-        self.loaded_ = True
+    def finish(self):
+        self.pipeline.set_state(Gst.State.NULL)
+        Logger.debug('Finished loading media information for %s, fingerprint %s', self.file, self.fingerprint)
+        self.loaded = True
 
-    def analyse( self ):
-        if not self.loaded_:
-            self.pipeline_.set_state( Gst.State.PLAYING )
+    def analyze(self):
+        """Analyze the media stream"""
+        if not self.loaded:
+            self.pipeline.set_state(Gst.State.PLAYING)

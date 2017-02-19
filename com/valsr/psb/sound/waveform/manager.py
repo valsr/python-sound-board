@@ -1,33 +1,49 @@
-'''
+"""
 Created on Jan 19, 2017
 
-@author: radoslav
-'''
+@author: valsr <valsr@valsr.com>
+"""
 from com.valsr.psb.sound.waveform import Waveform
 
-_WAVEFORMS_ = {}
 
 class WaveformManager:
-    def __init__( self, params ):
-        '''
-        Constructor
-        '''
+    """Manages all waveform objects"""
+    waveforms = {}
+
     @staticmethod
-    def getPlayer( file ):
-        global _WAVEFORMS_
-        if id in _WAVEFORMS_:
-            return _WAVEFORMS_[file]
+    def waveform(file):
+        """Obtain waveform by filename
+
+        Args:
+            file: Path to file
+
+        Returns:
+            Waveform or None
+        """
+        if file in WaveformManager.waveforms:
+            return WaveformManager.waveforms[file]
 
         return None
 
     @staticmethod
-    def createWaveform( filePath ):
-        global _WAVEFORMS_
-        p = Waveform( filePath )
-        _WAVEFORMS_[filePath] = p
-        return ( filePath, p )
+    def create_waveform(file_path):
+        """Create a waveform for given file
+
+        Args:
+            file_path: File path
+
+        Return:
+            (file_path, waveform)
+        """
+        p = Waveform(file_path)
+        WaveformManager.waveforms[file_path] = p
+        return (file_path, p)
 
     @staticmethod
-    def destroyWaveform( file ):
-        global _WAVEFORMS_
-        _WAVEFORMS_.pop( file, None )
+    def destroy_waveform(file):
+        """Destroy given waveform.
+
+        Args:
+            file: Waveform file
+        """
+        WaveformManager.waveforms.pop(file, None)

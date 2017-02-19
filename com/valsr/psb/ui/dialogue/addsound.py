@@ -23,7 +23,7 @@ class AddSoundDialogue(WindowBase):
         WindowBase.__init__(self, **kwargs)
         self.title = "Add Audio File"
         self.cwd_ = os.getcwd()
-        self.file_ = None
+        self.file = None
         self.playerId_ = None
 
     def on_open(self, **kwargs):
@@ -41,14 +41,14 @@ class AddSoundDialogue(WindowBase):
 
     def uiCancel(self, *args):
         if self.playerId_ is not None:
-            PlayerManager.destroyPlayer(self.playerId_)
+            PlayerManager.destroy_player(self.playerId_)
 
         self.close_state = WindowCloseState.CANCEL
         self.dismiss()
 
     def uiOpen(self, *args):
         if self.playerId_ is not None:
-            PlayerManager.destroyPlayer(self.playerId_)
+            PlayerManager.destroy_player(self.playerId_)
 
         self.close_state = WindowCloseState.OK
         self.dismiss()
@@ -67,7 +67,7 @@ class AddSoundDialogue(WindowBase):
         file = files.selection[0]
 
         if os.path.isfile(file):
-            self.file_ = file
+            self.file = file
             self.autoPlay(file)
             pass
 
@@ -76,33 +76,33 @@ class AddSoundDialogue(WindowBase):
     def autoPlay(self, file):
         if self.get_ui('AutoPlayButton').active:
             if self.playerId_ is not None:
-                PlayerManager.destroyPlayer(self.playerId_)
+                PlayerManager.destroy_player(self.playerId_)
 
-            (id, p) = PlayerManager.createPlayer(file)
-            self.get_ui('Waveform').file_ = file
+            (id, p) = PlayerManager.create_player(file)
+            self.get_ui('Waveform').file = file
             self.playerId_ = id
-            p.registerUpdateCallback(self.updateUI)
-            p.registerMessageCallback(self.messageCallback)
+            p.register_update_callback(self.updateUI)
+            p.register_message_callback(self.messageCallback)
             p.play()
-            self.get_ui('Waveform').player = p
+            self.get_ui('Waveform').waveform = p
 
-    def messageCallback(self, player, bus, message):
+    def messageCallback(self, waveform, bus, message):
         if message.type == Gst.MessageType.EOS:
             self.onStop()
 
-    def updateUI(self, player, delta):
-        pos = player.position
+    def updateUI(self, waveform, delta):
+        pos = waveform.position
         self.get_ui('Waveform').position_ = pos
 
     def onStop(self):
         if self.playerId_ is not None:
-            p = PlayerManager.getPlayer(self.playerId_)
+            p = PlayerManager.waveform(self.playerId_)
             p.stop()
 
     def onPlay(self):
         if self.playerId_ is not None:
-            p = PlayerManager.getPlayer(self.playerId_)
-            if p.state_ == PlayerState.PLAYING:
+            p = PlayerManager.waveform(self.playerId_)
+            if p.state == PlayerState.PLAYING:
                 p.pause()
             else:
                 p.play()

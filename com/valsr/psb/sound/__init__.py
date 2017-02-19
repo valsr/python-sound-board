@@ -1,16 +1,17 @@
-'''
+"""
 Created on Jan 17, 2017
 
-@author: radoslav
-'''
+@author: valsr <valsr@valsr.com>
+"""
+import os
+from threading import Thread
 from enum import Enum
 from gi.repository import Gst, GObject
 from kivy.logger import Logger
-import os
-from threading import Thread
 
 
-class PlayerState( Enum ):
+class PlayerState(Enum):
+    """Player states"""
     STOPPED = 1
     PLAYING = 2
     PAUSED = 3
@@ -18,7 +19,8 @@ class PlayerState( Enum ):
     NOTINIT = 5
     READY = 6
 
-def initAudio():
-    GObject.threads_init()
-    Gst.init_check( None )
 
+def init_audio():
+    """Initialize the audio system"""
+    GObject.threads_init()
+    Gst.init_check(None)

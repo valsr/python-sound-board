@@ -32,7 +32,7 @@ class MainWindow(WindowBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.file_ = None
+        self.file = None
         self.audioFilesTree_ = None
 
     def create_root_ui(self):
@@ -64,18 +64,18 @@ class MainWindow(WindowBase):
             if not self.audioFilesTree_.root.find_node(lambda x: x._label.text.lower() == 'uncategorized'):
                 self.audioFilesTree_.add_node(DraggableTreeViewNode(label='Uncategorized'))
 
-            self._addFileImpl(self.addSoundWindow_.file_)
+            self._addFileImpl(self.addSoundWindow_.file)
         else:
             self.addSoundWindow_ = None
 
     def _addFileImpl(self, file):
         # check the fingerprint and see if we already have it
-        info = MediaInfoManager.getInfoForMedia(file, reloadOnError=True)
+        info = MediaInfoManager.get_media_info(file, reload_on_error=True)
         if not info:
             Clock.schedule_once(lambda x: self._addFileImpl(file), 0.1)
             return
 
-        if self.audioFilesTree_.root.find_node(lambda x: x.data is not None and x.data.fingerprint_ == info.fingerprint_):
+        if self.audioFilesTree_.root.find_node(lambda x: x.data is not None and x.data.fingerprint == info.fingerprint):
             popup.showOkPopup('File Already Added', 'File by similar fingerprint has already been added', parent=self)
             return
 
@@ -84,7 +84,7 @@ class MainWindow(WindowBase):
         parent.add_node(DraggableTreeViewNode(id=file, label=os.path.basename(file), data=info))
 
     def uiSave(self, *args):
-        if self.file_ is None:
+        if self.file is None:
             # open file to save assert
             self.saveWindow_ = self.controller_.open_window(SaveDialogue, windowed=True, size_hint=(0.75, 0.75))
             self.saveWindow_.bind(on_dismiss=lambda x: self._saveImpl(fromDialogue=True))
@@ -95,9 +95,9 @@ class MainWindow(WindowBase):
         if fromDialogue:
             if self.saveWindow_.close_state != WindowCloseState.OK:
                 return
-            self.file_ = self.saveWindow_.file_
-        utility.save_project(self.file_, self.audioFilesTree_, None)
-        self.title = "PSB: " + self.file_
+            self.file = self.saveWindow_.file
+        utility.save_project(self.file, self.audioFilesTree_, None)
+        self.title = "PSB: " + self.file
 
     def uiOpen(self, *args):
         self.openWindow_ = WindowManager.create_window(
@@ -106,9 +106,9 @@ class MainWindow(WindowBase):
         self.openWindow_.open()
 
     def _openImpl(self, *args):
-        self.file_ = self.openWindow_.file_
+        self.file = self.openWindow_.file
         if self.openWindow_.close_state == WindowCloseState.OK:
-            utility.load_project(self.file_, self.audioFilesTree_)
+            utility.load_project(self.file, self.audioFilesTree_)
         WindowManager.destroy_window(self.openWindow_.id)
 
     def uiAddTreeCategory(self, *args):
