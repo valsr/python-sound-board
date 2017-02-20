@@ -96,7 +96,7 @@ class AddSoundDialogue(WindowBase):
             p.register_update_callback(self.update_ui)
             p.register_message_callback(self.message_callback)
             p.play()
-            self.get_ui('Waveform').waveform = p
+            self.get_ui('Waveform').associate_player(p)
 
     def message_callback(self, player, bus, message):
         """Message callback for the player
@@ -117,18 +117,18 @@ class AddSoundDialogue(WindowBase):
             delta: Time change
         """
         pos = player.position
-        self.get_ui('Waveform').position_ = pos
+        self.get_ui('Waveform').position = pos
 
     def stop(self):
         """Handles stopping current player (either via stop button or code)"""
         if self.player_id is not None:
-            p = PlayerManager.waveform(self.player_id)
+            p = PlayerManager.player(self.player_id)
             p.stop()
 
     def play(self):
         """Handles starting/pausing current player (either via play button or code)"""
         if self.player_id is not None:
-            p = PlayerManager.waveform(self.player_id)
+            p = PlayerManager.player(self.player_id)
             if p.state == PlayerState.PLAYING:
                 p.pause()
             else:

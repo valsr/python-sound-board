@@ -19,8 +19,8 @@ class PlayerManager:
         super().__init__()
 
     @staticmethod
-    def waveform(player_id):
-        """Obtain waveform by given identifier
+    def player(player_id):
+        """Obtain player by given identifier
 
         Args:
             player_id: Player identifier

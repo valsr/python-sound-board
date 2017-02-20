@@ -38,7 +38,7 @@ class SaveDialogue(WindowBase):
         file_name = self.get_ui('FileName').text
 
         if not file_name:
-            popup.showOkPopup(title='Enter name', message='Enter a valid project name', button='Ok')
+            popup.show_ok_popup(title='Enter name', message='Enter a valid project name', button='Ok')
             return
 
         if file_name and not file_name.lower().endswith('.psb'):
@@ -47,8 +47,8 @@ class SaveDialogue(WindowBase):
         self.file = os.path.join(self.get_ui('Files').path, file_name)
 
         if os.path.exists(self.file):
-            popup.showYesNoPopup(title='File Exists', message='Fire %s exists. Overwrite file? ' % file_name,
-                                 yesButton='Overwrite', noButton='Cancel',
+            popup.show_yes_no_popup(title='File Exists', message='Fire %s exists. Overwrite file? ' % file_name,
+                                 yes_button_label='Overwrite', no_button_label='Cancel',
                                  callback=self._save_overwrite_callback)
             return
 
@@ -61,7 +61,7 @@ class SaveDialogue(WindowBase):
         Args:
             popup: Overwrite popup
         """
-        if popup.selection_ == WindowCloseState.YES:
+        if popup.selection == WindowCloseState.YES:
             self.close_state = WindowCloseState.OK
             self.dismiss()
 

@@ -1,16 +1,16 @@
-'''
+"""
 Created on Jan 14, 2017
 
-@author: radoslav
-'''
+@author: valsr <valsr@valsr.com>
+"""
 import json
+import os
 from kivy.clock import Clock
 from kivy.lang import Builder
 from kivy.logger import Logger
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
-import os
 
 from com.valsr.psb import utility
 from com.valsr.psb.sound.info import MediaInfoManager
@@ -26,124 +26,120 @@ from com.valsr.psb.ui.window.manager import WindowManager
 
 
 class MainWindow(WindowBase):
-    '''
-    classdocs
-    '''
+    """Main PSB window"""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.file = None
-        self.audioFilesTree_ = None
+        self.audio_files_tree = None
+
+        # windows
+        self._open_window = None
+        self._save_window = None
+        self._add_sound_window = None
 
     def create_root_ui(self):
         return Builder.load_file("ui/kv/main.kv")
 
     def on_create(self):
-        self.audioFilesTree_ = self.get_ui('uiAudioFiles')
-        utility.load_project('test.psb', self.audioFilesTree_)
+        self.audio_files_tree = self.get_ui('uiAudioFiles')
+        utility.load_project('test.psb', self.audio_files_tree)
 
-        root = self.get_ui('test')
-        layout = GridLayout(cols=1, spacing=10, size_hint_y=None)
-        # Make sure the height is such that there is something to scroll.
-        layout.bind(minimum_height=layout.setter('height'))
-        for i in range(30):
-            btn = Button(text=str(i), size_hint_y=None, height=40)
-            layout.add_widget(btn)
-        sv = ScrollView(size_hint=(None, 1))
-        sv.add_widget(layout)
-        root.add_widget(sv)
+    def ui_add_sound(self, *args):
+        """Handle add sound button event"""
+        self._add_sound_window = WindowManager.create_window(AddSoundDialogue, self,
+                                                             create_opts={"size_hint": (0.75, 0.75)})
+        self._add_sound_window.bind(on_dismiss=self.ui_add_sound_dismiss)
+        self._add_sound_window.open()
 
-    def uiAddSound(self, *args):
-        self.addSoundWindow_ = WindowManager.create_window(
-            AddSoundDialogue, self, create_opts={"size_hint": (0.75, 0.75)})
-        self.addSoundWindow_.bind(on_dismiss=self.uiAddSoundDismiss)
-        self.addSoundWindow_.open()
+    def ui_add_sound_dismiss(self, *args):
+        """Handle dismissal of the add sound dialogue"""
+        if self._add_sound_window.close_state == WindowCloseState.OK:
+            if not self.audio_files_tree.root.find_node(lambda x: x._label.text.lower() == 'uncategorized'):
+                self.audio_files_tree.add_node(DraggableTreeViewNode(label='Uncategorized'))
 
-    def uiAddSoundDismiss(self, *args):
-        if self.addSoundWindow_.close_state == WindowCloseState.OK:
-            if not self.audioFilesTree_.root.find_node(lambda x: x._label.text.lower() == 'uncategorized'):
-                self.audioFilesTree_.add_node(DraggableTreeViewNode(label='Uncategorized'))
-
-            self._addFileImpl(self.addSoundWindow_.file)
+            self._add_audio_file(self._add_sound_window.file)
         else:
-            self.addSoundWindow_ = None
+            self._add_sound_window = None
 
-    def _addFileImpl(self, file):
+    def _add_audio_file(self, file):
         # check the fingerprint and see if we already have it
         info = MediaInfoManager.get_media_info(file, reload_on_error=True)
         if not info:
-            Clock.schedule_once(lambda x: self._addFileImpl(file), 0.1)
+            Clock.schedule_once(lambda x: self._add_audio_file(file), 0.1)
             return
 
-        if self.audioFilesTree_.root.find_node(lambda x: x.data is not None and x.data.fingerprint == info.fingerprint):
-            popup.showOkPopup('File Already Added', 'File by similar fingerprint has already been added', parent=self)
+        if self.audio_files_tree.root.find_node(lambda x: x.data and x.data.fingerprint == info.fingerprint):
+            popup.show_ok_popup(
+                'File Already Added', 'File by similar fingerprint has already been added', parent=self)
             return
 
         Logger.debug("Adding to %s to collection", file)
-        parent = self.audioFilesTree_.root.find_node(lambda x: x._label.text.lower() == 'uncategorized', False)
+        parent = self.audio_files_tree.root.find_node(lambda x: x._label.text.lower() == 'uncategorized', False)
         parent.add_node(DraggableTreeViewNode(id=file, label=os.path.basename(file), data=info))
 
     def ui_save(self, *args):
+        """Handle save button event"""
         if self.file is None:
             # open file to save assert
-            self.saveWindow_ = self.controller_.open_window(SaveDialogue, windowed=True, size_hint=(0.75, 0.75))
-            self.saveWindow_.bind(on_dismiss=lambda x: self._saveImpl(fromDialogue=True))
+            self._save_window = self.controller_.open_window(SaveDialogue, windowed=True, size_hint=(0.75, 0.75))
+            self._save_window.bind(on_dismiss=lambda x: self._save(from_dialogue=True))
         else:
-            self._saveImpl()
+            self._save()
 
-    def _saveImpl(self, fromDialogue=False):
-        if fromDialogue:
-            if self.saveWindow_.close_state != WindowCloseState.OK:
+    def _save(self, from_dialogue=False):
+        if from_dialogue:
+            if self._save_window.close_state != WindowCloseState.OK:
                 return
-            self.file = self.saveWindow_.file
-        utility.save_project(self.file, self.audioFilesTree_, None)
+            self.file = self._save_window.file
+        utility.save_project(self.file, self.audio_files_tree, None)
         self.title = "PSB: " + self.file
 
     def ui_open(self, *args):
-        self.openWindow_ = WindowManager.create_window(
-            OpenDialogue, parent=None, create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
-        self.openWindow_.bind(on_dismiss=self._openImpl)
-        self.openWindow_.open()
+        """Handle open button event"""
+        self._open_window = WindowManager.create_window(OpenDialogue, parent=None,
+                                                        create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
+        self._open_window.bind(on_dismiss=self._open)
+        self._open_window.open()
 
-    def _openImpl(self, *args):
-        self.file = self.openWindow_.file
-        if self.openWindow_.close_state == WindowCloseState.OK:
-            utility.load_project(self.file, self.audioFilesTree_)
-        WindowManager.destroy_window(self.openWindow_.id)
+    def _open(self, *args):
+        self.file = self._open_window.file
+        if self._open_window.close_state == WindowCloseState.OK:
+            utility.load_project(self.file, self.audio_files_tree)
+        WindowManager.destroy_window(self._open_window.id)
 
-    def uiAddTreeCategory(self, *args):
-        selectedNode = self.audioFilesTree_.selected_node
+    def ui_add_tree_category(self, *args):
+        """Handle add category button event"""
+        selected_node = self.audio_files_tree.selected_node
 
-        if selectedNode == None:
-            selectedNode = self.audioFilesTree_.root
+        if not selected_node:
+            selected_node = self.audio_files_tree.root
 
         # now open the dialogue
-        popup.showTextInputPopup(title='New Category', message='Enter Category Name', inputMessage='Category',
-                                 yesButton='Create', noButton='Cancel', parent=self,
-                                 callback=lambda x: self._completeNewCategory(x.selection_, selectedNode, x.text_))
+        popup.show_text_input_popup(title='New Category', message='Enter Category Name', input_text='Category',
+                                    yes_button_label='Create', no_button_label='Cancel', parent=self,
+                                    callback=lambda x: self._add_tree_category(x.selection, selected_node, x.text))
         return
 
-    def _completeNewCategory(self, button, parentNode, text):
+    def _add_tree_category(self, button, parent_node, text):
         if button == WindowCloseState.YES:
-            Logger.trace('Adding %s node to %s', text, parentNode.id)
+            Logger.trace('Adding %s node to %s', text, parent_node.id)
             # find if we have the node by text
-            if parentNode.find_node(lambda x: x.ui.text == text, False):
+            if parent_node.find_node(lambda x: x.ui.text == text, False):
                 Logger.trace('Node by %s already exists', text)
-                popup.showOkPopup(
-                    'New Category', message='Category \'%s\' already exists within \'%s\'' % (text, parentNode.id))
+                popup.show_ok_popup(
+                    'New Category', message='Category \'%s\' already exists within \'%s\'' % (text, parent_node.id))
                 return
 
             node = DraggableTreeViewNode(label=text)
-            parentNode.add_node(node).open(True)
+            parent_node.add_node(node).open(True)
 
-    def uiFileTreeTouchUp(self, fileNode, touch):
+    def ui_file_tree_touch_up(self, file_node, touch):
+        """Handle file tree touch events - opens menu"""
         if touch.button == 'left':
             # create menu
-            Logger.debug('Touch up from %s', fileNode.text)
+            Logger.debug('Touch up from %s', file_node.text)
             m = Menu(controller=self.controller_)
             m.addMenuItem(SimpleMenuItem(text='test'))
             m.addMenuItem(SimpleMenuItem(text='test2'))
             m.open()
-            pass
-
-    # def on_

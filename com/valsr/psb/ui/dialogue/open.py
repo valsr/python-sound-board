@@ -40,7 +40,7 @@ class OpenDialogue(WindowBase):
         self.file = os.path.join(self.get_ui('Files').path, file_name)
 
         if not os.path.exists(self.file):
-            popup.showOkPopup(
+            popup.show_ok_popup(
                 title='File Does Not Exists', message='File %s does not exist. Select an existing file. ' % file_name, )
             return
 
