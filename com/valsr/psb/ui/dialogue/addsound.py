@@ -26,18 +26,18 @@ class AddSoundDialogue(WindowBase):
 
     def on_open(self, **kwargs):
         """Perform dialogue opening actions"""
-        self.get_ui('Files').path = self.cwd
-        self.get_ui('PathInput').text = self.cwd
-        self.get_ui('Files').filters.append(self.ui_filter_files)
+        self.get_ui('files').path = self.cwd
+        self.get_ui('path_input').text = self.cwd
+        self.get_ui('files').filters.append(self.audio_file_filter)
 
     def create_root_ui(self):
         return Builder.load_file("ui/kv/addsound.kv")
 
     def ui_autoplay_label(self, touch):
         """Handles clicking on the auto-play label"""
-        label = self.get_ui('AutoPlayLabel')
+        label = self.get_ui('autoplay_button')
         if label.collide_point(*touch.pos):
-            self.get_ui('AutoPlayButton').active = not self.get_ui('AutoPlayButton').active
+            self.get_ui('autoplay_button').active = not self.get_ui('autoplay_button').active
 
     def ui_on_cancel(self, *args):
         """Handles cancel button action"""
@@ -55,7 +55,7 @@ class AddSoundDialogue(WindowBase):
         self.close_state = WindowCloseState.OK
         self.dismiss()
 
-    def ui_filter_files(self, folder, file):
+    def audio_file_filter(self, folder, file):
         """Filters to filter non-audio files
 
         Args:
@@ -68,14 +68,14 @@ class AddSoundDialogue(WindowBase):
         if os.path.isdir(file):
             return True
 
-        if self.get_ui('PathInput').text is not folder:
-            self.get_ui('PathInput').text = folder
+        if self.get_ui('path_input').text is not folder:
+            self.get_ui('path_input').text = folder
         ext = os.path.splitext(file)[1]
         return ext.lower() in utility.allowed_audio_formats()
 
-    def on_file_selection(self, *args):
+    def ui_file_selection(self, *args):
         """Handles selecting files in the file selection list"""
-        files = self.get_ui('Files')
+        files = self.get_ui('files')
         file = files.selection[0]
 
         if os.path.isfile(file):
@@ -86,17 +86,17 @@ class AddSoundDialogue(WindowBase):
 
     def handle_auto_play(self, file):
         """Handle auto-play files"""
-        if self.get_ui('AutoPlayButton').active:
+        if self.get_ui('autoplay_button').active:
             if self.player_id is not None:
                 PlayerManager.destroy_player(self.player_id)
 
             (player_id, p) = PlayerManager.create_player(file)
-            self.get_ui('Waveform').file = file
+            self.get_ui('waveform').file = file
             self.player_id = player_id
             p.register_update_callback(self.update_ui)
             p.register_message_callback(self.message_callback)
             p.play()
-            self.get_ui('Waveform').associate_player(p)
+            self.get_ui('waveform').associate_player(p)
 
     def message_callback(self, player, bus, message):
         """Message callback for the player
@@ -117,15 +117,15 @@ class AddSoundDialogue(WindowBase):
             delta: Time change
         """
         pos = player.position
-        self.get_ui('Waveform').position = pos
+        self.get_ui('waveform').position = pos
 
-    def stop(self):
+    def ui_stop(self):
         """Handles stopping current player (either via stop button or code)"""
         if self.player_id is not None:
             p = PlayerManager.player(self.player_id)
             p.stop()
 
-    def play(self):
+    def ui_play(self):
         """Handles starting/pausing current player (either via play button or code)"""
         if self.player_id is not None:
             p = PlayerManager.player(self.player_id)

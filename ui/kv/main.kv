@@ -12,7 +12,7 @@
 			text: root.label
 	
 GridLayout:
-	id: 'main'
+	id: main
 	cols: 1
 	rows_minimum: {0:30}
 	BoxLayout:
@@ -28,13 +28,13 @@ GridLayout:
 			height: 30
 			size_hint_y: None
 			label: 'Open'
-			on_press: root.parent.uiOpen()
+			on_press: root.parent.ui_open_project()
 			source: 'folder-open'
 		ImageButton:
 			height: 30
 			size_hint_y: None
 			label: 'Save'
-			on_press: root.parent.uiSave()
+			on_press: root.parent.ui_save_project()
 			source: 'download'
 	GridLayout:
 		cols: 2
@@ -58,18 +58,18 @@ GridLayout:
 					DraggableTreeView:
 						size_hint_y: None
 						size_hint_x: 1
-						id: uiAudioFiles
+						id: audio_files
 						hide_root: False
 				ImageButton:
-					id: addcategory
-					on_press: root.parent.uiAddTreeCategory()
+					id: add_category
+					on_press: root.parent.ui_add_tree_category()
 					label: 'Add Category'
 					source: 'folder'
 					height: 30
 					size_hint_y: None		
 				ImageButton:
 					id: addsound
-					on_press: root.parent.uiAddSound()
+					on_press: root.parent.ui_add_sound()
 					label: 'Add Sound'
 					source: 'plus'
 					height: 30

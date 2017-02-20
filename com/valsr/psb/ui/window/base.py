@@ -68,6 +68,8 @@ class WindowBase(FloatLayout):
         self.ui = None
         self.label = None
         self._close_state = WindowCloseState.CLOSE
+        self.id = str(id(self))
+        self.__dismiss_dispatched = False
         super().__init__(**kwargs)
 
     def on_pre_create(self):
@@ -115,6 +117,7 @@ class WindowBase(FloatLayout):
 
         self.fbind('size', self._update_center)
         self.dispatch('on_open')
+        self.__dismiss_dispatched = False
         return self
 
     def on_open(self):
@@ -140,11 +143,13 @@ class WindowBase(FloatLayout):
         Returns:
             True if the window should not be dismissed (see WindowManager)
         """
-        from com.valsr.psb.ui.window.manager import WindowManager
-        if not WindowManager.is_visible(self.id):
-            return False
+        if not self.__dismiss_dispatched:
+            self.__dismiss_dispatched = True
+            from com.valsr.psb.ui.window.manager import WindowManager
+            if not WindowManager.is_visible(self.id):
+                return False
 
-        return self.dispatch('on_dismiss')
+            return self.dispatch('on_dismiss')
 
     def on_dismiss(self):
         """Called when dismissing/closing the window.

@@ -24,18 +24,18 @@
 			source: app.theme_image_file(root.source, self.parent.height)	
 
 BoxLayout:
-	id: 'addsound'
+	id: add_sound
 	orientation: 'vertical'
 	TextInput:
 		height: 30
 		size_hint_y: None
 		text: 'Path'
-		id: PathInput
+		id: path_input
 	BoxLayout:
 		FileChooserIconView:
-			id: Files
+			id: files
 			size_hint_y: 1
-			on_selection: root.parent.on_file_selection()
+			on_selection: root.parent.ui_file_selection()
 			dirselect: False
 			show_hidden: True
 
@@ -48,32 +48,32 @@ BoxLayout:
 			WaveformWidget:
 				height: 26
 				size_hint_y: None
-				id: Waveform
+				id: waveform
 			BoxLayout:
 				orientatin: 'horizontal'
 				ImageOnlyButton:
 					source: 'play'
 					size: 48, 24
 					size_hint: None, None
-					on_press: root.parent.play()
+					on_press: root.parent.ui_play()
 				ImageOnlyButton:
 					source: 'stop'
 					size: 48, 24
 					size_hint: None, None
-					on_press: root.parent.stop()
+					on_press: root.parent.ui_stop()
 				BoxLayout:
 					width: 100
 					size_hint_x: None
 					CheckBox:
-						id: AutoPlayButton
+						id: autoplay_button
 						active: True
 						width: 24
 						size_hint_x: None
 						text: 'Auto-play'
 					Label:
-						id: AutoPlayLabel
+						id: autoplay_label
 						text: 'Auto-play'
-						on_touch_down: root.parent.ui_on_autoplay_label(args[1])
+						on_touch_down: root.parent.ui_autoplay_label(args[1])
 		BoxLayout:
 			orientation: 'vertical'
 			width: 150
@@ -83,10 +83,10 @@ BoxLayout:
 				size_hint: None,None
 				label: 'Open'
 				source: 'folder-open'
-				on_press: root.parent.ui_on_open()
+				on_press: root.parent.ui_open()
 			ImageButton:
 				size: 150, 25
 				size_hint: None,None
 				label: 'Cancel'
-				on_press: root.parent.ui_on_cancel()
+				on_press: root.parent.ui_cancel()
 				source: 'ban'

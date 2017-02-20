@@ -42,17 +42,17 @@ class MainWindow(WindowBase):
         return Builder.load_file("ui/kv/main.kv")
 
     def on_create(self):
-        self.audio_files_tree = self.get_ui('uiAudioFiles')
+        self.audio_files_tree = self.get_ui('audio_files')
         utility.load_project('test.psb', self.audio_files_tree)
 
     def ui_add_sound(self, *args):
         """Handle add sound button event"""
         self._add_sound_window = WindowManager.create_window(AddSoundDialogue, self,
                                                              create_opts={"size_hint": (0.75, 0.75)})
-        self._add_sound_window.bind(on_dismiss=self.ui_add_sound_dismiss)
+        self._add_sound_window.bind(on_dismiss=self._add_sound_dismiss)
         self._add_sound_window.open()
 
-    def ui_add_sound_dismiss(self, *args):
+    def _add_sound_dismiss(self, *args):
         """Handle dismissal of the add sound dialogue"""
         if self._add_sound_window.close_state == WindowCloseState.OK:
             if not self.audio_files_tree.root.find_node(lambda x: x._label.text.lower() == 'uncategorized'):
@@ -78,31 +78,35 @@ class MainWindow(WindowBase):
         parent = self.audio_files_tree.root.find_node(lambda x: x._label.text.lower() == 'uncategorized', False)
         parent.add_node(DraggableTreeViewNode(id=file, label=os.path.basename(file), data=info))
 
-    def ui_save(self, *args):
+    def ui_save_project(self, *args):
         """Handle save button event"""
         if self.file is None:
             # open file to save assert
-            self._save_window = self.controller_.open_window(SaveDialogue, windowed=True, size_hint=(0.75, 0.75))
-            self._save_window.bind(on_dismiss=lambda x: self._save(from_dialogue=True))
+            self._save_window = WindowManager.create_window(SaveDialogue, parent=None,
+                                                            create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
+            self._save_window.bind(on_dismiss=lambda x: self._save_project(from_dialogue=True))
+            self._save_window.open()
         else:
-            self._save()
+            self._save_project()
 
-    def _save(self, from_dialogue=False):
+    def _save_project(self, from_dialogue=False):
         if from_dialogue:
             if self._save_window.close_state != WindowCloseState.OK:
+                WindowManager.destroy_window(self._save_window.id)
                 return
             self.file = self._save_window.file
+            WindowManager.destroy_window(self._save_window.id)
         utility.save_project(self.file, self.audio_files_tree, None)
         self.title = "PSB: " + self.file
 
-    def ui_open(self, *args):
+    def ui_open_project(self, *args):
         """Handle open button event"""
         self._open_window = WindowManager.create_window(OpenDialogue, parent=None,
                                                         create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
-        self._open_window.bind(on_dismiss=self._open)
+        self._open_window.bind(on_dismiss=self._open_project)
         self._open_window.open()
 
-    def _open(self, *args):
+    def _open_project(self, *args):
         self.file = self._open_window.file
         if self._open_window.close_state == WindowCloseState.OK:
             utility.load_project(self.file, self.audio_files_tree)

@@ -72,9 +72,9 @@ class Waveform(PlayerBase):
                 Clock.schedule_once(self.analyze, 0.2)
                 return
 
-            if self.info.error:
+            if self.info._error:
                 raise RuntimeError("Issues during loading media %s: %s %s" %
-                                   (self.info.file, self.info.error.src, self.info.error.message))
+                                   (self.info.file, self.info._error.src, self.info._error.message))
 
             self.level.set_property('interval', math.ceil(self.info.duration / self.num_points() * Gst.SECOND))
             self.pipeline.set_state(Gst.State.PLAYING)

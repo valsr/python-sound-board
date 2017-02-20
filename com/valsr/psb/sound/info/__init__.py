@@ -39,15 +39,15 @@ class MediaInfoManager(object):
 
         Args:
             file: File path (key)
-            reload_on_error: Reload if the loader had an error
+            reload_on_error: Reload if the loader had an _error
 
         Returns:
-            MediaInfo (loaded media info, even on error) or None
+            MediaInfo (loaded media info, even on _error) or None
         """
         if file not in MediaInfoManager.loading:
             if file in MediaInfoManager.media_info:
                 info = MediaInfoManager.media_info[file]
-                if not (info.error and reload_on_error):
+                if not (info._error and reload_on_error):
                     return MediaInfoManager.media_info[file]
 
             Logger.debug('No media information found for %s', file)
@@ -69,7 +69,7 @@ class MediaInfoManager(object):
         info_struc = MediaInfo()
         info_struc.duration = info.duration
         info_struc.file = info.file
-        info_struc.error = info.error
+        info_struc._error = info._error
         info_struc.fingerprint = info.fingerprint
         info_struc.error_debug = info.error_debug
         MediaInfoManager.media_info[info.file] = info_struc
@@ -89,7 +89,7 @@ class MediaInfo(object):
         super().__init__(*args, **kwargs)
         self.duration = 0
         self.file = None
-        self.error = None
+        self._error = None
         self.error_debug = None
         self.fingerprint = 0
 

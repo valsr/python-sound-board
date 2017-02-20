@@ -23,7 +23,7 @@ class SaveDialogue(WindowBase):
         """Perform post open configuration"""
         self.get_ui('Files').path = self.cwd
         self.get_ui('PathInput').text = self.cwd
-        self.get_ui('Files').filters.append(self.ui_filter_files)
+        self.get_ui('Files').filters.append(self.project_file_filter)
 
     def create_root_ui(self):
         return Builder.load_file("ui/kv/save.kv")
@@ -48,8 +48,8 @@ class SaveDialogue(WindowBase):
 
         if os.path.exists(self.file):
             popup.show_yes_no_popup(title='File Exists', message='Fire %s exists. Overwrite file? ' % file_name,
-                                 yes_button_label='Overwrite', no_button_label='Cancel',
-                                 callback=self._save_overwrite_callback)
+                                    yes_button_label='Overwrite', no_button_label='Cancel',
+                                    callback=self._save_overwrite_callback)
             return
 
         self.close_state = WindowCloseState.OK
@@ -65,7 +65,7 @@ class SaveDialogue(WindowBase):
             self.close_state = WindowCloseState.OK
             self.dismiss()
 
-    def ui_filter_files(self, folder, file):
+    def project_file_filter(self, folder, file):
         """Filter used to filter only project files
 
         Args:
@@ -83,7 +83,7 @@ class SaveDialogue(WindowBase):
         ext = os.path.splitext(file)[1]
         return ext.lower() == '.psb'
 
-    def on_file_selection(self, *args):
+    def ui_file_selection(self, *args):
         """Handle selecting files in file view"""
         files = self.get_ui('Files')
 

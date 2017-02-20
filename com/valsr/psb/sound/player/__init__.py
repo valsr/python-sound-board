@@ -17,11 +17,11 @@ from kivy.logger import Logger
 
 
 _PLAYER_UPDATE_TIMEOUT_ = 0.2
-"""Timeout between waveform updates (callbacks)"""
+"""Timeout between player updates (callbacks)"""
 
 
 class PlayerBase(CallbackRegister):
-    """Base class for all waveform objects"""
+    """Base class for all player objects"""
     __metaclass__ = ABCMeta
 
     def __init__(self):
@@ -29,7 +29,7 @@ class PlayerBase(CallbackRegister):
         super().__init__()
 
         self._state = PlayerState.NOTINIT
-        self.error = None
+        self._error = None
         self.error_debug = None
         self.pipeline = None
         self.source = None
@@ -44,7 +44,7 @@ class PlayerBase(CallbackRegister):
     def __init(self):
         """Initialize all variables to their default state."""
         self._state = PlayerState.NOTINIT
-        self.error = None
+        self._error = None
         self.error_debug = None
         self.pipeline = None
         self.source = None
@@ -60,8 +60,12 @@ class PlayerBase(CallbackRegister):
 
     @property
     def id(self):
-        """Get waveform id"""
-        return id(self)
+        """Get player id
+
+        Returns:
+            string
+        """
+        return str(id(self))
 
     @abstractmethod
     def _set_up_pipeline(self):
@@ -107,15 +111,15 @@ class PlayerBase(CallbackRegister):
                     self.__finish()
                     self.state = PlayerState.ERROR
                     error, debug = message.parse_error()
-                    self.error = error
+                    self._error = error
                     self.error_debug = debug
-                ret = self.call('message', None, True, waveform=self, bus=bus, message=message)
+                ret = self.call('message', None, True, player=self, bus=bus, message=message)
                 if ret:
                     Logger.debug("Callback %s handled the event." % ret)
 
             # call the update callbacks
             if time.time() > next_update:
-                ret = self.call('update', None, True, waveform=self, delta=0)
+                ret = self.call('update', None, True, player=self, delta=0)
                 if ret:
                     Logger.debug("Callback %s handled the event." % ret)
 
@@ -195,10 +199,10 @@ class PlayerBase(CallbackRegister):
         pass
 
     def __stop(self, wait_for_stop=True):
-        """Called to stop the stream (usually due to error). Note: will call stop() method first.
+        """Called to stop the stream (usually due to _error). Note: will call stop() method first.
 
         Args:
-            wait_for_stop: Whether to wait for the waveform thread to exit or not (max 5 seconds)
+            wait_for_stop: Whether to wait for the player thread to exit or not (max 5 seconds)
         """
         self.stop()
         self.pipeline.set_state(Gst.State.NULL)
@@ -208,7 +212,7 @@ class PlayerBase(CallbackRegister):
         Logger.debug("Stopped playing %s" % self.id)
 
     def destroy(self):
-        """Called to terminate the waveform and free resources."""
+        """Called to terminate the player and free resources."""
         self.__stop()
         self.run_ = False
         if self.message_thread.is_alive():
@@ -217,7 +221,7 @@ class PlayerBase(CallbackRegister):
         if self.message_thread.is_alive():
             Logger.warning("Unable to stop thread")
         self.pipeline = None
-        Logger.debug("Destroyed waveform (%s)" % self.id)
+        Logger.debug("Destroyed player (%s)" % self.id)
 
     # Properties (select)
     @property
@@ -259,11 +263,11 @@ class PlayerBase(CallbackRegister):
     @property
     def error(self):
         """Error property getter"""
-        return self.error
+        return self._error
 
 
 class FilePlayer(PlayerBase):
-    """File waveform"""
+    """File player"""
 
     def __init__(self, file):
         """Constructor

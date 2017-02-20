@@ -42,6 +42,7 @@ class WindowManager(object):
         Returns:
             Created window
         """
+        Logger.debug('Creating new window by type %s', window_class)
         window = window_class(**args)
         if not isinstance(window, WindowBase):
             raise WrongWindowBaseException(window_class)
@@ -78,6 +79,8 @@ class WindowManager(object):
 
         WindowManager._windows.append((window.id, window))
 
+        window.on_create()
+
         return window
 
     @staticmethod
@@ -102,6 +105,7 @@ class WindowManager(object):
         Args:
             window_id: Window identifier
         """
+        Logger.debug('Opening window %s', window_id)
         window = WindowManager.window(window_id)
 
         if window:
@@ -123,6 +127,7 @@ class WindowManager(object):
             window_id: Window identifier
             force: If on_dismiss returns True
         """
+        Logger.debug('Closing window %s', window_id)
         window = WindowManager.window(window_id)
 
         if window:
@@ -145,6 +150,7 @@ class WindowManager(object):
         Args:
             window_id: Window identifier
         """
+        Logger.debug('Destroying window %s', window_id)
         window = WindowManager.window(window_id)
 
         if window:

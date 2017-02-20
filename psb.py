@@ -25,8 +25,7 @@ class PSB(App):
 
     def build(self):
         """Create the main window and open it"""
-        window = WindowManager.create_window(
-            MainWindow, None, {'draggable': 'None', 'title': 'PSB'})
+        window = WindowManager.create_window(MainWindow, None, {'draggable': 'None', 'title': 'PSB'})
         window.open()
         return None  # don't actually return a widget as WindowManager will take care of creating the root widget
 

@@ -23,7 +23,7 @@ class OpenDialogue(WindowBase):
         """Perform post open configuration"""
         self.get_ui('Files').path = self.cwd
         self.get_ui('PathInput').text = self.cwd
-        self.get_ui('Files').filters.append(self.ui_filter_files)
+        self.get_ui('Files').filters.append(self.project_file_filter)
 
     def create_root_ui(self):
         return Builder.load_file("ui/kv/open.kv")
@@ -47,7 +47,7 @@ class OpenDialogue(WindowBase):
         self.close_state = WindowCloseState.OK
         self.dismiss()
 
-    def ui_filter_files(self, folder, file):
+    def project_file_filter(self, folder, file):
         """File view filter for project files"""
         if os.path.isdir(file):
             return True
@@ -57,7 +57,7 @@ class OpenDialogue(WindowBase):
         ext = os.path.splitext(file)[1]
         return ext.lower() == '.psb'
 
-    def on_file_selection(self, *args):
+    def ui_file_selection(self, *args):
         """Handle file selection in file view"""
         files = self.get_ui('Files')
 
