@@ -64,7 +64,7 @@ class Waveform(PlayerBase):
         """Loaded property getter"""
         return self._loaded
 
-    def analyze(self):
+    def analyze(self, dt=None):
         """Analyze the stream (generate waveform information)"""
         if not self.loaded:
             if not self.info:

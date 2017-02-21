@@ -24,10 +24,11 @@ class PlayerBase(CallbackRegister):
     """Base class for all player objects"""
     __metaclass__ = ABCMeta
 
-    def __init__(self):
+    def __init__(self, player_id):
         """Constructor"""
         super().__init__()
 
+        self.id = player_id
         self._state = PlayerState.NOTINIT
         self._error = None
         self.error_debug = None
@@ -57,15 +58,6 @@ class PlayerBase(CallbackRegister):
     def _init(self):
         """Initialize all variables to their default state (overriding classes)"""
         pass
-
-    @property
-    def id(self):
-        """Get player id
-
-        Returns:
-            string
-        """
-        return str(id(self))
 
     @abstractmethod
     def _set_up_pipeline(self):
@@ -276,7 +268,7 @@ class FilePlayer(PlayerBase):
             file: File (path) to play
         """
         self.file = os.path.abspath(file)
-        super().__init__()
+        super().__init__("file://" + file)
 
     def _set_up_pipeline(self):
         # source

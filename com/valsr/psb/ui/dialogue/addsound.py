@@ -39,7 +39,7 @@ class AddSoundDialogue(WindowBase):
         if label.collide_point(*touch.pos):
             self.get_ui('autoplay_button').active = not self.get_ui('autoplay_button').active
 
-    def ui_on_cancel(self, *args):
+    def ui_cancel(self, *args):
         """Handles cancel button action"""
         if self.player_id is not None:
             PlayerManager.destroy_player(self.player_id)
@@ -47,7 +47,7 @@ class AddSoundDialogue(WindowBase):
         self.close_state = WindowCloseState.CANCEL
         self.dismiss()
 
-    def ui_on_open(self, *args):
+    def ui_open(self, *args):
         """Handles open button action"""
         if self.player_id is not None:
             PlayerManager.destroy_player(self.player_id)

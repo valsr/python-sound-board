@@ -138,7 +138,7 @@ class MediaInfoLoader(PlayerBase):
         """
         self.file = os.path.abspath(file)
         self._loaded = False
-        self.duration = 0
+        self._duration = 0
         self.fingerprint = 0
         self.md5 = hashlib.md5()
 
@@ -206,7 +206,7 @@ class MediaInfoLoader(PlayerBase):
 
             if message.type == Gst.MessageType.EOS:
                 _, dur = self.pipeline.query_duration(Gst.Format.TIME)
-                self.duration = dur / Gst.SECOND
+                self._duration = dur / Gst.SECOND
                 self.fingerprint = self.md5.hexdigest()
 
     def finish(self):
@@ -218,3 +218,7 @@ class MediaInfoLoader(PlayerBase):
         """Analyze the media stream"""
         if not self.loaded:
             self.pipeline.set_state(Gst.State.PLAYING)
+
+    @property
+    def duration(self):
+        return self._duration

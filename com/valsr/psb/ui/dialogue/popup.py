@@ -51,9 +51,10 @@ class PopupDialogue(Popup):
 
     def on_dismiss(self, *args):
         """Handle popup dismissal"""
-        self.dismissed = True
-        if self.cb:
-            self.cb(self)
+        if not self.dismissed:
+            self.dismissed = True
+            if self.cb:
+                self.cb(self)
 
 
 def show_ok_popup(title='Title Message', message='Message', button='Ok', parent=None, **kwargs):

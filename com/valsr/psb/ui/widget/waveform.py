@@ -128,7 +128,7 @@ class WaveformWidget(Widget):
 
         return (x, y)
 
-    def on_file_(self, *args):
+    def on_file(self, *args):
         """Change the file (waveform)"""
         self._init()
 
@@ -137,6 +137,7 @@ class WaveformWidget(Widget):
         if not waveform:
             _, waveform = WaveformManager.create_waveform(args[1])
 
+        self.file = args[1]
         self._waveform = waveform
         waveform.analyze()
         self._wait_for_waveform_analyze()
