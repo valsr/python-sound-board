@@ -36,22 +36,30 @@ class MenuItem(Widget):
     id = StringProperty(str(uuid.uuid1()))
     """Menu item id"""
 
-    def __init__(self, select_cb=None, hover_cb=None, **kwargs):
+    def __init__(self, **kwargs):
         """Constructor
 
         Args:
-            select_cb: Selection callback to use
-            hover_cb: Hover callback to use
             kwargs: Named parameters
         """
         if self.__class__ is MenuItem:
             raise RuntimeError('You cannot use MenuItem directly.')
         self.parent_menu = None  # parent menu
-        self.select_cb = select_cb
-        self.hover_cb = hover_cb
         super().__init__(**kwargs)
 
     def on_hover(self, pos):
+        """On hover event"""
+        pass
+
+    def on_hover_out(self, item, pos):
+        """On hover out event"""
+        pass
+
+    def on_select(self, item, pos):
+        """On select event"""
+        pass
+
+    def _on_hover(self, item, pos):
         """Handles menu item hover action
 
         Args:
@@ -60,12 +68,9 @@ class MenuItem(Widget):
         if self.menu:
             self.menu.show(self.pos[0] + self.width - 10, self.pos[1] + self.height - 10, self)
 
-        if self.hover_cb:
-            return self.hover_cb(pos)
+        return self.dispatch("on_hover", self, pos)
 
-        return True
-
-    def on_hover_out(self, pos):
+    def _on_hover_out(self, pos):
         """Handles on hover out action (hide the menu)
 
         Args:
@@ -74,16 +79,15 @@ class MenuItem(Widget):
         if self.menu:
             self.menu.hide()
 
-    def on_select(self, touch):
+        return self.dispatch("on_hover_out", self, pos)
+
+    def _on_select(self, touch):
         """Handles selecting the menu
 
         Args:
             touch: Touch event that triggered the selection
         """
-        if self.select_cb:
-            return self.select_cb(touch)
-
-        return True
+        return self.dispatch("on_select", self, touch)
 
     @abstractmethod
     def _calculate_minimum_size(self):
@@ -132,6 +136,9 @@ class SimpleMenuItem(Label, MenuItem):
 
 class Menu(BoxLayout):
     """UI Menu. This menu works only with WindowBase class as it attaches it self to that window (or top root window)"""
+
+    __events__ = ("on_hover_over", "on_hover_out", "on_select", "on_open", "on_close")
+    """Events"""
 
     color = ListProperty([0.3, 0.3, 0.3, 0.75])
     """Background colour"""
@@ -233,6 +240,7 @@ class Menu(BoxLayout):
                 self.pos = (x - 10, y - self.height + 10)
                 Logger.debug("%s: Bind windows event", self)
                 Window.bind(mouse_pos=self.on_mouse_move)
+                self.dispatch("on_show", self, x, y)
             else:
                 Logger.debug('%s: No menu items in menu! Will not open', self)
         else:
@@ -248,6 +256,7 @@ class Menu(BoxLayout):
             for item in self.items:
                 if item.menu:
                     item.menu.hide()
+            self.dispatch("on_hide", self)
 
     def item_at_pos(self, pos):
         """Return item at given position
@@ -371,18 +380,21 @@ class Menu(BoxLayout):
                         if self.active_item:
                             previous_active = self.active_item
                             self.active_item = None
-                            previous_active.on_hover_out(pos)
+                            if not previous_active._on_hover_out(pos):
+                                self.root_menu().dispatch("on_hover_out", previous_active, pos)
                     else:
                         if self.active_item and self.active_item.id is not item.id:
                             previous_active = self.active_item
                             self.active_item = None
-                            previous_active.on_hover_out(pos)
+                            if not previous_active._on_hover_out(pos):
+                                self.root_menu().dispatch("on_hover_out", previous_active, pos)
                             Logger.debug('%s: De-activated menu item: %s', self, previous_active.id)
                             self._trigger_layout()
 
                         if not self.active_item:
                             self.active_item = item
-                            item.on_hover(pos)
+                            if not item._on_hover(pos):
+                                self.root_menu().dispatch("on_hover", self.active_item, pos)
                             self._trigger_layout()
                             Logger.debug('%s: Activated menu item: %s', self, item.id)
                 else:
@@ -408,16 +420,26 @@ class Menu(BoxLayout):
             if item:
                 Logger.debug('%s: Item selected %s', self, item.id)
 
-                if item.on_select(touch):
+                if not item._on_select(touch):
                     # find the top-most menu parent
-                    top_most = self
-                    while top_most.parent_menu_item:
-                        top_most = top_most.parent_menu_item.parent_menu
-
-                    top_most.selected_item = item
-                    top_most.hide()
+                    menu = self.root_menu()
+                    menu.selected_item = item
+                    menu.dispatch("on_select", menu, item)
+                    menu.hide()
 
             return True
+
+    def root_menu(self):
+        """Obtain the root/top most menu
+
+        Returns:
+            Menu
+        """
+        top_most = self
+        while top_most.parent_menu_item:
+            top_most = top_most.parent_menu_item.parent_menu
+
+        return top_most
 
     def _do_layout(self, *largs):
         if self.visible:
@@ -482,3 +504,15 @@ class Menu(BoxLayout):
             return widget
 
         return self.root_widget
+
+    def on_hover(self, pos):
+        """On hover event"""
+        pass
+
+    def on_hover_out(self, item, pos):
+        """On hover out event"""
+        pass
+
+    def on_select(self, item, pos):
+        """On select event"""
+        pass
