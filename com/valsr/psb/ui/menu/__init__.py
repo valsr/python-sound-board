@@ -53,6 +53,7 @@ class MenuItem(Widget):
             raise RuntimeError('You cannot use MenuItem directly.')
         self.parent_menu = None  # parent menu
         super().__init__(**kwargs)
+        self.id = str(uuid.uuid1())  # for some reason uuid are the same if the id is not reassigned
 
     def on_hover_over(self, item, pos):
         """On hover event"""
@@ -475,7 +476,6 @@ class Menu(BoxLayout):
             self.width = min_width + width_padding
             self.height = min_height + height_padding
 
-            print(self.size)
             # fix child widths
             child_width = self.width - width_padding
             for child in self.items:
