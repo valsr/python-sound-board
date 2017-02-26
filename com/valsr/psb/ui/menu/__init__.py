@@ -24,6 +24,13 @@ from kivy.uix.widget import Widget
 class MenuItem(Widget):
     """Menu item class"""
 
+    __events__ = ("on_hover_over", "on_hover_out", "on_select")
+    """Events:
+        on_hover_over: When (continuously fired) the mouse is hovering over the menu item
+        on_hover_out: When the mouse moves outside a menu item
+        on_select: When a menu item has been selected
+    """
+
     select_cb = ObjectProperty(None)
     """Selection callback. Called when the user selects a menu item"""
 
@@ -47,7 +54,7 @@ class MenuItem(Widget):
         self.parent_menu = None  # parent menu
         super().__init__(**kwargs)
 
-    def on_hover(self, pos):
+    def on_hover_over(self, item, pos):
         """On hover event"""
         pass
 
@@ -59,7 +66,7 @@ class MenuItem(Widget):
         """On select event"""
         pass
 
-    def _on_hover(self, item, pos):
+    def _on_hover_over(self, pos):
         """Handles menu item hover action
 
         Args:
@@ -68,7 +75,7 @@ class MenuItem(Widget):
         if self.menu:
             self.menu.show(self.pos[0] + self.width - 10, self.pos[1] + self.height - 10, self)
 
-        return self.dispatch("on_hover", self, pos)
+        return self.dispatch("on_hover_over", self, pos)
 
     def _on_hover_out(self, pos):
         """Handles on hover out action (hide the menu)
@@ -138,7 +145,14 @@ class Menu(BoxLayout):
     """UI Menu. This menu works only with WindowBase class as it attaches it self to that window (or top root window)"""
 
     __events__ = ("on_hover_over", "on_hover_out", "on_select", "on_open", "on_close")
-    """Events"""
+    """Events:
+        on_hover_over: When (continuously fired) the mouse is hovering over the menu item (will not fire if the menu
+            item handled the event)
+        on_hover_out: When the mouse moves outside a menu item (will not fire if the menu item handled the event)
+        on_select: When a menu item has been selected (will not fire if the menu item handled the event)
+        on_open: After the menu has been opened
+        on_close: After the menu has been closed but before closing child menus
+    """
 
     color = ListProperty([0.3, 0.3, 0.3, 0.75])
     """Background colour"""
@@ -231,16 +245,16 @@ class Menu(BoxLayout):
         """
         if not self.visible:
             if len(self.items) > 0:
-                Logger.debug('%s: Open menu', self)
-                self.visible = True
+                Logger.debug('%s: Open menu at %d %d', self, x, y)
                 if not self.root_widget:
                     self.root_widget = self._find_root_wiget(widget)
                 self.root_widget.add_widget(self)
+                self.visible = True
                 self._do_layout()
                 self.pos = (x - 10, y - self.height + 10)
                 Logger.debug("%s: Bind windows event", self)
                 Window.bind(mouse_pos=self.on_mouse_move)
-                self.dispatch("on_show", self, x, y)
+                self.dispatch("on_open", self, x, y)
             else:
                 Logger.debug('%s: No menu items in menu! Will not open', self)
         else:
@@ -256,7 +270,7 @@ class Menu(BoxLayout):
             for item in self.items:
                 if item.menu:
                     item.menu.hide()
-            self.dispatch("on_hide", self)
+            self.dispatch("on_close", self)
 
     def item_at_pos(self, pos):
         """Return item at given position
@@ -393,8 +407,8 @@ class Menu(BoxLayout):
 
                         if not self.active_item:
                             self.active_item = item
-                            if not item._on_hover(pos):
-                                self.root_menu().dispatch("on_hover", self.active_item, pos)
+                            if not item._on_hover_over(pos):
+                                self.root_menu().dispatch("on_hover_over", self.active_item, pos)
                             self._trigger_layout()
                             Logger.debug('%s: Activated menu item: %s', self, item.id)
                 else:
@@ -446,8 +460,10 @@ class Menu(BoxLayout):
             self.clear_widgets()
             self._draw_background()
 
-            min_width = self.padding[0] + self.padding[2]
-            min_height = self.padding[1] + self.padding[3]
+            height_padding = self.padding[1] + self.padding[3]
+            width_padding = self.padding[0] + self.padding[2]
+            min_width = 0
+            min_height = 0
             for child in self.items:
                 child.size = child._calculate_minimum_size()
                 min_width = max(min_width, child.width)
@@ -456,11 +472,12 @@ class Menu(BoxLayout):
             # fix bottom height (no spacing)
             min_height -= self.spacing
 
-            self.width = max(min_width, self.width)
-            self.height = max(min_height, self.height)
+            self.width = min_width + width_padding
+            self.height = min_height + height_padding
 
+            print(self.size)
             # fix child widths
-            child_width = self.width - self.padding[0] - self.padding[1]
+            child_width = self.width - width_padding
             for child in self.items:
                 child.width = child_width
 
@@ -505,7 +522,7 @@ class Menu(BoxLayout):
 
         return self.root_widget
 
-    def on_hover(self, pos):
+    def on_hover_over(self, item, pos):
         """On hover event"""
         pass
 
@@ -515,4 +532,12 @@ class Menu(BoxLayout):
 
     def on_select(self, item, pos):
         """On select event"""
+        pass
+
+    def on_open(self, menu, x, y):
+        """On open event"""
+        pass
+
+    def on_close(self, menu):
+        """On close event"""
         pass
