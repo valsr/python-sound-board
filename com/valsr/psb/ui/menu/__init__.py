@@ -135,7 +135,7 @@ class SimpleMenuItem(Label, MenuItem):
     """Simple label menu item based on kivy Label class"""
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(halign='left', size_hint=(1, None), markup=True, **kwargs)
 
     def _calculate_minimum_size(self):
         self.texture_update()
@@ -475,11 +475,6 @@ class Menu(BoxLayout):
 
             self.width = min_width + width_padding
             self.height = min_height + height_padding
-
-            # fix child widths
-            child_width = self.width - width_padding
-            for child in self.items:
-                child.width = child_width
 
             for child in self.items:
                 self.add_widget(child)
