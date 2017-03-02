@@ -45,6 +45,8 @@ class MainWindow(WindowBase):
         self.audio_files_tree = self.get_ui('audio_files')
         utility.load_project('test.psb', self.audio_files_tree)
 
+        self.audio_files_tree.bind(on_touch_up=self.ui_file_tree_touch_up)
+
     def ui_add_sound(self, *args):
         """Handle add sound button event"""
         self._add_sound_window = WindowManager.create_window(AddSoundDialogue, self,
@@ -138,12 +140,33 @@ class MainWindow(WindowBase):
             node = DraggableTreeViewNode(label=text)
             parent_node.add_node(node).open(True)
 
-    def ui_file_tree_touch_up(self, file_node, touch):
+    def ui_file_tree_touch_up(self, tree, touch):
         """Handle file tree touch events - opens menu"""
-        if touch.button == 'left':
+        if touch.button == 'right':
             # create menu
-            Logger.debug('Touch up from %s', file_node.text)
-            m = Menu(controller=self.controller_)
-            m.addMenuItem(SimpleMenuItem(text='test'))
-            m.addMenuItem(SimpleMenuItem(text='test2'))
-            m.open()
+            Logger.debug('Touch up from tree %s', tree.id)
+
+            node = tree.get_node_at_pos(touch.pos)
+            if node:
+                # construct menu
+                m = Menu()
+                m.bind(on_select=self.on_menu_press)
+
+                m.add_menu_item(SimpleMenuItem(text="Rename '%s'" % node._label.text, data=node))
+
+                pos = node.to_window(touch.pos[0], touch.pos[1])  # need to translate to proper coordinates
+                m.show(pos[0], pos[1], node)
+
+    def on_menu_press(self, menu, item, pos):
+        node = item.data
+
+        if node:
+            popup.show_text_input_popup(title='Rename Category', message='Enter New Category Name', input_text=node._label.text,
+                                        yes_button_label='Rename', no_button_label='Cancel', parent=self,
+                                        callback=lambda x: self._rename_tree_node(node.id, x.text))
+            pass
+
+    def _rename_tree_node(self, node_id, text):
+        node = self.audio_files_tree.find_node(lambda x: x.id == node_id)
+        if node:
+            node.label = text

@@ -127,6 +127,9 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
     ui = ObjectProperty(defaultvalue=None, allownone=True)
     """UI component to use as component"""
 
+    label = StringProperty(defaultvalue=None, allownone=True)
+    """String label for node"""
+
     def __init__(self, node_id=None, data=None, label=None, **kwargs):
         super().__init__(**kwargs)
         if not node_id:
@@ -214,7 +217,9 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
             if cb(node):
                 return node
             elif descend:
-                node.find_node(cb, descend)
+                found = node.find_node(cb, descend)
+                if found:
+                    return found
 
         return None
 
@@ -249,3 +254,6 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
     def toggle(self):
         """Toggle node open/close state"""
         self._tree.toggle_node(self)
+
+    def on_label(self, *args):
+        self._label.text = args[1]

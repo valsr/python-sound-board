@@ -51,7 +51,7 @@ def serialize_node_structure(node):
 
     d = {}
     d['id'] = node.id
-    d['label'] = node._label.text
+    d['label'] = node.label
 
     if isinstance(node.data, MediaInfo):
         d['data'] = node.data.serialize()

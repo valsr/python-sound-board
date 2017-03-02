@@ -43,7 +43,7 @@ class MenuItem(Widget):
     id = StringProperty(str(uuid.uuid1()))
     """Menu item id"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, data=None, **kwargs):
         """Constructor
 
         Args:
@@ -54,6 +54,7 @@ class MenuItem(Widget):
         self.parent_menu = None  # parent menu
         super().__init__(**kwargs)
         self.id = str(uuid.uuid1())  # for some reason uuid are the same if the id is not reassigned
+        self.data = data
 
     def on_hover_over(self, item, pos):
         """On hover event"""
@@ -439,7 +440,7 @@ class Menu(BoxLayout):
                     # find the top-most menu parent
                     menu = self.root_menu()
                     menu.selected_item = item
-                    menu.dispatch("on_select", menu, item)
+                    menu.dispatch("on_select", item, touch.pos)
                     menu.hide()
 
             return True
