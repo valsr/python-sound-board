@@ -1,0 +1,38 @@
+<LaneWidget@BoxLayout>:
+	size_hint_y: None
+	BoxLayout:
+		canvas.before:
+			Color:
+				rgba: 0.5, 0.5, 0.5, 0.5
+			Rectangle:
+				pos: self.pos
+				size: self.size
+		width: 150
+		size_hint_x: None
+		orientation: 'vertical'
+		TextInput:
+			height: 30
+			size_hint_y: None
+			text: 'Lane'
+		BoxLayout:
+			height: 50
+			orientation: 'horizontal'
+		BoxLayout:
+			height: 24
+			Label:
+				width: 10
+				text: 'L'
+		BoxLayout:
+			height: 24
+			Label:
+				width: 10
+				text: 'R'
+	BoxLayout:
+		orientation: 'vertical'
+		canvas.before:
+			Color:
+				rgba: 0.25, 0.25, 0.25, 0.5
+			Rectangle:
+				pos: self.pos
+				size: self.size
+		

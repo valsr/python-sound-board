@@ -21,6 +21,7 @@ from com.valsr.psb.ui.dialogue.open import OpenDialogue
 from com.valsr.psb.ui.dialogue.save import SaveDialogue
 from com.valsr.psb.ui.menu import SimpleMenuItem, Menu
 from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeView, DraggableTreeViewNode
+from com.valsr.psb.ui.widget.lane import LaneWidget
 from com.valsr.psb.ui.window.base import WindowBase, WindowCloseState
 from com.valsr.psb.ui.window.manager import WindowManager
 
@@ -142,27 +143,31 @@ class MainWindow(WindowBase):
 
     def ui_file_tree_touch_up(self, tree, touch):
         """Handle file tree touch events - opens menu"""
-        if touch.button == 'right':
-            # create menu
-            Logger.debug('Touch up from tree %s', tree.id)
+        pos = tree.to_window(touch.pos[0], touch.pos[1], relative=True)
+        print(pos)
+        print(tree.x, tree.right, tree.y, tree.top)
+        if tree.collide_point(*pos):
+            if touch.button == 'right':
+                # create menu
+                Logger.debug('Touch up from tree %s', tree.id)
 
-            node = tree.get_node_at_pos(touch.pos)
-            if node and node is not self.audio_files_tree.root:
-                # construct menu
-                m = Menu()
-                m.bind(on_select=self.on_menu_press)
+                node = tree.get_node_at_pos(touch.pos)
+                if node and node is not self.audio_files_tree.root:
+                    # construct menu
+                    m = Menu()
+                    m.bind(on_select=self.on_menu_press)
 
-                m.add_menu_item(SimpleMenuItem(text="Rename '%s'" % node._label.text, data=('RENAME', node)))
+                    m.add_menu_item(SimpleMenuItem(text="Rename '%s'" % node._label.text, data=('RENAME', node)))
 
-                if node.is_leaf:
-                    m.add_menu_item(
-                        SimpleMenuItem(text="Delete sound '%s'" % node._label.text, data=('DELETE', node)))
-                else:
-                    m.add_menu_item(
-                        SimpleMenuItem(text="Delete category '%s'" % node._label.text, data=('DELETE', node)))
+                    if node.is_leaf:
+                        m.add_menu_item(
+                            SimpleMenuItem(text="Delete sound '%s'" % node._label.text, data=('DELETE', node)))
+                    else:
+                        m.add_menu_item(
+                            SimpleMenuItem(text="Delete category '%s'" % node._label.text, data=('DELETE', node)))
 
-                pos = node.to_window(touch.pos[0], touch.pos[1])  # need to translate to proper coordinates
-                m.show(pos[0], pos[1], node)
+                    pos = node.to_window(touch.pos[0], touch.pos[1])  # need to translate to proper coordinates
+                    m.show(pos[0], pos[1], node)
 
     def on_menu_press(self, menu, item, pos):
         action, node = item.data
@@ -185,3 +190,10 @@ class MainWindow(WindowBase):
 
         if node:
             self.audio_files_tree.remove_node(node)
+
+    def ui_add_lane(self, position='bottom'):
+        ui_lanes = self.get_ui('lanes')
+
+        lane = LaneWidget()
+        ui_lanes.add_widget(lane)
+        print(lane.pos, lane.size)

@@ -56,7 +56,6 @@ GridLayout:
 					text: 'Search'
 				ScrollView:
 					DraggableTreeView:
-						size_hint_y: None
 						size_hint_x: 1
 						id: audio_files
 						hide_root: False
@@ -77,18 +76,18 @@ GridLayout:
 		BoxLayout:
 			orientation: 'vertical'
 			BoxLayout:
-				id: test
+				size_hint_y: 1
+				id: lanes
 				orientation: 'vertical'
-			Splitter:
-				sizable_from: 'top'
-				min_size: 150
-				max_size: 250
+			BoxLayout:
+				height: 50
 				size_hint_y: None
-				height: 200
-				keep_within_parent: True
-				strip_size: '8pt'
-				BoxLayout:
-					ImageButton:
-						label: 'New'
-						source: 'hotel'
-
+				ImageButton:
+					label: 'New Lane'
+					height: 50
+					source: 'plus-square-o'
+					on_press: root.parent.ui_add_lane()
+				ImageButton:
+					label: 'Stop All'
+					height: 50
+					source: 'stop'
