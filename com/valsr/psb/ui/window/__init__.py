@@ -147,26 +147,41 @@ class MainWindow(WindowBase):
             Logger.debug('Touch up from tree %s', tree.id)
 
             node = tree.get_node_at_pos(touch.pos)
-            if node:
+            if node and node is not self.audio_files_tree.root:
                 # construct menu
                 m = Menu()
                 m.bind(on_select=self.on_menu_press)
 
-                m.add_menu_item(SimpleMenuItem(text="Rename '%s'" % node._label.text, data=node))
+                m.add_menu_item(SimpleMenuItem(text="Rename '%s'" % node._label.text, data=('RENAME', node)))
+
+                if node.is_leaf:
+                    m.add_menu_item(
+                        SimpleMenuItem(text="Delete sound '%s'" % node._label.text, data=('DELETE', node)))
+                else:
+                    m.add_menu_item(
+                        SimpleMenuItem(text="Delete category '%s'" % node._label.text, data=('DELETE', node)))
 
                 pos = node.to_window(touch.pos[0], touch.pos[1])  # need to translate to proper coordinates
                 m.show(pos[0], pos[1], node)
 
     def on_menu_press(self, menu, item, pos):
-        node = item.data
+        action, node = item.data
 
         if node:
-            popup.show_text_input_popup(title='Rename Category', message='Enter New Category Name', input_text=node._label.text,
-                                        yes_button_label='Rename', no_button_label='Cancel', parent=self,
-                                        callback=lambda x: self._rename_tree_node(node.id, x.text))
-            pass
+            if action == 'RENAME':
+                popup.show_text_input_popup(title='Rename Category', message='Enter New Category Name', input_text=node._label.text,
+                                            yes_button_label='Rename', no_button_label='Cancel', parent=self,
+                                            callback=lambda x: self._rename_tree_node(node.id, x.text))
+            elif action == 'DELETE':
+                self._delete_tree_node(node.id)
 
     def _rename_tree_node(self, node_id, text):
         node = self.audio_files_tree.find_node(lambda x: x.id == node_id)
         if node:
             node.label = text
+
+    def _delete_tree_node(self, node_id):
+        node = self.audio_files_tree.find_node(lambda x: x.id == node_id)
+
+        if node:
+            self.audio_files_tree.remove_node(node)
