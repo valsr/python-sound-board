@@ -45,10 +45,10 @@ def serialize_node_structure(node):
     Returns:
         String: serialized object
     """
-    from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeViewNode
+    from com.valsr.psb.ui.widget.audiotree import AudioTreeViewNode
 
-    if not isinstance(node, DraggableTreeViewNode):
-        raise RuntimeError("Can only serialize DraggableTreeViewNodes")
+    if not isinstance(node, AudioTreeViewNode):
+        raise RuntimeError("Can only serialize AudioTreeViewNode")
 
     d = {}
     d['id'] = node.id
@@ -74,10 +74,10 @@ def deserialize_node_structure(d, parent):
         d: Dictionary to deserialize
         parent: Parent root node
     """
-    from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeViewNode
+    from com.valsr.psb.ui.widget.audiotree import AudioTreeViewNode
 
     data = MediaInfo.deserialize(d['data']) if d['data'] else None
-    node = DraggableTreeViewNode(id=d['id'], data=data, label=d['label'])
+    node = AudioTreeViewNode(id=d['id'], data=data, label=d['label'])
     node.is_open = True
     parent.add_node(node)
     if 'children' in d:

@@ -20,11 +20,12 @@ from com.valsr.psb.ui.dialogue.addsound import AddSoundDialogue
 from com.valsr.psb.ui.dialogue.open import OpenDialogue
 from com.valsr.psb.ui.dialogue.save import SaveDialogue
 from com.valsr.psb.ui.menu import SimpleMenuItem, Menu
-from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeView, DraggableTreeViewNode
+from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeView
 from com.valsr.psb.ui.widget.lane import LaneWidget
 from com.valsr.psb.ui.window.base import WindowBase, WindowCloseState
 from com.valsr.psb.ui.window.manager import WindowManager
 from com.valsr.psb.utility import MainTreeMenuActions
+from com.valsr.psb.ui.widget.audiotree import AudioTreeViewNode
 
 
 class MainWindow(WindowBase):
@@ -59,7 +60,7 @@ class MainWindow(WindowBase):
         """Handle dismissal of the add sound dialogue"""
         if self._add_sound_window.close_state == WindowCloseState.OK:
             if not self.audio_files_tree.root.find_node(lambda x: x._label.text.lower() == 'uncategorized'):
-                self.audio_files_tree.add_node(DraggableTreeViewNode(label='Uncategorized'))
+                self.audio_files_tree.add_node(AudioTreeViewNode(label='Uncategorized'))
 
             self._add_audio_file(self._add_sound_window.file)
         else:
@@ -79,7 +80,7 @@ class MainWindow(WindowBase):
 
         Logger.debug("Adding to %s to collection", file)
         parent = self.audio_files_tree.root.find_node(lambda x: x._label.text.lower() == 'uncategorized', False)
-        parent.add_node(DraggableTreeViewNode(id=file, label=os.path.basename(file), data=info))
+        parent.add_node(AudioTreeViewNode(id=file, label=os.path.basename(file), data=info))
 
     def ui_save_project(self, *args):
         """Handle save button event"""
@@ -138,7 +139,7 @@ class MainWindow(WindowBase):
                     'New Category', message='Category \'%s\' already exists within \'%s\'' % (text, parent_node.id))
                 return
 
-            node = DraggableTreeViewNode(label=text)
+            node = AudioTreeViewNode(label=text)
             parent_node.add_node(node).open(True)
 
     def ui_file_tree_touch_up(self, tree, touch):

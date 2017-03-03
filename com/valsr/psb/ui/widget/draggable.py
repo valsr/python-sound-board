@@ -19,7 +19,7 @@ class Draggable(Widget):
     """Whether dragging is enabled"""
 
     draggable_offset = NumericProperty(30)
-    """Minimum drag distance before drag statrs"""
+    """Minimum drag distance before drag stars"""
 
     draggableBoundWindow = ObjectProperty(defaultvalue=None, allownone=True)
     """Bound dragging to this window"""
@@ -40,7 +40,6 @@ class Draggable(Widget):
             touch.grab(self)
             self._grab_pos = touch.pos
             self._grab_offset = self.to_local(touch.pos[0], touch.pos[1], True)
-            self.dispatch('on_drag', self, touch)
             return True
 
     def on_touch_move(self, touch):
@@ -48,20 +47,20 @@ class Draggable(Widget):
             distance = abs(touch.pos[0] - self._grab_pos[0]) + abs(touch.pos[1] - self._grab_pos[1])
             if not self._detached:
                 if distance > self.draggable_offset:
-                    Logger.debug('detaching')
+                    Logger.debug('drag started')
                     root_widget = self._find_root_wiget()
                     size = self.size
                     self._original_parent = self.parent
 
                     # do detach or copy
-                    self._tree.remove_node(self)
-                    self._original_parent._do_layout()
+                    self._drag_detach_parent()
 
                     # re-attach
                     root_widget.add_widget(self)
                     self._detached = True
                     self.size_hint = (None, None)
                     self.size = size
+                    self.dispatch('on_drag', self, touch)
             else:
                 self.pos = (touch.pos[0] - self._grab_offset[0], touch.pos[1] - self._grab_offset[1])
                 for widget in self.parent.walk():
@@ -119,3 +118,7 @@ class Draggable(Widget):
 
     def on_drag(self, draggable, touch):
         pass
+
+    def _drag_detach_parent(self):
+        self._original_parent.remove_widget(self)
+        self._original_parent._do_layout()
