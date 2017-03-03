@@ -7,6 +7,7 @@ import json
 from kivy.logger import Logger
 
 from com.valsr.psb.sound.info import MediaInfo
+from enum import Enum
 
 
 def save_project(file, tree_file_structure=None, stream_list=None):
@@ -116,3 +117,9 @@ def allowed_audio_formats():
         List
     """
     return ['.mp3', '.wav', '.flac', '.ogg', '.mp4']
+
+
+class MainTreeMenuActions(Enum):
+    """Main tree menu actions"""
+    RENAME = 1
+    DELETE = 2

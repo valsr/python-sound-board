@@ -55,10 +55,12 @@ GridLayout:
 					size_hint_y: None
 					text: 'Search'
 				ScrollView:
+					size_hint: (1,1)
 					DraggableTreeView:
-						size_hint_x: 1
 						id: audio_files
 						hide_root: False
+						size_hint: (1,None)
+						height: self.minimum_height
 				ImageButton:
 					id: add_category
 					on_press: root.parent.ui_add_tree_category()
@@ -75,10 +77,13 @@ GridLayout:
 					size_hint_y: None		
 		BoxLayout:
 			orientation: 'vertical'
-			BoxLayout:
-				size_hint_y: 1
-				id: lanes
-				orientation: 'vertical'
+			ScrollView:
+				size_hint: (1, 1)
+				GridLayout:
+					id: lanes
+					cols:1
+					size_hint: (1, None)
+					height: self.minimum_height
 			BoxLayout:
 				height: 50
 				size_hint_y: None

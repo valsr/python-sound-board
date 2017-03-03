@@ -24,6 +24,7 @@ from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeView, Draggab
 from com.valsr.psb.ui.widget.lane import LaneWidget
 from com.valsr.psb.ui.window.base import WindowBase, WindowCloseState
 from com.valsr.psb.ui.window.manager import WindowManager
+from com.valsr.psb.utility import MainTreeMenuActions
 
 
 class MainWindow(WindowBase):
@@ -45,7 +46,6 @@ class MainWindow(WindowBase):
     def on_create(self):
         self.audio_files_tree = self.get_ui('audio_files')
         utility.load_project('test.psb', self.audio_files_tree)
-
         self.audio_files_tree.bind(on_touch_up=self.ui_file_tree_touch_up)
 
     def ui_add_sound(self, *args):
@@ -144,8 +144,7 @@ class MainWindow(WindowBase):
     def ui_file_tree_touch_up(self, tree, touch):
         """Handle file tree touch events - opens menu"""
         pos = tree.to_window(touch.pos[0], touch.pos[1], relative=True)
-        print(pos)
-        print(tree.x, tree.right, tree.y, tree.top)
+
         if tree.collide_point(*pos):
             if touch.button == 'right':
                 # create menu
@@ -157,14 +156,15 @@ class MainWindow(WindowBase):
                     m = Menu()
                     m.bind(on_select=self.on_menu_press)
 
-                    m.add_menu_item(SimpleMenuItem(text="Rename '%s'" % node._label.text, data=('RENAME', node)))
+                    m.add_menu_item(
+                        SimpleMenuItem(text="Rename '%s'" % node._label.text, data=(MainTreeMenuActions.RENAME, node)))
 
                     if node.is_leaf:
                         m.add_menu_item(
-                            SimpleMenuItem(text="Delete sound '%s'" % node._label.text, data=('DELETE', node)))
+                            SimpleMenuItem(text="Delete sound '%s'" % node._label.text, data=(MainTreeMenuActions.DELETE, node)))
                     else:
                         m.add_menu_item(
-                            SimpleMenuItem(text="Delete category '%s'" % node._label.text, data=('DELETE', node)))
+                            SimpleMenuItem(text="Delete category '%s'" % node._label.text, data=(MainTreeMenuActions.DELETE, node)))
 
                     pos = node.to_window(touch.pos[0], touch.pos[1])  # need to translate to proper coordinates
                     m.show(pos[0], pos[1], node)
@@ -173,11 +173,11 @@ class MainWindow(WindowBase):
         action, node = item.data
 
         if node:
-            if action == 'RENAME':
+            if action == MainTreeMenuActions.RENAME:
                 popup.show_text_input_popup(title='Rename Category', message='Enter New Category Name', input_text=node._label.text,
                                             yes_button_label='Rename', no_button_label='Cancel', parent=self,
                                             callback=lambda x: self._rename_tree_node(node.id, x.text))
-            elif action == 'DELETE':
+            elif action == MainTreeMenuActions.DELETE:
                 self._delete_tree_node(node.id)
 
     def _rename_tree_node(self, node_id, text):
@@ -196,4 +196,3 @@ class MainWindow(WindowBase):
 
         lane = LaneWidget()
         ui_lanes.add_widget(lane)
-        print(lane.pos, lane.size)
