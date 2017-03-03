@@ -78,7 +78,7 @@ class DraggableTreeView(TreeView, Droppable):
         """
         return self.root.find_node(cb, True)
 
-    def on_drag_drop(self, draggable, touch):
+    def on_drop(self, draggable, touch):
         if isinstance(draggable, DraggableTreeViewNode):
             node = self.get_node_at_pos(self.to_widget(*touch.pos))
             if not node:
@@ -95,7 +95,7 @@ class DraggableTreeView(TreeView, Droppable):
 
         return False
 
-    def on_drag_over(self, draggable, touch):
+    def on_hover(self, draggable, touch):
         node = self.get_node_at_pos(self.to_widget(*touch.pos))
 
         if not node:

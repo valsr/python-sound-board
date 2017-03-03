@@ -3,7 +3,6 @@ Created on Feb 4, 2017
 
 @author: valsr <valsr@valsr.com>
 """
-from abc import ABCMeta
 from kivy.core.window.window_sdl2 import WindowSDL
 from kivy.logger import Logger
 from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty
@@ -13,7 +12,8 @@ from com.valsr.psb.ui.widget.droppable import Droppable
 
 class Draggable(Widget):
     """Draggable class interface"""
-    __metaclass__ = ABCMeta
+
+    __events__ = ('on_drag', 'on_drop')
 
     draggable = BooleanProperty(True)
     """Whether dragging is enabled"""
@@ -40,6 +40,7 @@ class Draggable(Widget):
             touch.grab(self)
             self._grab_pos = touch.pos
             self._grab_offset = self.to_local(touch.pos[0], touch.pos[1], True)
+            self.dispatch('on_drag', self, touch)
             return True
 
     def on_touch_move(self, touch):
@@ -85,15 +86,17 @@ class Draggable(Widget):
                     if isinstance(widget, Droppable):
                         x, y = widget.to_widget(*touch.pos)
                         if widget.collide_point(x, y):
-                            if widget._drag_drop(self, touch):
+                            if widget._drop(self, touch):
+                                self.dispatch('on_drop', self, widget, touch)
                                 dropped = True
                                 break
 
                 # if not, drop back to original parent
                 if not dropped:
-                    Logger.debug('No drop recepients, returning to original parent')
-                    if not self._original_parent._drag_drop(self, touch):
+                    Logger.debug('No drop recipients, returning to original parent')
+                    if not self._original_parent._drop(self, touch):
                         raise RuntimeError('Previous parent rejected us!!!')
+                    self.dispatch('on_drop', self, self._original_parent, touch)
 
                 self._detached = False
 
@@ -110,3 +113,9 @@ class Draggable(Widget):
             return parent
 
         return None
+
+    def on_drop(self, draggable, droppable, touch):
+        pass
+
+    def on_drag(self, draggable, touch):
+        pass
