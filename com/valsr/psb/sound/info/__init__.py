@@ -93,12 +93,20 @@ class MediaInfo(object):
         self.error_debug = None
         self.fingerprint = 0
 
-    def serialize(self):
+    def serialize(self, relative_file=False, relative_root=''):
         """Serialize it self
 
+        Args:
+            relative_file: Whether to use relative file path (to running app)
+            relative_root: Root to use for relative path correction
         Returns:
             Object dictionary
         """
+        if relative_file:
+            d = self.__dict__
+            if os.path.isabs(d['file']):
+                d['file'] = os.path.relpath(d['file'], relative_root)
+
         return self.__dict__
 
     def update(self, **entries):
@@ -108,6 +116,9 @@ class MediaInfo(object):
             entries: Dictionary entries to update
         """
         self.__dict__.update(entries)
+
+        if not os.path.isabs(self.file):
+            self.file = os.path.abspath(self.file)
 
     @staticmethod
     def deserialize(entries):

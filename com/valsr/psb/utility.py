@@ -8,6 +8,7 @@ from kivy.logger import Logger
 
 from com.valsr.psb.sound.info import MediaInfo
 from enum import Enum
+import os
 
 
 def save_project(file, tree_file_structure=None, stream_list=None):
@@ -24,7 +25,7 @@ def save_project(file, tree_file_structure=None, stream_list=None):
     files = []
     if tree_file_structure:
         for child in tree_file_structure.root.nodes:
-            files.append(serialize_node_structure(child))
+            files.append(serialize_node_structure(child, save_file=file))
         json_dict['files'] = files
 
     if stream_list:
@@ -36,7 +37,7 @@ def save_project(file, tree_file_structure=None, stream_list=None):
     Logger.info('Project successfully saved to file %s', file)
 
 
-def serialize_node_structure(node):
+def serialize_node_structure(node, save_file):
     """Serialize node structure to a string
 
     Args:
@@ -55,14 +56,14 @@ def serialize_node_structure(node):
     d['label'] = node.label
 
     if isinstance(node.data, MediaInfo):
-        d['data'] = node.data.serialize()
+        d['data'] = node.data.serialize(relative_file=True, relative_root=os.path.dirname(save_file))
     else:
         d['data'] = None
 
     # serialize children
     d['children'] = []
     for child in node.nodes:
-        d['children'].append(serialize_node_structure(child))
+        d['children'].append(serialize_node_structure(child, save_file=save_file))
 
     return d
 
