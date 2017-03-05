@@ -320,6 +320,44 @@ class TestGenericTreeNode(unittest.TestCase):
         n.detach()
         self.assertIsNone(n.parent())
         self.assertEqual(len(self.node.children()), 0)
+
+    def test_clone(self):
+        n = self.node.clone()
+
+        self.assertNotEqual(n.id, self.node.id)
+        self.assertDictEqual(n.get_data(), self.node.get_data())
+
+    def test_clone_child_order(self):
+        for i in range(0, 10):
+            self.node.add_node(GenericTreeNode(order=i))
+
+        n = self.node.clone()
+
+        for i in range(0, 10):
+            self.assertEqual(n.node_at(i).order, self.node.node_at(i).order)
+
+    def test_clone_shallow(self):
+        self.node.test = {'immutable': 1, 'object': object()}
+        self.node.variable = "some data"
+
+        n = self.node.clone()
+
+        self.assertEqual(id(n.test['immutable']), id(self.node.test['immutable']))
+        self.assertEqual(id(n.test['object']), id(self.node.test['object']))
+        self.assertEqual(id(n.test), id(self.node.test))
+        self.assertEqual(id(n.variable), id(self.node.variable))
+
+    def test_clone_deep(self):
+        self.node.test = {'immutable': 1, 'object': object()}
+        self.node.variable = "some data"
+
+        n = self.node.clone(deep=True)
+
+        self.assertEqual(id(n.test['immutable']), id(self.node.test['immutable']))
+        self.assertNotEqual(id(n.test['object']), id(self.node.test['object']))
+        self.assertNotEqual(id(n.test), id(self.node.test))
+        self.assertEqual(id(n.variable), id(self.node.variable))
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

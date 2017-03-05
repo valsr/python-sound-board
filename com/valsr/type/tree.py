@@ -4,6 +4,7 @@ Created on Mar 3, 2017
 @author: valsr <valsr@valsr.com>
 """
 import uuid
+import copy
 
 
 class GenericTreeNode(object):
@@ -288,3 +289,23 @@ class GenericTreeNode(object):
             self._parent.remove_node(self)
 
         return self
+
+    def clone(self, deep=False):
+        """Performs a shallow clone of the data and children (new ids will be generated)
+
+        Args:
+            deep: Perform a deep copy instead
+
+        Returns:
+            GenericTreeNode cloned node
+        """
+        node = GenericTreeNode()
+
+        data = self.get_data()
+        node.set_data(copy.copy(data) if not deep else copy.deepcopy(data))
+
+        for child in self.children():
+            child_node = child.clone()
+            node.add_node(child_node)
+
+        return node
