@@ -309,3 +309,19 @@ class GenericTreeNode(object):
             node.add_node(child_node)
 
         return node
+
+    def _dump_node(self, logger=print, indent=" ", data_indent=" ", level=0):
+        logger("%sNode: %s" % (indent * level, self.id))
+
+        # dump properties
+        data = self.get_data()
+        if len(data) > 0:
+            logger("%s%s%s" % (indent * level, data_indent, "Data:"))
+            for v in data:
+                logger("%s%s%s:%s" % (indent * level, data_indent, v, str(data[v])))
+
+        children = self.children()
+        if len(children) > 0:
+            logger("%s%s%s" % (indent * level, data_indent, "Children:"))
+            for c in children:
+                c._dump_node(logger=logger, indent=indent, data_indent=data_indent, level=level + 1)
