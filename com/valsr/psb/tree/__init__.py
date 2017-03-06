@@ -11,7 +11,7 @@ from com.valsr.psb.callback import CallbackRegister
 from com.valsr.psb.sound.info import MediaInfo
 
 
-class TreeNode(TreeViewLabel, CallbackRegister):
+class GenericTreeNode(TreeViewLabel, CallbackRegister):
     """Node structure. Provides enhancements to kivy's TreeViewLabel to make it easier to work with."""
 
     def __init__(self, tree, label=None, data=None, **kwargs):
@@ -61,7 +61,7 @@ class TreeNode(TreeViewLabel, CallbackRegister):
         self.tree = tree
 
         for child in data_dict['children']:
-            node = TreeNode(id=child["id"], tree=None)
+            node = GenericTreeNode(id=child["id"], tree=None)
             node.deserialize(tree, child)
             self.add_child(node)
 
@@ -87,7 +87,7 @@ class TreeNode(TreeViewLabel, CallbackRegister):
             node_id: Node identifier
 
         Returns:
-            TreeNode or None
+            GenericTreeNode or None
         """
         for node in self.nodes:
             if node.node_id == node_id:
@@ -102,7 +102,7 @@ class TreeNode(TreeViewLabel, CallbackRegister):
             child: Child node
 
         Returns:
-            TreeNode: The added node, or
+            GenericTreeNode: The added node, or
             None
         """
         if not self.has_child(child.node_id):
@@ -157,7 +157,7 @@ class TreeNode(TreeViewLabel, CallbackRegister):
         if self.parent_node:
             if not self.parent_node.is_open:
                 self.tree.toggle_node(self.parent_node)
-            if isinstance(self.parent_node, TreeNode):
+            if isinstance(self.parent_node, GenericTreeNode):
                 self.parent_node.open_parents()
         return self
 
@@ -168,7 +168,7 @@ class TreeNode(TreeViewLabel, CallbackRegister):
             fingerprint: Fingerprint identifier
 
         Returns:
-            TreeNode: Found node, or
+            GenericTreeNode: Found node, or
             None
         """
         if self.data:

@@ -32,8 +32,8 @@ class DraggableTreeView(TreeView, Droppable):
         super().__init__(**kwargs)
         self.drop_acceptable_cb = self._drop_acceptable
 
-    def add_node(self, node, parent=None):
-        if self._root != None:  # allow adding different nodes during tree initialization
+    def add_node(self, node, parent=None, position=-1):
+        if self._root:  # allow adding different nodes during tree initialization
             if not isinstance(node, DraggableTreeViewNode):
                 raise TreeViewException('The node must be a subclass of DraggableTreeViewNode')
         else:  # convert root nod to DraggabreTreeViewNode
@@ -49,11 +49,28 @@ class DraggableTreeView(TreeView, Droppable):
             return parent.node(node.id)
 
         node = super().add_node(node, parent)
+        self.order_node(node, position)
 
         for n in self.iterate_all_nodes(node):
             n._tree = self
 
         return node
+
+    def order_node(self, node, position):
+        if node.parent:
+            nodes = node.parent.nodes
+
+            # calculate position
+            if position < 0:
+                position = len(nodes) + position
+
+            if position < 0:
+                position = 0
+            elif position >= len(nodes):
+                position = len(nodes) - 1
+
+            # get the node at position
+            nodes.insert(position, nodes.pop(nodes.index(node)))
 
     def remove_node(self, node):
         for n in self.iterate_all_nodes(node):
@@ -67,7 +84,7 @@ class DraggableTreeView(TreeView, Droppable):
         for n in self.root.nodes:
             self.remove_node(n)
 
-    def find_node(self, cb):
+    def find_nodes(self, cb):
         """Find node by given function
 
         Args:
@@ -76,7 +93,7 @@ class DraggableTreeView(TreeView, Droppable):
         Returns:
             DraggableTrieViewNode or None
         """
-        return self.root.find_node(cb, True)
+        return self.root.find_nodes(cb, True)
 
     def on_drop(self, draggable, touch):
         if isinstance(draggable, DraggableTreeViewNode):
@@ -109,7 +126,7 @@ class DraggableTreeView(TreeView, Droppable):
         return True
 
     def _drop_acceptable(self, node):
-        return node.data is None
+        return True
 
 
 class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
@@ -171,13 +188,13 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
         """
         return self._tree.add_node(node, self)
 
-    def remove_node_id(self, node_id):
+    def remove_node_by_id(self, node_id):
         """Remove node by given id
 
         Args:
             node_id: Node identifier
         """
-        node = self.node(node_id)
+        node = self.find_nodes(lambda x: x.id == node_id, True)
         if node:
             self._tree.remove_node(node)
 
@@ -190,7 +207,8 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
         Returns:
             Found node or None
         """
-        return self.find_node(lambda x: x.id == node_id, False)
+        for n in self.find_nodes(lambda x: x.id == node_id, False):
+            return n
 
     def has_node(self, node_id):
         """Check if given node exists in the tree
@@ -203,7 +221,7 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
         """
         return self.node(node_id) is not None
 
-    def find_node(self, cb, descend=False):
+    def find_nodes(self, cb, descend=False):
         """Use a callback to locate a node
 
         Args:
@@ -211,17 +229,14 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
             descend: Descend into child nodes as well
 
         Returns:
-            Node or None
+            yield found Nodes
         """
         for node in self.nodes:
             if cb(node):
-                return node
-            elif descend:
-                found = node.find_node(cb, descend)
-                if found:
-                    return found
+                yield node
 
-        return None
+            if descend:
+                yield from node.find_nodes(cb, descend)
 
     def open(self, open_parents=False):
         """Open node

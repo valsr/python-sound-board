@@ -14,18 +14,19 @@ from kivy.uix.scrollview import ScrollView
 
 from com.valsr.psb import utility
 from com.valsr.psb.sound.info import MediaInfoManager
-from com.valsr.psb.tree import TreeNode
+from com.valsr.psb.tree import GenericTreeNode
 from com.valsr.psb.ui.dialogue import popup, addsound
 from com.valsr.psb.ui.dialogue.addsound import AddSoundDialogue
 from com.valsr.psb.ui.dialogue.open import OpenDialogue
 from com.valsr.psb.ui.dialogue.save import SaveDialogue
 from com.valsr.psb.ui.menu import SimpleMenuItem, Menu
-from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeView
+from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeView, DraggableTreeViewNode
 from com.valsr.psb.ui.widget.lane import LaneWidget
 from com.valsr.psb.ui.window.base import WindowBase, WindowCloseState
 from com.valsr.psb.ui.window.manager import WindowManager
 from com.valsr.psb.utility import MainTreeMenuActions
 from com.valsr.psb.ui.widget.audiotree import AudioTreeViewNode
+from com.valsr.psb.project import PSBProject
 
 
 class MainWindow(WindowBase):
@@ -45,9 +46,13 @@ class MainWindow(WindowBase):
         return Builder.load_file("ui/kv/main.kv")
 
     def on_create(self):
+        project = PSBProject()
+        project.load_project('test.psb')
+        project.dump()
+        PSBProject.project = project
         self.audio_files_tree = self.get_ui('audio_files')
-        utility.load_project('test.psb', self.audio_files_tree)
         self.audio_files_tree.bind(on_touch_up=self.ui_file_tree_touch_up)
+        self.ui_update_audio_tree()
 
     def ui_add_sound(self, *args):
         """Handle add sound button event"""
@@ -59,7 +64,7 @@ class MainWindow(WindowBase):
     def _add_sound_dismiss(self, *args):
         """Handle dismissal of the add sound dialogue"""
         if self._add_sound_window.close_state == WindowCloseState.OK:
-            if not self.audio_files_tree.root.find_node(lambda x: x._label.text.lower() == 'uncategorized'):
+            if not self.audio_files_tree.root.find_nodes(lambda x: x._label.text.lower() == 'uncategorized'):
                 self.audio_files_tree.add_node(AudioTreeViewNode(label='Uncategorized'))
 
             self._add_audio_file(self._add_sound_window.file)
@@ -73,13 +78,13 @@ class MainWindow(WindowBase):
             Clock.schedule_once(lambda x: self._add_audio_file(file), 0.1)
             return
 
-        if self.audio_files_tree.root.find_node(lambda x: x.data and x.data.fingerprint == info.fingerprint):
+        if self.audio_files_tree.root.find_nodes(lambda x: x.data and x.data.fingerprint == info.fingerprint):
             popup.show_ok_popup(
                 'File Already Added', 'File by similar fingerprint has already been added', parent=self)
             return
 
         Logger.debug("Adding to %s to collection", file)
-        parent = self.audio_files_tree.root.find_node(lambda x: x._label.text.lower() == 'uncategorized', False)
+        parent = self.audio_files_tree.root.find_nodes(lambda x: x._label.text.lower() == 'uncategorized', False)
         parent.add_node(AudioTreeViewNode(id=file, label=os.path.basename(file), data=info))
 
     def ui_save_project(self, *args):
@@ -133,7 +138,7 @@ class MainWindow(WindowBase):
         if button == WindowCloseState.YES:
             Logger.trace('Adding %s node to %s', text, parent_node.id)
             # find if we have the node by text
-            if parent_node.find_node(lambda x: x.ui.text == text, False):
+            if parent_node.find_nodes(lambda x: x.ui.text == text, False):
                 Logger.trace('Node by %s already exists', text)
                 popup.show_ok_popup(
                     'New Category', message='Category \'%s\' already exists within \'%s\'' % (text, parent_node.id))
@@ -182,12 +187,12 @@ class MainWindow(WindowBase):
                 self._delete_tree_node(node.id)
 
     def _rename_tree_node(self, node_id, text):
-        node = self.audio_files_tree.find_node(lambda x: x.id == node_id)
+        node = self.audio_files_tree.find_nodes(lambda x: x.id == node_id)
         if node:
             node.label = text
 
     def _delete_tree_node(self, node_id):
-        node = self.audio_files_tree.find_node(lambda x: x.id == node_id)
+        node = self.audio_files_tree.find_nodes(lambda x: x.id == node_id)
 
         if node:
             self.audio_files_tree.remove_node(node)
@@ -197,3 +202,18 @@ class MainWindow(WindowBase):
 
         lane = LaneWidget()
         ui_lanes.add_widget(lane)
+
+    def ui_update_audio_tree(self):
+        tree = PSBProject.project.audio_files
+
+        # TODO: Smarter list synchronization
+        self.audio_files_tree.remove_all_nodes()
+        for child in tree.children():
+            self._add_tree_branch(self.audio_files_tree.root, child)
+
+    def _add_tree_branch(self, ui_parent_node, generic_tree_node):
+        n = ui_parent_node.add_node(
+            DraggableTreeViewNode(label=generic_tree_node.label, data=generic_tree_node.node_id))
+
+        for child in generic_tree_node.children():
+            self._add_tree_branch(n, child)
