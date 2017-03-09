@@ -35,7 +35,6 @@ class MainWindow(WindowBase):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.file = None
         self.audio_files_tree = None
 
         # windows
@@ -52,14 +51,106 @@ class MainWindow(WindowBase):
         PSBProject.project = project
         self.audio_files_tree = self.get_ui('audio_files')
         self.audio_files_tree.bind(on_touch_up=self.ui_file_tree_touch_up)
-        self.ui_update_audio_tree()
+        self._update_audio_tree()
 
-    def ui_add_sound(self, *args):
+    def _update_audio_tree(self):
+        PSBProject.project.audio_files._dump_node(logger=Logger.debug)
+        draggabletreeview.synchronize_with_tree(self.audio_files_tree, PSBProject.project.audio_files)
+
+    #
+    # UI Handling
+    #
+    def on_add_sound(self, *args):
         """Handle add sound button event"""
         self._add_sound_window = WindowManager.create_window(AddSoundDialogue, self,
                                                              create_opts={"size_hint": (0.75, 0.75)})
         self._add_sound_window.bind(on_dismiss=self._add_sound_dismiss)
         self._add_sound_window.open()
+
+    def on_save_project(self, *args):
+        """Handle save button event"""
+        if self.project is None:
+            # open file to save assert
+            self._save_window = WindowManager.create_window(SaveDialogue, parent=None,
+                                                            create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
+            self._save_window.bind(on_dismiss=lambda x: self._save_project(from_dialogue=True))
+            self._save_window.open()
+        else:
+            self._save_project()
+
+    def ui_open_project(self, *args):
+        """Handle open button event"""
+        self._open_window = WindowManager.create_window(OpenDialogue, parent=None,
+                                                        create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
+        self._open_window.bind(on_dismiss=self._open_project)
+        self._open_window.open()
+
+    def ui_add_tree_category(self, *args):
+        """Handle add category button event"""
+        selected_node = self.audio_files_tree.selected_node
+
+        if not selected_node:
+            selected_node = self.audio_files_tree.root
+
+        # now open the dialogue
+        popup.show_text_input_popup(title='New Category', message='Enter Category Name', input_text='Category',
+                                    yes_button_label='Create', no_button_label='Cancel', parent=self,
+                                    callback=lambda x: self._add_tree_category(x.selection, selected_node, x.text))
+        return
+
+    def ui_file_tree_touch_up(self, tree, touch):
+        """Handle file tree touch events - opens menu"""
+        pos = tree.to_window(touch.pos[0], touch.pos[1], relative=True)
+
+        if tree.collide_point(*pos):
+            if touch.button == 'right':
+                # create menu
+                Logger.debug('Touch up from tree %s', tree.id)
+
+                node = tree.get_node_at_pos(touch.pos)
+                if node and node is not self.audio_files_tree.root:
+                    # construct menu
+                    m = self._create_files_menu(node.id)
+                    pos = node.to_window(touch.pos[0], touch.pos[1])  # need to translate to proper coordinates
+                    m.show(pos[0], pos[1], node)
+
+    def ui_add_lane(self, position='bottom'):
+        ui_lanes = self.get_ui('lanes')
+
+        lane = LaneWidget()
+        ui_lanes.add_widget(lane)
+
+    def on_menu_press(self, menu, item, pos):
+        action, node = item.data
+
+        if node:
+            if action == MainTreeMenuActions.RENAME:
+                popup.show_text_input_popup(title='Rename Category', message='Enter New Category Name', input_text=node._label.text,
+                                            yes_button_label='Rename', no_button_label='Cancel', parent=self,
+                                            callback=lambda x: self._rename_tree_node(node.id, x.text))
+            elif action == MainTreeMenuActions.DELETE:
+                self._delete_tree_node(node.id)
+    #
+    # MENU
+    #
+
+    def _create_files_menu(self, node_id):
+        menu = Menu()
+        menu.bind(on_select=self.on_menu_press)
+
+        node = PSBProject.project.audio_files.get_node(node_id, decend=True)
+
+        menu.add_menu_item(
+            SimpleMenuItem(text="Rename '%s'" % node.label, data=(MainTreeMenuActions.RENAME, node_id)))
+
+        if node.is_leaf:
+            menu.add_menu_item(
+                SimpleMenuItem(text="Delete sound '%s'" % node.label, data=(MainTreeMenuActions.DELETE, node_id)))
+        else:
+            menu.add_menu_item(
+                SimpleMenuItem(text="Delete category '%s'" % node.label, data=(MainTreeMenuActions.DELETE, node_id)))
+
+        return menu
 
     def _add_sound_dismiss(self, *args):
         """Handle dismissal of the add sound dialogue"""
@@ -87,17 +178,6 @@ class MainWindow(WindowBase):
         parent = self.audio_files_tree.root.find_nodes(lambda x: x._label.text.lower() == 'uncategorized', False)
         parent.add_node(AudioTreeViewNode(id=file, label=os.path.basename(file), data=info))
 
-    def ui_save_project(self, *args):
-        """Handle save button event"""
-        if self.file is None:
-            # open file to save assert
-            self._save_window = WindowManager.create_window(SaveDialogue, parent=None,
-                                                            create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
-            self._save_window.bind(on_dismiss=lambda x: self._save_project(from_dialogue=True))
-            self._save_window.open()
-        else:
-            self._save_project()
-
     def _save_project(self, from_dialogue=False):
         if from_dialogue:
             if self._save_window.close_state != WindowCloseState.OK:
@@ -108,31 +188,11 @@ class MainWindow(WindowBase):
         utility.save_project(self.file, self.audio_files_tree, None)
         self.title = "PSB: " + self.file
 
-    def ui_open_project(self, *args):
-        """Handle open button event"""
-        self._open_window = WindowManager.create_window(OpenDialogue, parent=None,
-                                                        create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
-        self._open_window.bind(on_dismiss=self._open_project)
-        self._open_window.open()
-
     def _open_project(self, *args):
         self.file = self._open_window.file
         if self._open_window.close_state == WindowCloseState.OK:
             utility.load_project(self.file, self.audio_files_tree)
         WindowManager.destroy_window(self._open_window.id)
-
-    def ui_add_tree_category(self, *args):
-        """Handle add category button event"""
-        selected_node = self.audio_files_tree.selected_node
-
-        if not selected_node:
-            selected_node = self.audio_files_tree.root
-
-        # now open the dialogue
-        popup.show_text_input_popup(title='New Category', message='Enter Category Name', input_text='Category',
-                                    yes_button_label='Create', no_button_label='Cancel', parent=self,
-                                    callback=lambda x: self._add_tree_category(x.selection, selected_node, x.text))
-        return
 
     def _add_tree_category(self, button, parent_node, text):
         if button == WindowCloseState.YES:
@@ -147,45 +207,6 @@ class MainWindow(WindowBase):
             node = AudioTreeViewNode(label=text)
             parent_node.add_node(node).open(True)
 
-    def ui_file_tree_touch_up(self, tree, touch):
-        """Handle file tree touch events - opens menu"""
-        pos = tree.to_window(touch.pos[0], touch.pos[1], relative=True)
-
-        if tree.collide_point(*pos):
-            if touch.button == 'right':
-                # create menu
-                Logger.debug('Touch up from tree %s', tree.id)
-
-                node = tree.get_node_at_pos(touch.pos)
-                if node and node is not self.audio_files_tree.root:
-                    # construct menu
-                    m = Menu()
-                    m.bind(on_select=self.on_menu_press)
-
-                    m.add_menu_item(
-                        SimpleMenuItem(text="Rename '%s'" % node._label.text, data=(MainTreeMenuActions.RENAME, node)))
-
-                    if node.is_leaf:
-                        m.add_menu_item(
-                            SimpleMenuItem(text="Delete sound '%s'" % node._label.text, data=(MainTreeMenuActions.DELETE, node)))
-                    else:
-                        m.add_menu_item(
-                            SimpleMenuItem(text="Delete category '%s'" % node._label.text, data=(MainTreeMenuActions.DELETE, node)))
-
-                    pos = node.to_window(touch.pos[0], touch.pos[1])  # need to translate to proper coordinates
-                    m.show(pos[0], pos[1], node)
-
-    def on_menu_press(self, menu, item, pos):
-        action, node = item.data
-
-        if node:
-            if action == MainTreeMenuActions.RENAME:
-                popup.show_text_input_popup(title='Rename Category', message='Enter New Category Name', input_text=node._label.text,
-                                            yes_button_label='Rename', no_button_label='Cancel', parent=self,
-                                            callback=lambda x: self._rename_tree_node(node.id, x.text))
-            elif action == MainTreeMenuActions.DELETE:
-                self._delete_tree_node(node.id)
-
     def _rename_tree_node(self, node_id, text):
         node = self.audio_files_tree.find_nodes(lambda x: x.id == node_id)
         if node:
@@ -196,13 +217,3 @@ class MainWindow(WindowBase):
 
         if node:
             self.audio_files_tree.remove_node(node)
-
-    def ui_add_lane(self, position='bottom'):
-        ui_lanes = self.get_ui('lanes')
-
-        lane = LaneWidget()
-        ui_lanes.add_widget(lane)
-
-    def ui_update_audio_tree(self):
-        PSBProject.project.audio_files._dump_node(logger=Logger.debug)
-        draggabletreeview.synchronize_with_tree(self.audio_files_tree, PSBProject.project.audio_files)
