@@ -188,13 +188,20 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
         """
         return self._tree.add_node(node, self)
 
+    def order_node(self, position):
+        return self._tree.order_node(self, position)
+
     def remove_node_by_id(self, node_id):
         """Remove node by given id
 
         Args:
             node_id: Node identifier
         """
-        node = self.find_nodes(lambda x: x.id == node_id, True)
+        try:
+            node = next(self.find_nodes(lambda x: x.id == node_id, True))
+        except StopIteration:
+            return
+
         if node:
             self._tree.remove_node(node)
 
@@ -207,8 +214,10 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
         Returns:
             Found node or None
         """
-        for n in self.find_nodes(lambda x: x.id == node_id, False):
-            return n
+        try:
+            return next(self.find_nodes(lambda x: x.id == node_id, False))
+        except StopIteration:
+            return None
 
     def has_node(self, node_id):
         """Check if given node exists in the tree
@@ -276,3 +285,80 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
     def _drag_detach_parent(self):
         self._tree.remove_node(self)
         self._original_parent._do_layout()
+
+
+def synchronize_with_tree(draggable_tree, tree):
+    draggable_node = draggable_tree.root
+    tree_node = tree
+    Logger.debug("Synchronizing node %s (root) to N/A(%s)", draggable_node.id, tree_node.label)
+
+    # update children
+    updated_child_list = []
+    for child in tree_node.children():
+        updated_child_list.append(child.node_id)
+        node = draggable_node.node(child.node_id)
+        if node:
+            synchronize_node_with_tree(node, child)
+        else:
+            # node does not exist so insert it at position
+            insert_tree_at_position(draggable_node, child, tree_node.node_index(child))
+
+    # delete unused child nodes
+    delete_nodes = []
+    for child in draggable_node.nodes:
+        if child.id not in updated_child_list:
+            delete_nodes.append(child.id)
+
+    for id in delete_nodes:
+        Logger.debug("Removing node %s", id)
+        draggable_node.remove_node_by_id(id)
+
+
+def synchronize_node_with_tree(draggable_node, tree_node):
+    Logger.debug("Synchronizing node %s (%s) to %s (%s)", draggable_node.id,
+                 draggable_node.label, tree_node.node_id, tree_node.label)
+    update_tree_node(draggable_node, tree_node)
+
+    # update children
+    updated_child_list = []
+    for child in tree_node.children():
+        updated_child_list.append(child.node_id)
+        node = draggable_node.node(child.node_id)
+        if node:
+            synchronize_node_with_tree(node, child)
+        else:
+            # node does not exist so insert it at position
+            insert_tree_at_position(draggable_node, child, tree_node.node_index(child))
+
+    # delete unused child nodes
+    delete_nodes = []
+    for child in draggable_node.nodes():
+        if child.id not in updated_child_list:
+            delete_nodes.append(child.id)
+
+    for id in delete_nodes:
+        Logger.debug("Removing node %s", id)
+        draggable_node.remove_node_by_id(id)
+
+
+def insert_tree_at_position(parent, tree_node, position):
+    Logger.debug("Inserting node (parent %s) %s (%s) at position %d",
+                 parent.id, tree_node.node_id, tree_node.label, position)
+    node = parent.add_node(DraggableTreeViewNode(node_id=tree_node.node_id, label=tree_node.label))
+    node.order_node(position)
+
+    for child in tree_node.children():
+        insert_tree_at_position(node, child, tree_node.node_index(child))
+
+
+def update_tree_node(draggable_node, tree_node):
+    if tree_node.has_data('label'):
+        draggable_node.label = tree_node.label
+
+    # update if three is a leaf or a branch
+    if len(tree_node.children()) == 0 and tree_node.has_data('info'):
+        draggable_node.is_leaf = True
+    else:
+        draggable_node.is_leaf = False
+
+    draggable_node.id = tree_node.node_id

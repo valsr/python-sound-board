@@ -12,7 +12,17 @@ from com.valsr.psb.project import file
 
 
 class PSBProject(object):
-    """Project Data object"""
+    """Project Data object
+
+    The project contains two trees - files and lanes. Files represent the added music files to the project and have
+    the following structure:
+        node:
+            label: string
+            info: media information (none if this is a category instead), obtained from MediaInfo class
+            node_id: internal node identifier (different from node)
+
+    Lanes represent the lanes of music files added to the project.
+    """
 
     project = None
     """Current open/loaded project"""

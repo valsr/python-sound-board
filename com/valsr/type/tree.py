@@ -127,6 +127,10 @@ class GenericTreeNode(object):
         """Equivalent to add_node"""
         return self.add_node(node, position)
 
+    def node_index(self, node):
+        """Return the index of given node"""
+        return self._children.index(node)
+
     def iterate_nodes(self, cb=lambda n: True, descend=False):
         """Iterate over child nodes based on given function
 

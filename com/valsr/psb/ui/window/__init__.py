@@ -27,6 +27,7 @@ from com.valsr.psb.ui.window.manager import WindowManager
 from com.valsr.psb.utility import MainTreeMenuActions
 from com.valsr.psb.ui.widget.audiotree import AudioTreeViewNode
 from com.valsr.psb.project import PSBProject
+from com.valsr.psb.ui.widget import draggabletreeview
 
 
 class MainWindow(WindowBase):
@@ -48,7 +49,6 @@ class MainWindow(WindowBase):
     def on_create(self):
         project = PSBProject()
         project.load_project('test.psb')
-        project.dump()
         PSBProject.project = project
         self.audio_files_tree = self.get_ui('audio_files')
         self.audio_files_tree.bind(on_touch_up=self.ui_file_tree_touch_up)
@@ -204,16 +204,5 @@ class MainWindow(WindowBase):
         ui_lanes.add_widget(lane)
 
     def ui_update_audio_tree(self):
-        tree = PSBProject.project.audio_files
-
-        # TODO: Smarter list synchronization
-        self.audio_files_tree.remove_all_nodes()
-        for child in tree.children():
-            self._add_tree_branch(self.audio_files_tree.root, child)
-
-    def _add_tree_branch(self, ui_parent_node, generic_tree_node):
-        n = ui_parent_node.add_node(
-            DraggableTreeViewNode(label=generic_tree_node.label, data=generic_tree_node.node_id))
-
-        for child in generic_tree_node.children():
-            self._add_tree_branch(n, child)
+        PSBProject.project.audio_files._dump_node(logger=Logger.debug)
+        draggabletreeview.synchronize_with_tree(self.audio_files_tree, PSBProject.project.audio_files)
