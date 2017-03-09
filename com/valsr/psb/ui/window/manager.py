@@ -16,6 +16,13 @@ class WrongWindowBaseException(Exception):
         super().__init__("%s does not derive from com.valsr.psb.ui.window.WindowBase" % window_class)
 
 
+class WindowExistsError(Exception):
+    """Window by given identifier already exists"""
+
+    def __init__(self, id):
+        super().__init__("Window '%s' already exists" % id)
+
+
 class WindowManager(object):
     """Window Manager class - manages window's life cycle. Only a single window manager exists in the application."""
 
@@ -28,24 +35,38 @@ class WindowManager(object):
         raise RuntimeError("Do not instantiate WindowManager")
 
     @staticmethod
-    def create_window(window_class, parent, create_opts=None, **args):
+    def create_window(window_class, parent, window_id=None, create_opts=None, **args):
         """Create window to be managed by the window manager - call this to create a window object that can be shown to
         the end user
 
         Args:
             window_class: Class of the window to create
             parent: Parent widget of this window
+            window_id: Unique window identifier (None for random generated)
             create_opts: Create options for window, currently the following are recognized:
                 draggable, windowed, size_hint, title
             **args: Arguments to pass to the init method of the window
+
+        Raises:
+            WindowExitstsError: If window by given id already exists
+            WrongWindowBaseException: If window does not inherit from WindowBase
 
         Returns:
             Created window
         """
         Logger.debug('Creating new window by type %s', window_class)
+
+        # check window id
+        if window_id:
+            if WindowManager.window(window_id):
+                raise WindowExistsError(window_id)
+
         window = window_class(**args)
         if not isinstance(window, WindowBase):
             raise WrongWindowBaseException(window_class)
+
+        if window_id:
+            window.id = window_id
 
         # call on pre-create
         window.on_pre_create()
