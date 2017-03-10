@@ -332,7 +332,7 @@ def synchronize_node_with_tree(draggable_node, tree_node):
 
     # delete unused child nodes
     delete_nodes = []
-    for child in draggable_node.nodes():
+    for child in draggable_node.nodes:
         if child.id not in updated_child_list:
             delete_nodes.append(child.id)
 

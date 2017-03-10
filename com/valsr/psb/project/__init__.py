@@ -3,12 +3,12 @@ Created on Mar 3, 2017
 
 @author: valsr <valsr@valsr.com>
 """
-from com.valsr.type.tree import GenericTreeNode
 from kivy.logger import Logger
 
 from com.valsr.psb.sound.info import MediaInfo
 from com.valsr.psb.project.file import SaveFile
 from com.valsr.psb.project import file
+from com.valsr.type.nodes import AudioFileNode
 
 
 class PSBProject(object):
@@ -29,8 +29,8 @@ class PSBProject(object):
 
     def __init__(self):
         """Constructor"""
-        self._audio_tree = GenericTreeNode(label='files')
-        self._lanes = GenericTreeNode(label='lanes')
+        self._audio_tree = AudioFileNode(label='files')
+        self._lanes = AudioFileNode(label='lanes')
         self._file = None
 
     def load_project(self, path):

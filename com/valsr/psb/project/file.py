@@ -3,11 +3,11 @@ Created on Mar 3, 2017
 
 @author: valsr <valsr@valsr.com>
 """
-from com.valsr.type.tree import GenericTreeNode
 from kivy.logger import Logger
 import json
 from com.valsr.psb.sound.info import MediaInfo
 import os
+from com.valsr.type.nodes import AudioFileNode
 
 
 class SaveFile(object):
@@ -15,8 +15,8 @@ class SaveFile(object):
 
     def __init__(self):
         """Constructor"""
-        self.audio_tree = GenericTreeNode(label='files')
-        self.lanes = GenericTreeNode(label='lanes')
+        self.audio_tree = AudioFileNode(label='files')
+        self.lanes = AudioFileNode(label='lanes')
         self.file = None
 
 
@@ -43,7 +43,7 @@ def load_project(path):
 
 
 def _deserialize_node_structure(data, parent):
-    node = GenericTreeNode(node_id=data['id'], label=data['label'])
+    node = AudioFileNode(node_id=data['id'], label=data['label'])
 
     if data['data']:  # a music file
         node.data = MediaInfo.deserialize(data['data'])

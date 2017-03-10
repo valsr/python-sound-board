@@ -14,7 +14,6 @@ from kivy.uix.scrollview import ScrollView
 
 from com.valsr.psb import utility
 from com.valsr.psb.sound.info import MediaInfoManager
-from com.valsr.psb.tree import GenericTreeNode
 from com.valsr.psb.ui.dialogue import popup, addsound
 from com.valsr.psb.ui.dialogue.addsound import AddSoundDialogue
 from com.valsr.psb.ui.dialogue.open import OpenDialogue
@@ -28,6 +27,7 @@ from com.valsr.psb.utility import MainTreeMenuActions
 from com.valsr.psb.ui.widget.audiotree import AudioTreeViewNode
 from com.valsr.psb.project import PSBProject
 from com.valsr.psb.ui.widget import draggabletreeview
+from com.valsr.type.nodes import AudioFileNode
 
 
 class MainWindow(WindowBase):
@@ -154,9 +154,9 @@ class MainWindow(WindowBase):
         """Handle dismissal of the add sound dialogue"""
         window = WindowManager.window(MainWindow.POPUP_WINDOW_ID)
         if window and window.close_state == WindowCloseState.OK:
-            self._add_audio_file(self._add_sound_window.file)
-        else:
-            WindowManager.destroy_window(MainWindow.POPUP_WINDOW_ID)
+            self._add_audio_file(window.file)
+
+        WindowManager.destroy_window(MainWindow.POPUP_WINDOW_ID)
 
     def _add_audio_file(self, file):
         # check the fingerprint and see if we already have it
@@ -166,7 +166,7 @@ class MainWindow(WindowBase):
             return
 
         tree = PSBProject.project.audio_files
-        if tree.find_nodes(lambda x: x.data and x.data.fingerprint == info.fingerprint):
+        if tree.has_node(lambda x: x.has_data('data') and x.data.fingerprint == info.fingerprint):
             popup.show_ok_popup(
                 'File Already Added', 'File by similar fingerprint has already been added', parent=self)
             return
@@ -177,9 +177,9 @@ class MainWindow(WindowBase):
         if parents:
             parent = parents[0]
         else:
-            pass
+            parent = tree.add_node(AudioFileNode(label="Uncategorized"))
 
-        parent.add_node(AudioTreeViewNode(id=file, label=os.path.basename(file), data=info))
+        parent.add_node(AudioFileNode(label=os.path.basename(file), data=info))
         self._update_audio_tree()
 
     def _save_project(self, from_dialogue=False):
