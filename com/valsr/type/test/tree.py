@@ -265,6 +265,20 @@ class TestGenericTreeNode(unittest.TestCase):
         nodes = [x for x in t.iterate_nodes(descend=True)]
         self.assertEqual(len(nodes), 155)
 
+    def test_find_nodes_none(self):
+        t = self.set_up_tree()
+
+        self.assertListEqual(t.find_nodes(lambda x: False), [])
+
+    def test_has_node(self):
+        t = self.set_up_tree()
+
+        self.assertTrue(t.has_node(lambda x: True))
+        self.assertFalse(t.has_node(lambda x: False))
+
+        self.assertTrue(t.has_node(lambda x: True, True))
+        self.assertFalse(t.has_node(lambda x: False, False))
+
     def test_get_node(self):
         t = self.set_up_tree()
 

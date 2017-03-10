@@ -33,14 +33,11 @@ from com.valsr.psb.ui.widget import draggabletreeview
 class MainWindow(WindowBase):
     """Main PSB window"""
 
+    POPUP_WINDOW_ID = "_MAIN_WINDOW_POPUP"
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.audio_files_tree = None
-
-        # windows
-        self._open_window = None
-        self._save_window = None
-        self._add_sound_window = None
 
     def create_root_ui(self):
         return Builder.load_file("ui/kv/main.kv")
@@ -62,10 +59,11 @@ class MainWindow(WindowBase):
     #
     def on_add_sound(self, *args):
         """Handle add sound button event"""
-        self._add_sound_window = WindowManager.create_window(AddSoundDialogue, self,
-                                                             create_opts={"size_hint": (0.75, 0.75)})
-        self._add_sound_window.bind(on_dismiss=self._add_sound_dismiss)
-        self._add_sound_window.open()
+        if not WindowManager.window(MainWindow.POPUP_WINDOW_ID):
+            window = WindowManager.create_window(AddSoundDialogue, parent=self, window_id=MainWindow.POPUP_WINDOW_ID,
+                                                 create_opts={"size_hint": (0.75, 0.75)})
+            window.bind(on_dismiss=self._add_sound_dismiss)
+            window.open()
 
     def on_save_project(self, *args):
         """Handle save button event"""
@@ -154,13 +152,11 @@ class MainWindow(WindowBase):
 
     def _add_sound_dismiss(self, *args):
         """Handle dismissal of the add sound dialogue"""
-        if self._add_sound_window.close_state == WindowCloseState.OK:
-            if not self.audio_files_tree.root.find_nodes(lambda x: x._label.text.lower() == 'uncategorized'):
-                self.audio_files_tree.add_node(AudioTreeViewNode(label='Uncategorized'))
-
+        window = WindowManager.window(MainWindow.POPUP_WINDOW_ID)
+        if window and window.close_state == WindowCloseState.OK:
             self._add_audio_file(self._add_sound_window.file)
         else:
-            self._add_sound_window = None
+            WindowManager.destroy_window(MainWindow.POPUP_WINDOW_ID)
 
     def _add_audio_file(self, file):
         # check the fingerprint and see if we already have it
@@ -169,14 +165,22 @@ class MainWindow(WindowBase):
             Clock.schedule_once(lambda x: self._add_audio_file(file), 0.1)
             return
 
-        if self.audio_files_tree.root.find_nodes(lambda x: x.data and x.data.fingerprint == info.fingerprint):
+        tree = PSBProject.project.audio_files
+        if tree.find_nodes(lambda x: x.data and x.data.fingerprint == info.fingerprint):
             popup.show_ok_popup(
                 'File Already Added', 'File by similar fingerprint has already been added', parent=self)
             return
 
         Logger.debug("Adding to %s to collection", file)
-        parent = self.audio_files_tree.root.find_nodes(lambda x: x._label.text.lower() == 'uncategorized', False)
+
+        parents = tree.find_nodes(lambda x: x.label.lower() == 'uncategorized', False)
+        if parents:
+            parent = parents[0]
+        else:
+            pass
+
         parent.add_node(AudioTreeViewNode(id=file, label=os.path.basename(file), data=info))
+        self._update_audio_tree()
 
     def _save_project(self, from_dialogue=False):
         if from_dialogue:

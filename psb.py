@@ -19,13 +19,16 @@ gi.require_version('Gst', '1.0')
 class PSB(App):
     """Main application"""
 
+    MAIN_WINDOW_ID = "_PSB_MAIN_"
+
     def __init__(self, **kwargs):
         """Constructor"""
         App.__init__(self, **kwargs)
 
     def build(self):
         """Create the main window and open it"""
-        window = WindowManager.create_window(MainWindow, None, {'draggable': 'None', 'title': 'PSB'})
+        window = WindowManager.create_window(
+            MainWindow, parent=None, window_id=PSB.MAIN_WINDOW_ID, create_opts={'draggable': 'None', 'title': 'PSB'})
         window.open()
         return None  # don't actually return a widget as WindowManager will take care of creating the root widget
 
