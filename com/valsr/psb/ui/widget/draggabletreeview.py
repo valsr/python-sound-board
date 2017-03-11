@@ -12,6 +12,49 @@ from kivy.uix.treeview import TreeView, TreeViewException, TreeViewNode
 
 from com.valsr.psb.ui.widget.draggable import Draggable
 from com.valsr.psb.ui.widget.droppable import Droppable
+from com.valsr.type.tree import GenericTreeNodeInterface
+
+
+class TreeViewNodeInterface(GenericTreeNodeInterface):
+    """TreeViewNodeInterface. This provides the a custom implementation of the GenericTreeNodeInterface to account
+    for the incomparability between TreeViewNode and GenericTreeView node interface."""
+
+    def iterate_nodes(self, cb=lambda n: True, descend=False, include_self=True):
+        """Iterate over child nodes based on given function
+
+        Args:
+            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            descend: Whether to descend into child nodes as well
+            include_self: Include self in the iteration
+
+        Returns:
+            yields DataTreeNode
+
+        Notes:
+            When iterating, it will descend to child nodes if the current node has any.
+        """
+        if include_self:
+            if cb(self):
+                yield self
+
+        for n in self.nodes:
+            if cb(n):
+                yield n
+
+            if descend:
+                if len(n.nodes) > 0:
+                    yield from n.iterate_nodes(cb, descend, False)  # we already did the child nodes here/at this level
+
+    def detach(self):
+        """Remove self from parent_node (if attached)
+
+        Returns:
+            self
+        """
+        if self.parent_node:
+            self.parent_node.remove_node(self)
+
+        return self
 
 
 class DraggableTreeView(TreeView, Droppable):
@@ -32,7 +75,7 @@ class DraggableTreeView(TreeView, Droppable):
         super().__init__(**kwargs)
         self.drop_acceptable_cb = self._drop_acceptable
 
-    def add_node(self, node, parent=None, position=-1):
+    def add_node(self, node, position=-1, parent_node=None):
         if self._root:  # allow adding different nodes during tree initialization
             if not isinstance(node, DraggableTreeViewNode):
                 raise TreeViewException('The node must be a subclass of DraggableTreeViewNode')
@@ -43,12 +86,12 @@ class DraggableTreeView(TreeView, Droppable):
             node = root_node
             node.draggable = False
 
-        # check if the parent has the node already
-        if parent and parent.has_node(node.id):
-            Logger.warning('Node %s already has node by id %s', parent.id, node.id)
-            return parent.node(node.id)
+        # check if the parent_node has the node already
+        if parent_node and parent_node.has_node(lambda x: x.id == node.id):
+            Logger.warning('Node %s already has node by id %s', parent_node.id, node.id)
+            return parent_node.node(node.id)
 
-        node = super().add_node(node, parent)
+        node = super().add_node(node, parent_node)
         self.order_node(node, position)
 
         for n in self.iterate_all_nodes(node):
@@ -57,8 +100,8 @@ class DraggableTreeView(TreeView, Droppable):
         return node
 
     def order_node(self, node, position):
-        if node.parent:
-            nodes = node.parent.nodes
+        if node.parent_node:
+            nodes = node.parent_node.nodes
 
             # calculate position
             if position < 0:
@@ -83,17 +126,6 @@ class DraggableTreeView(TreeView, Droppable):
         """Remove all nodes from the tree (will not remove root node)"""
         for n in self.root.nodes:
             self.remove_node(n)
-
-    def find_nodes(self, cb):
-        """Find node by given function
-
-        Args:
-            cb: Callback accepting a single argument (node) and returns Boolean value
-
-        Returns:
-            DraggableTrieViewNode or None
-        """
-        return self.root.find_nodes(cb, True)
 
     def on_drop(self, draggable, touch):
         if isinstance(draggable, DraggableTreeViewNode):
@@ -129,7 +161,7 @@ class DraggableTreeView(TreeView, Droppable):
         return True
 
 
-class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
+class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInterface):
     """Node in the DraggableTreeView"""
 
     id = StringProperty(allownone=False)
@@ -154,6 +186,7 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
 
         self.id = node_id
         self.data = data
+        self.label = label
 
         # create a label for us
         self._label = Label(text=label)
@@ -177,81 +210,83 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
             self._label.text_size[0] = self.width
         return BoxLayout.do_layout(self, *largs)
 
-    def add_node(self, node):
+    def add_node(self, node, position=-1):
         """Add node to the tree
 
         Args:
             node: Node to add
+            position: Position index to add to
 
         Returns:
             The added node
         """
-        return self._tree.add_node(node, self)
+        return self._tree.add_node(node=node, parent_node=self, position=position)
+
+    def node_index(self, node):
+        return self.nodes.index(node)
+
+    def node_at(self, position):
+        if position < 0:
+            position = len(self.nodes) + position
+
+        if position < 0 or position >= len(self.nodes):
+            return None
+
+        return self.nodes[position]
 
     def order_node(self, position):
         return self._tree.order_node(self, position)
 
-    def remove_node_by_id(self, node_id):
-        """Remove node by given id
+    def remove_node(self, node):
+        return self.remove_at(self.node_index(node))
+
+    def remove_at(self, position):
+        """Remove node at given position
 
         Args:
-            node_id: Node identifier
-        """
-        try:
-            node = next(self.find_nodes(lambda x: x.id == node_id, True))
-        except StopIteration:
-            return
-
-        if node:
-            self._tree.remove_node(node)
-
-    def node(self, node_id):
-        """Get node by given identifier
-
-        Args:
-            node_id: Node identifier
+            position: The node index. If <0, then it will return the index as counted from the back (-1 being the last
+                item)
 
         Returns:
-            Found node or None
+            Removed node or None if index > child size
         """
-        try:
-            return next(self.find_nodes(lambda x: x.id == node_id, False))
-        except StopIteration:
+        if position < 0:
+            position = len(self.nodes) + position
+
+        if position < 0 or position >= len(self.nodes):
             return None
 
-    def has_node(self, node_id):
-        """Check if given node exists in the tree
+        node = self.nodes[position]
+        self._tree.remove_node(node)
+        return node
 
-        Args:
-            node_id: Node identifier
-
-        Returns:
-            Boolean
-        """
-        return self.node(node_id) is not None
-
-    def find_nodes(self, cb, descend=False):
-        """Use a callback to locate a node
-
-        Args:
-            cb: Callback accepting a single parameter (node) and returning Boolean value
-            descend: Descend into child nodes as well
+    def clear_nodes(self):
+        """Remove all child nodes
 
         Returns:
-            yield found Nodes
+            self
         """
-        for node in self.nodes:
-            if cb(node):
-                yield node
+        for n in self.nodes:
+            n._tree.remove_node(n)
 
-            if descend:
-                yield from node.find_nodes(cb, descend)
+        return self
+
+    def clone(self, deep=False):
+        """Performs a shallow clone of the data and nodes (new ids will be generated)
+
+        Args:
+            deep: Perform a deep copy instead
+
+        Returns:
+            DataTreeNode cloned node
+        """
+        raise NotImplementedError()
 
     def open(self, open_parents=False):
         """Open node
 
         Args:
-            open_parents: Whether to open all parent nodes as well
+            open_parents: Whether to open all parent_node nodes as well
         """
         if not self.is_leaf:
             if not self.is_open:
@@ -280,7 +315,7 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable):
         self._tree.toggle_node(self)
 
     def on_label(self, *args):
-        self._label.text = args[1]
+        self.label = args[1]
 
     def _drag_detach_parent(self):
         self._tree.remove_node(self)
@@ -296,11 +331,11 @@ def synchronize_with_tree(draggable_tree, tree):
     if draggable_node.id is not tree.node_id:
         draggable_node.id = tree.node_id
 
-    # update children
+    # update nodes
     updated_child_list = []
-    for child in tree_node.children():
+    for child in tree_node.nodes():
         updated_child_list.append(child.node_id)
-        node = draggable_node.node(child.node_id)
+        node = draggable_node.get_node(child.node_id)
         if node:
             synchronize_node_with_tree(node, child)
         else:
@@ -323,9 +358,9 @@ def synchronize_node_with_tree(draggable_node, tree_node):
                  draggable_node.label, tree_node.node_id, tree_node.label)
     update_tree_node(draggable_node, tree_node)
 
-    # update children
+    # update nodes
     updated_child_list = []
-    for child in tree_node.children():
+    for child in tree_node.nodes():
         updated_child_list.append(child.node_id)
         node = draggable_node.node(child.node_id)
         if node:
@@ -345,13 +380,13 @@ def synchronize_node_with_tree(draggable_node, tree_node):
         draggable_node.remove_node_by_id(id)
 
 
-def insert_tree_at_position(parent, tree_node, position):
-    Logger.debug("Inserting node (parent %s) %s (%s) at position %d",
-                 parent.id, tree_node.node_id, tree_node.label, position)
-    node = parent.add_node(DraggableTreeViewNode(node_id=tree_node.node_id, label=tree_node.label))
+def insert_tree_at_position(parent_node, tree_node, position):
+    Logger.debug("Inserting node (parent_node %s) %s (%s) at position %d",
+                 parent_node.id, tree_node.node_id, tree_node.label, position)
+    node = parent_node.add_node(DraggableTreeViewNode(node_id=tree_node.node_id, label=tree_node.label))
     node.order_node(position)
 
-    for child in tree_node.children():
+    for child in tree_node.nodes():
         insert_tree_at_position(node, child, tree_node.node_index(child))
 
 
@@ -360,7 +395,7 @@ def update_tree_node(draggable_node, tree_node):
         draggable_node.label = tree_node.label
 
     # update if three is a leaf or a branch
-    if len(tree_node.children()) == 0:
+    if len(tree_node.nodes()) == 0:
         draggable_node.is_leaf = True
     else:
         draggable_node.is_leaf = False

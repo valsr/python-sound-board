@@ -198,7 +198,7 @@ class MainWindow(WindowBase):
         parent_node = tree.find_node(lambda x: x.node_id == ui_selected_node.id, True, True)
 
         if parent_node.is_file():
-            parent_node = parent_node.parent()
+            parent_node = parent_node.parent_node
 
         parent_node.add_node(AudioFileNode(label=os.path.basename(file), data=info))
         self._update_ui()
@@ -230,7 +230,7 @@ class MainWindow(WindowBase):
             tree = PSBProject.project.audio_files
             parent_node = tree.find_node(lambda x: x.node_id == parent_id, True)
             if parent_node.is_file:
-                parent_node = parent_node.parent()
+                parent_node = parent_node.parent_node
 
             Logger.trace('Adding %s node to %s', text, parent_node.label)
 

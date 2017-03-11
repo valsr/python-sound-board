@@ -14,10 +14,10 @@ class GenericTreeNodeInterface(object):
         node_index (get index for node)
         node_at (get node at given position)
         remove_at (remove position)
-        clear_nodes (clear all nodes, technically we could iterate over the children nodes)
-        children (obtain children node list)
-        parent (obtain parent node if any)
-        clone (obtain a clone of self and children nodes)"""
+        clear_nodes (clear all nodes, technically we could iterate over the nodes nodes)
+        nodes (obtain child node list)
+        parent_node (obtain parent_node node if any)
+        clone (obtain a clone of self and nodes nodes)"""
 
     def add_node(self, node, position=-1):
         """Add node at given position
@@ -63,12 +63,12 @@ class GenericTreeNodeInterface(object):
             if cb(self):
                 yield self
 
-        for n in self.children():
+        for n in self.nodes():
             if cb(n):
                 yield n
 
             if descend:
-                if len(n.children()) > 0:
+                if len(n.nodes()) > 0:
                     yield from n.iterate_nodes(cb, descend, False)  # we already did the child nodes here/at this level
 
     def find_nodes(self, cb, descend=False, include_self=True):
@@ -148,7 +148,7 @@ class GenericTreeNodeInterface(object):
             self
 
         Note:
-            Scans only immediate nodes (does not scan for children's children nodes). For that use remove_node_by_id
+            Scans only immediate nodes (does not scan for children's nodes nodes). For that use remove_node_by_id
         """
         self.remove_at(self.node_index(node))
         return self
@@ -170,7 +170,7 @@ class GenericTreeNodeInterface(object):
 
         Args:
             node_id: Node node_id to remove
-            descend: Whether to scan children's children
+            descend: Whether to scan children's nodes
 
         Returns:
             Removed node or None
@@ -190,19 +190,19 @@ class GenericTreeNodeInterface(object):
         """
         raise NotImplementedError()
 
-    def children(self):
+    def nodes(self):
         """Obtain child list
 
         Returns:
             List of DataTreeNode
 
         Note:
-            Will always return a list, empty if no node has no children
+            Will always return a list, empty if node has no child nodes
         """
         raise NotImplementedError()
 
-    def parent(self):
-        """Obtain parent node
+    def parent_node(self):
+        """Obtain parent_node node
 
         Returns:
             DataTreeNode or None
@@ -210,18 +210,18 @@ class GenericTreeNodeInterface(object):
         raise NotImplementedError()
 
     def detach(self):
-        """Remove self from parent (if attached)
+        """Remove self from parent_node (if attached)
 
         Returns:
             self
         """
-        if self.parent():
-            self.parent().remove_node(self)
+        if self.parent_node():
+            self.parent_node().remove_node(self)
 
         return self
 
     def clone(self, deep=False):
-        """Performs a shallow clone of the data and children (new ids will be generated)
+        """Performs a shallow clone of the data and nodes (new ids will be generated)
 
         Args:
             deep: Perform a deep copy instead
@@ -238,8 +238,8 @@ class DataTreeNode(GenericTreeNodeInterface):
     def __init__(self, **kwargs):
         """Constructor"""
         self._data = {}
-        self._parent = None
-        self._children = []
+        self._parent_node = None
+        self._nodes = []
         self._id = str(uuid.uuid1())
 
         for k in kwargs:
@@ -303,31 +303,16 @@ class DataTreeNode(GenericTreeNodeInterface):
         self._data = {}
 
     def add_node(self, node, position=-1):
-        """Add node at given position
-
-        Args:
-            node: Node to add
-            position: Position to add the node at. If >=0, then the node will be inserted before at the position index
-                (or end if greater than the child node list). If < 0 then it will be inserted from the back at given
-                position (-1 being last, -2 second last..)
-
-        Returns:
-            self
-
-        Raises:
-            TypeError: If node is not instance of DataTreeNode
-            RuntimeError: If node is - self, already added, detected a recursive node addition
-        """
         self._validate_node_add(node)
 
         if position < 0:
-            position = len(self._children) + 1 + position  # +1 since negative is adding after
+            position = len(self._nodes) + 1 + position  # +1 since negative is adding after
 
         if position < 0:
             position = 0
 
-        self._children.insert(position, node)
-        node._parent = self
+        self._nodes.insert(position, node)
+        node._parent_node = self
 
         return self
 
@@ -338,104 +323,59 @@ class DataTreeNode(GenericTreeNodeInterface):
         if node is self:
             raise RuntimeError("Can't add self as a child node")
 
-        if node.parent() or node in self._children:
-            raise RuntimeError("Node already attached to %s" % node.parent())
+        if node.parent_node() or node in self._nodes:
+            raise RuntimeError("Node already attached to %s" % node.parent_node())
 
         _top = self
-        while _top.parent():
-            _top = _top.parent()
+        while _top.parent_node():
+            _top = _top.parent_node()
 
         if _top is node:
             raise RuntimeError("Detected recursive addition of node")
 
     def node_index(self, node):
-        """Return the index of given node"""
-        return self._children.index(node)
+        return self._nodes.index(node)
 
     def node_at(self, position=0):
-        """Obtain node at given position
-
-        Args:
-            position: The node index. If <0, then it will return the index as counted from the back (-1 being the last
-                item)
-
-        Returns:
-            DataTreeNode or None if index > node's child list
-        """
         if position < 0:
-            position = len(self._children) + position
+            position = len(self._nodes) + position
 
-        if position < 0 or position >= len(self._children):
+        if position < 0 or position >= len(self._nodes):
             return None
 
-        return self._children[position]
+        return self._nodes[position]
 
     def remove_at(self, position=-1):
-        """Remove node at given position
-
-        Args:
-            position: The node index. If <0, then it will return the index as counted from the back (-1 being the last
-                item)
-
-        Returns:
-            Removed node or None if index > child size
-        """
         if position < 0:
-            position = len(self._children) + position
+            position = len(self._nodes) + position
 
-        if position < 0 or position >= len(self._children):
+        if position < 0 or position >= len(self._nodes):
             return None
 
-        node = self._children.pop(position)
-        node._parent = None
+        node = self._nodes.pop(position)
+        node._parent_node = None
         return node
 
     def clear_nodes(self):
-        """Remove all child nodes
+        for n in self._nodes:
+            n._parent_node = None
 
-        Returns:
-            self
-        """
-        for n in self._children:
-            n._parent = None
-
-        self._children = {}
+        self._nodes = {}
         return self
 
-    def children(self):
-        """Obtain child list
+    def nodes(self):
+        return self._nodes
 
-        Returns:
-            List of DataTreeNode
-
-        Note:
-            Will always return a list, empty if no node has no children
-        """
-        return self._children
-
-    def parent(self):
-        """Obtain parent node
-
-        Returns:
-            DataTreeNode or None
-        """
-        return self._parent
+    def parent_node(self):
+        return self._parent_node
 
     def clone(self, deep=False):
-        """Performs a shallow clone of the data and children (new ids will be generated)
-
-        Args:
-            deep: Perform a deep copy instead
-
-        Returns:
-            DataTreeNode cloned node
-        """
         node = DataTreeNode()
 
         data = self.get_data()
         node.set_data(copy.copy(data) if not deep else copy.deepcopy(data))
 
-        for child in self.children():
+        for child in self.nodes():
             child_node = child.clone()
             node.add_node(child_node)
 
@@ -451,7 +391,7 @@ class DataTreeNode(GenericTreeNodeInterface):
             for v in data:
                 logger("%s%s%s:%s" % (indent * level, data_indent, v, str(data[v])))
 
-        children = self.children()
+        children = self.nodes()
         if len(children) > 0:
             logger("%s%s%s" % (indent * level, data_indent, "Children:"))
             for c in children:

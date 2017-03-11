@@ -68,35 +68,35 @@ class TestGenericTreeNode(unittest.TestCase):
 
     def test_add_node(self):
         self.assertIsInstance(self.node.add_node(DataTreeNode(label="1")), DataTreeNode)
-        self.assertEqual(len(self.node.children()), 1)
+        self.assertEqual(len(self.node.nodes()), 1)
 
         self.assertIsInstance(self.node.add_node(DataTreeNode(label="2")), DataTreeNode)
-        self.assertEqual(len(self.node.children()), 2)
+        self.assertEqual(len(self.node.nodes()), 2)
 
         n = DataTreeNode(label="3")
-        self.assertIsNone(n.parent())
+        self.assertIsNone(n.parent_node())
         self.assertIsInstance(self.node.add_node(n), DataTreeNode)
-        self.assertIs(self.node, n.parent())
-        self.assertEqual(len(self.node.children()), 3)
+        self.assertIs(self.node, n.parent_node())
+        self.assertEqual(len(self.node.nodes()), 3)
 
     def test_add_node_appending(self):
         self.node.add_node(DataTreeNode(label="1"))
         self.node.add_node(DataTreeNode(label="2"))
         self.node.add_node(DataTreeNode(label="3"))
-        self.assertEqual(self.node.children()[0].label, "1")
-        self.assertEqual(self.node.children()[1].label, "2")
-        self.assertEqual(self.node.children()[2].label, "3")
+        self.assertEqual(self.node.nodes()[0].label, "1")
+        self.assertEqual(self.node.nodes()[1].label, "2")
+        self.assertEqual(self.node.nodes()[2].label, "3")
 
     def test_add_node_position(self):
         self.assertIsInstance(self.node.add_node(DataTreeNode(label="1")), DataTreeNode)
-        self.assertEqual(len(self.node.children()), 1)
+        self.assertEqual(len(self.node.nodes()), 1)
 
     def test_add_node_type(self):
         self.assertRaises(TypeError, self.node.add_node, 1)
 
     def test_add_node_none(self):
         self.assertRaises(TypeError, self.node.add_node, node=None)
-        self.assertEqual(len(self.node.children()), 0)
+        self.assertEqual(len(self.node.nodes()), 0)
 
     def set_up_tree(self):
         t = DataTreeNode()
@@ -149,24 +149,24 @@ class TestGenericTreeNode(unittest.TestCase):
         t = self.set_up_tree()
 
         n = t.node_at()
-        self.assertNotEqual(len(t.children()), 0)
+        self.assertNotEqual(len(t.nodes()), 0)
         self.assertIs(t.clear_nodes(), t)
-        self.assertEqual(len(t.children()), 0)
-        self.assertIsNone(n.parent())
+        self.assertEqual(len(t.nodes()), 0)
+        self.assertIsNone(n.parent_node())
 
     def test_children(self):
         t = self.set_up_tree()
-        c = t.children()
+        c = t.nodes()
         self.assertIsNotNone(c)
         self.assertEqual(c[0].label, "first")
         self.assertIs(c[0], t.node_at())
 
     def test_parent(self):
         n = DataTreeNode()
-        self.assertIsNone(n.parent())
+        self.assertIsNone(n.parent_node())
 
         self.node.add_node(n)
-        self.assertIs(n.parent(), self.node)
+        self.assertIs(n.parent_node(), self.node)
 
     def test_remove_node_none(self):
         t = self.set_up_tree()
@@ -214,20 +214,20 @@ class TestGenericTreeNode(unittest.TestCase):
 
         n = t.node_at(0)
 
-        children_size = len(t.children())
+        children_size = len(t.nodes())
         self.assertIs(t.remove_node(n), t)
         self.assertIsNot(t.node_at(0), n)
-        self.assertEqual(len(t.children()), children_size - 1)
+        self.assertEqual(len(t.nodes()), children_size - 1)
 
     def test_remove_node_id(self):
         t = self.set_up_tree()
 
         n = t.node_at(0)
 
-        children_size = len(t.children())
+        children_size = len(t.nodes())
         self.assertIs(t.remove_node_by_id(n.id), n)
         self.assertIsNot(t.node_at(0), n)
-        self.assertEqual(len(t.children()), children_size - 1)
+        self.assertEqual(len(t.nodes()), children_size - 1)
 
         # remove non existing
         self.assertIsNone(t.remove_node_by_id(n.node_at(1).id))
@@ -334,14 +334,14 @@ class TestGenericTreeNode(unittest.TestCase):
 
     def test_detach(self):
         n = DataTreeNode()
-        self.assertIsNone(n.parent())
+        self.assertIsNone(n.parent_node())
 
         self.node.add_node(n)
-        self.assertIs(n.parent(), self.node)
+        self.assertIs(n.parent_node(), self.node)
 
         n.detach()
-        self.assertIsNone(n.parent())
-        self.assertEqual(len(self.node.children()), 0)
+        self.assertIsNone(n.parent_node())
+        self.assertEqual(len(self.node.nodes()), 0)
 
     def test_clone(self):
         n = self.node.clone()

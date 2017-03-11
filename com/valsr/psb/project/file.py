@@ -49,8 +49,8 @@ def _deserialize_node_structure(data, parent):
         node.data = MediaInfo.deserialize(data['data'])
 
     parent.add_node(node)
-    if 'children' in data:
-        for child in data['children']:
+    if 'nodes' in data:
+        for child in data['nodes']:
             _deserialize_node_structure(child, node)
 
 
@@ -61,7 +61,7 @@ def save_project(savefile):
     files = []
     lanes = []
 
-    for child in savefile.audio_tree.children():
+    for child in savefile.audio_tree.nodes():
         files.append(_serialize_node_structure(child, savefile=savefile))
     json_dict['files'] = files
 
@@ -97,10 +97,10 @@ def _serialize_node_structure(node, savefile):
     else:
         d['data'] = None
 
-    # serialize children
-    d['children'] = []
-    for child in node.children():
-        d['children'].append(_serialize_node_structure(child, savefile=savefile))
+    # serialize nodes
+    d['nodes'] = []
+    for child in node.nodes():
+        d['nodes'].append(_serialize_node_structure(child, savefile=savefile))
 
     return d
 
