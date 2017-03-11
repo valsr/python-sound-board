@@ -13,6 +13,7 @@ from kivy.uix.treeview import TreeView, TreeViewException, TreeViewNode
 from com.valsr.psb.ui.widget.draggable import Draggable
 from com.valsr.psb.ui.widget.droppable import Droppable
 from com.valsr.type import tree
+from com.valsr.type.tree import find_by_id
 
 
 class TreeViewNodeInterface(tree.GenericTreeNodeInterface):
@@ -350,7 +351,7 @@ def synchronize_with_tree(draggable_tree, tree_node):
 
     for id in delete_nodes:
         Logger.debug("Removing node %s", id)
-        draggable_node.remove_node_by_id(id)
+        draggable_node.remove_nodes(find_by_id(id))
 
 
 def synchronize_node_with_tree(draggable_node, tree_node):
@@ -362,7 +363,7 @@ def synchronize_node_with_tree(draggable_node, tree_node):
     updated_child_list = []
     for child in tree_node.nodes():
         updated_child_list.append(child.node_id)
-        node = draggable_node.node(child.node_id)
+        node = draggable_node.get_node(child.node_id)
         if node:
             synchronize_node_with_tree(node, child)
         else:

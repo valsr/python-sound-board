@@ -111,7 +111,6 @@ class MainWindow(WindowBase):
         PSBProject.project = PSBProject()
         self._update_ui()
 
-    # TODO:
     def on_file_tree_touch_up(self, tree, touch):
         """Handle file tree touch events - opens menu"""
         pos = touch.pos  # tree.parent.to_window(touch.pos[0], touch.pos[1], relative=True)
@@ -138,15 +137,15 @@ class MainWindow(WindowBase):
 
     # TODO:
     def on_menu_press(self, menu, item, pos):
-        action, node = item.data
-
-        if node:
-            if action == MainTreeMenuActions.RENAME:
-                popup.show_text_input_popup(title='Rename Category', message='Enter New Category Name', input_text=node._label.text,
-                                            yes_button_label='Rename', no_button_label='Cancel', parent=self,
-                                            callback=lambda x: self._rename_tree_node(node.id, x.text))
-            elif action == MainTreeMenuActions.DELETE:
-                self._delete_tree_node(node.id)
+        action, node_id = item.data
+        if action == MainTreeMenuActions.RENAME:
+            node = PSBProject.project.audio_files.find_node(find_by_property("node_id", node_id), descend=True)
+            print(node, node_id)
+            popup.show_text_input_popup(title='Rename Category', message='Enter New Category Name', input_text=node.label,
+                                        yes_button_label='Rename', no_button_label='Cancel', parent=self,
+                                        callback=lambda x: self._rename_tree_node(node_id, x.text))
+        elif action == MainTreeMenuActions.DELETE:
+            self._delete_tree_node(node_id)
     #
     # MENU
     #
@@ -161,7 +160,6 @@ class MainWindow(WindowBase):
         menu.add_menu_item(
             SimpleMenuItem(text="Rename '%s'" % node.label, data=(MainTreeMenuActions.RENAME, node_id)))
 
-        print(node, PSBProject.project.audio_files)
         if node.is_file():
             menu.add_menu_item(
                 SimpleMenuItem(text="Delete sound '%s'" % node.label, data=(MainTreeMenuActions.DELETE, node_id)))
@@ -231,9 +229,9 @@ class MainWindow(WindowBase):
         if button == WindowCloseState.YES:
             # find if we have the node by text
             tree = PSBProject.project.audio_files
-            parent_node = tree.find_node(find_by_property("node_id", parent_id), descend=True)
-            if parent_node.is_file:
-                parent_node = parent_node.parent_node
+            parent_node = tree.find_node(find_by_property("node_id", parent_id), include_self=False)
+            if parent_node.is_file():
+                parent_node = parent_node.parent_node()
 
             Logger.trace('Adding %s node to %s', text, parent_node.label)
 
@@ -246,14 +244,15 @@ class MainWindow(WindowBase):
             node = AudioFileNode(label=text)
             parent_node.add_node(node)
             self._update_ui()
-
-            # open the node
-            # TODO: Open the new node
+            self.audio_files_tree.root.find_node(find_by_id(node.node_id)).open()
 
     def _rename_tree_node(self, node_id, text):
-        node = self.audio_files_tree.find_nodes(find_by_id(node_id))
+        node = PSBProject.project.audio_files.find_node(find_by_property('node_id', node_id))
+
         if node:
             node.label = text
+            self._update_ui()
 
     def _delete_tree_node(self, node_id):
-        self.audio_files_tree.remove_nodes(find_by_id(node_id))
+        PSBProject.project.audio_files.remove_nodes(find_by_property('node_id', node_id))
+        self._update_ui()

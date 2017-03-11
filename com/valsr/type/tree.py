@@ -101,7 +101,7 @@ class GenericTreeNodeInterface(object):
         """Return the index of given node"""
         raise NotImplementedError()
 
-    def iterate_nodes(self, callback=find_all(), descend=False, include_self=True):
+    def iterate_nodes(self, callback=find_all(), descend=True, include_self=True):
         """Iterate over child nodes based on given function
 
         Args:
