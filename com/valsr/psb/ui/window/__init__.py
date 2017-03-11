@@ -124,6 +124,7 @@ class MainWindow(WindowBase):
                 Logger.debug('Touched node %s %s', node.id, node.label)
                 if node and node is not self.audio_files_tree.root:
                     # construct menu
+                    tree.select_node(node)
                     m = self._create_files_menu(node.id)
                     pos = node.to_window(touch.pos[0], touch.pos[1])  # need to translate to proper coordinates
                     m.show(pos[0], pos[1], node)
