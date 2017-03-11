@@ -50,7 +50,7 @@ class PSBProject(object):
         self._lanes.clear_data()
         self._lanes.label = 'lanes'
 
-        self._file = savefile
+        self._file = path
         self._audio_tree = savefile.audio_tree.clone(deep=True)
         self._lanes = savefile.lanes.clone(deep=True)
 
@@ -76,7 +76,5 @@ class PSBProject(object):
         return self._lanes
 
     def dump(self):
-        print("PSBProject")
-        print("File: %s" % self._file)
         self._audio_tree._dump_node(logger=print, indent="  ", data_indent="-")
         self._lanes._dump_node(logger=print, indent="  ", data_indent="-")

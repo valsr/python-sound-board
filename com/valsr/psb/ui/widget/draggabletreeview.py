@@ -188,7 +188,6 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInte
 
         self.id = node_id
         self.data = data
-        self.label = label
 
         # create a label for us
         self._label = Label(text=label)
@@ -197,6 +196,8 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInte
         self._label.max_lines = 1
         self._label.shorten_from = 'right'
         self._label.texture_update()
+
+        self.label = label
 
         # add label to ui component
         self.ui = self._label
@@ -318,6 +319,7 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInte
 
     def on_label(self, *args):
         self.label = args[1]
+        self._label.text = args[1]
 
     def _drag_detach_parent(self):
         self._tree.remove_node(self)
@@ -378,7 +380,7 @@ def synchronize_node_with_tree(draggable_node, tree_node):
 
     for id in delete_nodes:
         Logger.debug("Removing node %s", id)
-        draggable_node.remove_node_by_id(id)
+        draggable_node.remove_node(draggable_node.get_node(id))
 
 
 def insert_tree_at_position(parent_node, tree_node, position):

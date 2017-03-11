@@ -83,16 +83,14 @@ def _serialize_node_structure(node, savefile):
     Returns:
         String: serialized object
     """
-    from com.valsr.psb.ui.widget.audiotree import AudioTreeViewNode
-
-    if not isinstance(node, AudioTreeViewNode):
-        raise RuntimeError("Can only serialize AudioTreeViewNode")
+    if not isinstance(node, AudioFileNode):
+        raise RuntimeError("Can only serialize AudioFileNode")
 
     d = {}
     d['id'] = node.node_id
     d['label'] = node.label
 
-    if isinstance(node.data, MediaInfo):
+    if node.has_data('data') and isinstance(node.data, MediaInfo):
         d['data'] = node.data.serialize(relative_file=True, relative_root=os.path.dirname(savefile.file))
     else:
         d['data'] = None

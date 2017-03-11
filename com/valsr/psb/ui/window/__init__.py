@@ -128,19 +128,16 @@ class MainWindow(WindowBase):
                     pos = node.to_window(touch.pos[0], touch.pos[1])  # need to translate to proper coordinates
                     m.show(pos[0], pos[1], node)
 
-    # TODO:
-    def ui_add_lane(self, position='bottom'):
+    def on_add_lane(self, position='bottom'):
         ui_lanes = self.get_ui('lanes')
 
         lane = LaneWidget()
         ui_lanes.add_widget(lane)
 
-    # TODO:
     def on_menu_press(self, menu, item, pos):
         action, node_id = item.data
         if action == MainTreeMenuActions.RENAME:
             node = PSBProject.project.audio_files.find_node(find_by_property("node_id", node_id), descend=True)
-            print(node, node_id)
             popup.show_text_input_popup(title='Rename Category', message='Enter New Category Name', input_text=node.label,
                                         yes_button_label='Rename', no_button_label='Cancel', parent=self,
                                         callback=lambda x: self._rename_tree_node(node_id, x.text))
@@ -169,6 +166,9 @@ class MainWindow(WindowBase):
 
         return menu
 
+    #
+    # Miscellaneous functions
+    #
     def _add_sound_dismiss(self, *args):
         """Handle dismissal of the add sound dialogue"""
         window = WindowManager.window(MainWindow.POPUP_WINDOW_ID)
@@ -247,12 +247,12 @@ class MainWindow(WindowBase):
             self.audio_files_tree.root.find_node(find_by_id(node.node_id)).open()
 
     def _rename_tree_node(self, node_id, text):
-        node = PSBProject.project.audio_files.find_node(find_by_property('node_id', node_id))
+        node = PSBProject.project.audio_files.find_node(find_by_property('node_id', node_id), descend=True)
 
         if node:
             node.label = text
             self._update_ui()
 
     def _delete_tree_node(self, node_id):
-        PSBProject.project.audio_files.remove_nodes(find_by_property('node_id', node_id))
+        PSBProject.project.audio_files.remove_nodes(find_by_property('node_id', node_id), descend=True)
         self._update_ui()
