@@ -3,10 +3,10 @@ Created on Mar 9, 2017
 
 @author: valsr <valsr@valsr.com>
 """
-from com.valsr.type.tree import GenericTreeNode
+from com.valsr.type.tree import DataTreeNode
 
 
-class AudioFileNode(GenericTreeNode):
+class AudioFileNode(DataTreeNode):
     """Audio file node used for audio files tree"""
 
     def __init__(self, label, node_id=None, **params):

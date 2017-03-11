@@ -32,7 +32,7 @@ class GenericTreeNodeInterface(object):
             self
 
         Raises:
-            TypeError: If node is not instance of GenericTreeNode
+            TypeError: If node is not instance of DataTreeNode
             RuntimeError: If node is - self, already added, detected a recursive node addition
         """
         raise NotImplementedError()
@@ -54,7 +54,7 @@ class GenericTreeNodeInterface(object):
             include_self: Include self in the iteration
 
         Returns:
-            yields GenericTreeNode
+            yields DataTreeNode
 
         Notes:
             When iterating, it will descend to child nodes if the current node has any.
@@ -93,7 +93,7 @@ class GenericTreeNodeInterface(object):
             include_self: Whether to include self in the search
 
         Returns:
-            GenericTreeNode or None
+            DataTreeNode or None
         """
         try:
             return next(self.iterate_nodes(cb, descend, include_self))
@@ -122,7 +122,7 @@ class GenericTreeNodeInterface(object):
             descend: Whether to descend into child nodes as well
 
         Returns:
-            GenericTreeNode or None
+            DataTreeNode or None
         """
         return self.find_node(lambda n: n.id == node_id, descend)
 
@@ -134,7 +134,7 @@ class GenericTreeNodeInterface(object):
                 item)
 
         Returns:
-            GenericTreeNode or None if index > node's child list
+            DataTreeNode or None if index > node's child list
         """
         raise NotImplementedError()
 
@@ -194,7 +194,7 @@ class GenericTreeNodeInterface(object):
         """Obtain child list
 
         Returns:
-            List of GenericTreeNode
+            List of DataTreeNode
 
         Note:
             Will always return a list, empty if no node has no children
@@ -205,7 +205,7 @@ class GenericTreeNodeInterface(object):
         """Obtain parent node
 
         Returns:
-            GenericTreeNode or None
+            DataTreeNode or None
         """
         raise NotImplementedError()
 
@@ -227,12 +227,12 @@ class GenericTreeNodeInterface(object):
             deep: Perform a deep copy instead
 
         Returns:
-            GenericTreeNode cloned node
+            DataTreeNode cloned node
         """
         raise NotImplementedError()
 
 
-class GenericTreeNode(GenericTreeNodeInterface):
+class DataTreeNode(GenericTreeNodeInterface):
     """A generic tree node/tree structure with ability to store custom data"""
 
     def __init__(self, **kwargs):
@@ -315,7 +315,7 @@ class GenericTreeNode(GenericTreeNodeInterface):
             self
 
         Raises:
-            TypeError: If node is not instance of GenericTreeNode
+            TypeError: If node is not instance of DataTreeNode
             RuntimeError: If node is - self, already added, detected a recursive node addition
         """
         self._validate_node_add(node)
@@ -332,8 +332,8 @@ class GenericTreeNode(GenericTreeNodeInterface):
         return self
 
     def _validate_node_add(self, node):
-        if not isinstance(node, GenericTreeNode):
-            raise TypeError("Node must be an instance of GenericTreeNode")
+        if not isinstance(node, DataTreeNode):
+            raise TypeError("Node must be an instance of DataTreeNode")
 
         if node is self:
             raise RuntimeError("Can't add self as a child node")
@@ -360,7 +360,7 @@ class GenericTreeNode(GenericTreeNodeInterface):
                 item)
 
         Returns:
-            GenericTreeNode or None if index > node's child list
+            DataTreeNode or None if index > node's child list
         """
         if position < 0:
             position = len(self._children) + position
@@ -406,7 +406,7 @@ class GenericTreeNode(GenericTreeNodeInterface):
         """Obtain child list
 
         Returns:
-            List of GenericTreeNode
+            List of DataTreeNode
 
         Note:
             Will always return a list, empty if no node has no children
@@ -417,7 +417,7 @@ class GenericTreeNode(GenericTreeNodeInterface):
         """Obtain parent node
 
         Returns:
-            GenericTreeNode or None
+            DataTreeNode or None
         """
         return self._parent
 
@@ -428,9 +428,9 @@ class GenericTreeNode(GenericTreeNodeInterface):
             deep: Perform a deep copy instead
 
         Returns:
-            GenericTreeNode cloned node
+            DataTreeNode cloned node
         """
-        node = GenericTreeNode()
+        node = DataTreeNode()
 
         data = self.get_data()
         node.set_data(copy.copy(data) if not deep else copy.deepcopy(data))
