@@ -27,7 +27,8 @@ from com.valsr.psb.utility import MainTreeMenuActions
 from com.valsr.psb.ui.widget.audiotree import AudioTreeViewNode
 from com.valsr.psb.project import PSBProject
 from com.valsr.psb.ui.widget import draggabletreeview
-from com.valsr.type.nodes import AudioFileNode
+from com.valsr.type.nodes import AudioFileNode, find_by_fingerprint
+from com.valsr.type.tree import find_by_id, find_by_property
 
 
 class MainWindow(WindowBase):
@@ -184,7 +185,7 @@ class MainWindow(WindowBase):
             return
 
         tree = PSBProject.project.audio_files
-        if tree.has_node(lambda x: x.has_data('data') and x.data.fingerprint == info.fingerprint):
+        if tree.has_node(find_by_fingerprint(info.fingerprint), descend=True, include_self=True):
             popup.show_ok_popup(
                 'File Already Added', 'File by similar fingerprint has already been added', parent_node=self)
             return
@@ -195,7 +196,7 @@ class MainWindow(WindowBase):
         if not ui_selected_node:
             ui_selected_node = self.audio_files_tree.root
 
-        parent_node = tree.find_node(lambda x: x.node_id == ui_selected_node.id, True, True)
+        parent_node = tree.find_node(find_by_property("node_id", ui_selected_node.id), descend=True, include_self=True)
 
         if parent_node.is_file():
             parent_node = parent_node.parent_node
@@ -228,13 +229,13 @@ class MainWindow(WindowBase):
         if button == WindowCloseState.YES:
             # find if we have the node by text
             tree = PSBProject.project.audio_files
-            parent_node = tree.find_node(lambda x: x.node_id == parent_id, True)
+            parent_node = tree.find_node(find_by_property("node_id", parent_id), descend=True)
             if parent_node.is_file:
                 parent_node = parent_node.parent_node
 
             Logger.trace('Adding %s node to %s', text, parent_node.label)
 
-            if parent_node.has_node(lambda x: x.label == text, include_self=False):
+            if parent_node.has_node(find_by_property("label", text), include_self=False):
                 Logger.trace('Node by %s already exists', text)
                 popup.show_ok_popup(
                     'New Category', message='Category \'%s\' already exists within \'%s\'' % (text, parent_node.label))
@@ -248,12 +249,9 @@ class MainWindow(WindowBase):
             # TODO: Open the new node
 
     def _rename_tree_node(self, node_id, text):
-        node = self.audio_files_tree.find_nodes(lambda x: x.id == node_id)
+        node = self.audio_files_tree.find_nodes(find_by_id(node_id))
         if node:
             node.label = text
 
     def _delete_tree_node(self, node_id):
-        node = self.audio_files_tree.find_nodes(lambda x: x.id == node_id)
-
-        if node:
-            self.audio_files_tree.remove_node(node)
+        self.audio_files_tree.remove_nodes(find_by_id(node_id))

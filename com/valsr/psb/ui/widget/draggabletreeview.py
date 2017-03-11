@@ -12,14 +12,14 @@ from kivy.uix.treeview import TreeView, TreeViewException, TreeViewNode
 
 from com.valsr.psb.ui.widget.draggable import Draggable
 from com.valsr.psb.ui.widget.droppable import Droppable
-from com.valsr.type.tree import GenericTreeNodeInterface
+from com.valsr.type import tree
 
 
-class TreeViewNodeInterface(GenericTreeNodeInterface):
+class TreeViewNodeInterface(tree.GenericTreeNodeInterface):
     """TreeViewNodeInterface. This provides the a custom implementation of the GenericTreeNodeInterface to account
     for the incomparability between TreeViewNode and GenericTreeView node interface."""
 
-    def iterate_nodes(self, callback=lambda n: True, descend=False, include_self=True):
+    def iterate_nodes(self, callback=tree.find_all(), descend=False, include_self=True):
         """Iterate over child nodes based on given function
 
         Args:
@@ -43,7 +43,8 @@ class TreeViewNodeInterface(GenericTreeNodeInterface):
 
             if descend:
                 if len(n.nodes) > 0:
-                    yield from n.iterate_nodes(callback, descend, False)  # we already did the child nodes here/at this level
+                    # we already did the child nodes here/at this level
+                    yield from n.iterate_nodes(callback, descend, False)
 
     def detach(self):
         """Remove self from parent_node (if attached)
@@ -87,7 +88,7 @@ class DraggableTreeView(TreeView, Droppable):
             node.draggable = False
 
         # check if the parent_node has the node already
-        if parent_node and parent_node.has_node(lambda x: x.id == node.id):
+        if parent_node and parent_node.has_node(tree.find_by_id(node.id)):
             Logger.warning('Node %s already has node by id %s', parent_node.id, node.id)
             return parent_node.node(node.id)
 
@@ -322,14 +323,13 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInte
         self._original_parent._do_layout()
 
 
-def synchronize_with_tree(draggable_tree, tree):
+def synchronize_with_tree(draggable_tree, tree_node):
     draggable_node = draggable_tree.root
-    tree_node = tree
     Logger.debug("Synchronizing node %s (root) to N/A(%s)", draggable_node.id, tree_node.label)
 
     # update the node id for the root (if applicable)
-    if draggable_node.id is not tree.node_id:
-        draggable_node.id = tree.node_id
+    if draggable_node.id is not tree_node.node_id:
+        draggable_node.id = tree_node.node_id
 
     # update nodes
     updated_child_list = []
