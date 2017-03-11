@@ -28,13 +28,19 @@ GridLayout:
 			height: 30
 			size_hint_y: None
 			label: 'Open'
-			on_press: root.parent.ui_open_project()
+			on_press: root.parent.on_open_project()
 			source: 'folder-open'
 		ImageButton:
 			height: 30
 			size_hint_y: None
 			label: 'Save'
-			on_press: root.parent.ui_save_project()
+			on_press: root.parent.on_save_project()
+			source: 'download'
+		ImageButton:
+			height: 30
+			size_hint_y: None
+			label: 'Save As'
+			on_press: root.parent.on_save_as_project()
 			source: 'download'
 	GridLayout:
 		cols: 2
@@ -63,7 +69,7 @@ GridLayout:
 						height: self.minimum_height
 				ImageButton:
 					id: add_category
-					on_press: root.parent.ui_add_tree_category()
+					on_press: root.parent.on_add_category()
 					label: 'Add Category'
 					source: 'folder'
 					height: 30

@@ -61,29 +61,40 @@ class MainWindow(WindowBase):
         """Handle add sound button event"""
         if not WindowManager.window(MainWindow.POPUP_WINDOW_ID):
             window = WindowManager.create_window(AddSoundDialogue, parent=self, window_id=MainWindow.POPUP_WINDOW_ID,
-                                                 create_opts={"size_hint": (0.75, 0.75)})
+                                                 create_opts={"windowed": True, "size_hint": (0.75, 0.75)})
             window.bind(on_dismiss=self._add_sound_dismiss)
             window.open()
+        else:
+            Logger.debug("Main popup window is open...")
 
     def on_save_project(self, *args):
         """Handle save button event"""
-        if self.project is None:
-            # open file to save assert
-            self._save_window = WindowManager.create_window(SaveDialogue, parent=None,
-                                                            create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
-            self._save_window.bind(on_dismiss=lambda x: self._save_project(from_dialogue=True))
-            self._save_window.open()
+        if not PSBProject.project.file:
+            return self.on_save_as_project(*args)
         else:
             self._save_project()
 
-    def ui_open_project(self, *args):
-        """Handle open button event"""
-        self._open_window = WindowManager.create_window(OpenDialogue, parent=None,
-                                                        create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
-        self._open_window.bind(on_dismiss=self._open_project)
-        self._open_window.open()
+    def on_save_as_project(self, *args):
+        """Handle save as button event"""
+        if not WindowManager.window(MainWindow.POPUP_WINDOW_ID):
+            window = WindowManager.create_window(SaveDialogue, parent=None, window_id=MainWindow.POPUP_WINDOW_ID,
+                                                 create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
+            window.bind(on_dismiss=lambda x: self._save_project(from_dialogue=True))
+            window.open()
+        else:
+            Logger.debug("Main popup window is open...")
 
-    def ui_add_tree_category(self, *args):
+    def on_open_project(self, *args):
+        """Handle open button event"""
+        if not WindowManager.window(MainWindow.POPUP_WINDOW_ID):
+            window = WindowManager.create_window(OpenDialogue, parent=None, window_id=MainWindow.POPUP_WINDOW_ID,
+                                                 create_opts={'windowed': True, 'size_hint': (0.75, 0.75)})
+            window.bind(on_dismiss=self._open_project)
+            window.open()
+        else:
+            Logger.debug("Main popup window is open...")
+
+    def on_add_category(self, *args):
         """Handle add category button event"""
         selected_node = self.audio_files_tree.selected_node
 
@@ -93,9 +104,9 @@ class MainWindow(WindowBase):
         # now open the dialogue
         popup.show_text_input_popup(title='New Category', message='Enter Category Name', input_text='Category',
                                     yes_button_label='Create', no_button_label='Cancel', parent=self,
-                                    callback=lambda x: self._add_tree_category(x.selection, selected_node, x.text))
-        return
+                                    callback=lambda x: self._add_category(x.selection, selected_node.id, x.text))
 
+    # TODO:
     def ui_file_tree_touch_up(self, tree, touch):
         """Handle file tree touch events - opens menu"""
         pos = tree.to_window(touch.pos[0], touch.pos[1], relative=True)
@@ -112,12 +123,14 @@ class MainWindow(WindowBase):
                     pos = node.to_window(touch.pos[0], touch.pos[1])  # need to translate to proper coordinates
                     m.show(pos[0], pos[1], node)
 
+    # TODO:
     def ui_add_lane(self, position='bottom'):
         ui_lanes = self.get_ui('lanes')
 
         lane = LaneWidget()
         ui_lanes.add_widget(lane)
 
+    # TODO:
     def on_menu_press(self, menu, item, pos):
         action, node = item.data
 
@@ -153,7 +166,7 @@ class MainWindow(WindowBase):
     def _add_sound_dismiss(self, *args):
         """Handle dismissal of the add sound dialogue"""
         window = WindowManager.window(MainWindow.POPUP_WINDOW_ID)
-        if window and window.close_state == WindowCloseState.OK:
+        if window and window.close_state == WindowCloseState.OK and window.file:
             self._add_audio_file(window.file)
 
         WindowManager.destroy_window(MainWindow.POPUP_WINDOW_ID)
@@ -173,10 +186,8 @@ class MainWindow(WindowBase):
 
         Logger.debug("Adding to %s to collection", file)
 
-        parents = tree.find_nodes(lambda x: x.label.lower() == 'uncategorized', False)
-        if parents:
-            parent = parents[0]
-        else:
+        parent = tree.find_node(lambda x: x.label.lower() == 'uncategorized', False)
+        if not parent:
             parent = tree.add_node(AudioFileNode(label="Uncategorized"))
 
         parent.add_node(AudioFileNode(label=os.path.basename(file), data=info))
@@ -184,32 +195,43 @@ class MainWindow(WindowBase):
 
     def _save_project(self, from_dialogue=False):
         if from_dialogue:
-            if self._save_window.close_state != WindowCloseState.OK:
-                WindowManager.destroy_window(self._save_window.id)
+            window = WindowManager.window(MainWindow.POPUP_WINDOW_ID)
+            if window.close_state != WindowCloseState.OK:
+                WindowManager.destroy_window(MainWindow.POPUP_WINDOW_ID)
                 return
-            self.file = self._save_window.file
-            WindowManager.destroy_window(self._save_window.id)
-        utility.save_project(self.file, self.audio_files_tree, None)
-        self.title = "PSB: " + self.file
+            file = window.file
+            WindowManager.destroy_window(MainWindow.POPUP_WINDOW_ID)
+        else:
+            file = PSBProject.project.file
+
+        PSBProject.project.save_project(file)
+        self.title = "PSB: " + file
 
     def _open_project(self, *args):
-        self.file = self._open_window.file
+        window = WindowManager.window(MainWindow.POPUP_WINDOW_ID)
         if self._open_window.close_state == WindowCloseState.OK:
-            utility.load_project(self.file, self.audio_files_tree)
+            PSBProject.load_project(self, window.file)
         WindowManager.destroy_window(self._open_window.id)
 
-    def _add_tree_category(self, button, parent_node, text):
+    def _add_category(self, button, parent_id, text):
         if button == WindowCloseState.YES:
-            Logger.trace('Adding %s node to %s', text, parent_node.id)
             # find if we have the node by text
-            if parent_node.find_nodes(lambda x: x.ui.text == text, False):
+            tree = PSBProject.project.audio_files
+            parent_node = tree.find_node(lambda x: x.node_id == parent_id, True)
+            Logger.trace('Adding %s node to %s', text, parent_node.label)
+
+            if parent_node.has_node(lambda x: x.label == text, include_self=False):
                 Logger.trace('Node by %s already exists', text)
                 popup.show_ok_popup(
-                    'New Category', message='Category \'%s\' already exists within \'%s\'' % (text, parent_node.id))
+                    'New Category', message='Category \'%s\' already exists within \'%s\'' % (text, parent_node.label))
                 return
 
-            node = AudioTreeViewNode(label=text)
-            parent_node.add_node(node).open(True)
+            node = AudioFileNode(label=text)
+            parent_node.add_node(node)
+            self._update_audio_tree()
+
+            # open the node
+            # TODO: Open the new node
 
     def _rename_tree_node(self, node_id, text):
         node = self.audio_files_tree.find_nodes(lambda x: x.id == node_id)

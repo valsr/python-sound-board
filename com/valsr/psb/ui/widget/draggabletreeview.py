@@ -292,6 +292,10 @@ def synchronize_with_tree(draggable_tree, tree):
     tree_node = tree
     Logger.debug("Synchronizing node %s (root) to N/A(%s)", draggable_node.id, tree_node.label)
 
+    # update the node id for the root (if applicable)
+    if draggable_node.id is not tree.node_id:
+        draggable_node.id = tree.node_id
+
     # update children
     updated_child_list = []
     for child in tree_node.children():

@@ -243,27 +243,35 @@ class TestGenericTreeNode(unittest.TestCase):
 
     def test_iterate(self):
         t = self.set_up_tree()
-        nodes = [x for x in t.iterate_nodes(lambda n: n.label == "first")]
+        nodes = [x for x in t.iterate_nodes(lambda n: n.label == "first", include_self=False)]
         self.assertEqual(len(nodes), 1)
 
-        nodes = [x for x in t.iterate_nodes(lambda n: n.label == "nonexisting")]
+        nodes = [x for x in t.iterate_nodes(lambda n: n.label == "nonexisting", include_self=False)]
         self.assertEqual(len(nodes), 0)
 
     def test_iterate_all(self):
         t = self.set_up_tree()
-        nodes = [x for x in t.iterate_nodes(lambda n: n.label == "first", True)]
+        nodes = [x for x in t.iterate_nodes(lambda n: n.label == "first", True, include_self=False)]
         self.assertEqual(len(nodes), 31)
 
-        nodes = [x for x in t.iterate_nodes(lambda n: n.label == "nonexisting", True)]
+        nodes = [x for x in t.iterate_nodes(lambda n: n.label == "nonexisting", True, include_self=False)]
         self.assertEqual(len(nodes), 0)
 
     def test_iterate_default(self):
         t = self.set_up_tree()
-        nodes = [x for x in t.iterate_nodes()]
+        nodes = [x for x in t.iterate_nodes(include_self=False)]
         self.assertEqual(len(nodes), 5)
 
-        nodes = [x for x in t.iterate_nodes(descend=True)]
+        nodes = [x for x in t.iterate_nodes(descend=True, include_self=False)]
         self.assertEqual(len(nodes), 155)
+
+    def test_iterate_nodes_include_self(self):
+        t = self.set_up_tree()
+        nodes = [x for x in t.iterate_nodes()]
+        self.assertEqual(len(nodes), 6)
+
+        nodes = [x for x in t.iterate_nodes(include_self=False)]
+        self.assertEqual(len(nodes), 5)
 
     def test_find_nodes_none(self):
         t = self.set_up_tree()

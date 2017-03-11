@@ -131,12 +131,13 @@ class GenericTreeNode(object):
         """Return the index of given node"""
         return self._children.index(node)
 
-    def iterate_nodes(self, cb=lambda n: True, descend=False):
+    def iterate_nodes(self, cb=lambda n: True, descend=False, include_self=True):
         """Iterate over child nodes based on given function
 
         Args:
             cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
             descend: Whether to descend into child nodes as well
+            include_self: Include self in the iteration
 
         Returns:
             yields GenericTreeNode
@@ -144,44 +145,62 @@ class GenericTreeNode(object):
         Notes:
             When iterating, it will descend to child nodes if the current node has any.
         """
+        if include_self:
+            if cb(self):
+                yield self
+
         for n in self._children:
             if cb(n):
                 yield n
 
             if descend:
                 if len(n.children()) > 0:
-                    yield from n.find_nodes(cb, descend)
+                    yield from n.iterate_nodes(cb, descend, False)  # we already did the child nodes here/at this level
 
-    def find_nodes(self, cb, descend=False):
+    def find_nodes(self, cb, descend=False, include_self=True):
         """Return a list of nodes that match based on given function (it actualizes the iterate_nodes function)
 
         Args:
             cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
             descend: Whether to descend into child nodes as well
+            include_self: Whether to include self in the search
 
         Returns:
             []
         """
 
-        return [x for x in self.iterate_nodes(cb, descend)]
+        return [x for x in self.iterate_nodes(cb, descend, include_self)]
 
-    def has_node(self, cb, descend=False):
+    def find_node(self, cb, descend=False, include_self=True):
+        """Return the first node found by given callback function.
+
+        Args:
+            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            descend: Whether to descend into child nodes as well
+            include_self: Whether to include self in the search
+
+        Returns:
+            GenericTreeNode or None
+        """
+
+        try:
+            return next(self.iterate_nodes(cb, descend, include_self))
+        except StopIteration:
+            return None
+
+    def has_node(self, cb, descend=False, include_self=True):
         """Return if given call back returns at least one matched node. This method is faster than find_nodes as it
         stops after/return the first found node.
 
         Args:
             cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
             descend: Whether to descend into child nodes as well
+            include_self: Whether to include self in the search
 
         Returns:
             Boolean
         """
-
-        try:
-            next(self.iterate_nodes(cb, descend))
-            return True
-        except StopIteration:
-            return False
+        return self.find_node(cb, descend, include_self=include_self) is not None
 
     def get_node(self, node_id, descend=False):
         """Obtain the node by given node_id
