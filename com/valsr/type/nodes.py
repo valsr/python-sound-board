@@ -22,6 +22,9 @@ class AudioFileNode(DataTreeNode):
     def is_file(self):
         return self.has_data('data') and isinstance(self.data, MediaInfo)
 
+    def clone(self):
+        return super().clone()
+
 
 def find_by_fingerprint(fingerprint):
     def _find(node, fingerprint):

@@ -103,6 +103,3 @@ def _serialize_node_structure(node, savefile):
         d['nodes'].append(_serialize_node_structure(child, savefile=savefile))
 
     return d
-
-    # adding dictionary items
-    # def get

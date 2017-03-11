@@ -111,11 +111,11 @@ class MainWindow(WindowBase):
         PSBProject.project = PSBProject()
         self._update_ui()
 
+    # TODO:
     def on_file_tree_touch_up(self, tree, touch):
         """Handle file tree touch events - opens menu"""
         pos = touch.pos  # tree.parent.to_window(touch.pos[0], touch.pos[1], relative=True)
 
-        print(touch.pos, pos)
         if tree.collide_point(*pos):
             if touch.button == 'right':
                 # create menu
@@ -155,12 +155,14 @@ class MainWindow(WindowBase):
         menu = Menu()
         menu.bind(on_select=self.on_menu_press)
 
-        node = PSBProject.project.audio_files.get_node(node_id, decend=True)
+        node = PSBProject.project.audio_files.find_node(
+            find_by_property('node_id', node_id), descend=True, include_self=True)
 
         menu.add_menu_item(
             SimpleMenuItem(text="Rename '%s'" % node.label, data=(MainTreeMenuActions.RENAME, node_id)))
 
-        if node.is_leaf:
+        print(node, PSBProject.project.audio_files)
+        if node.is_file():
             menu.add_menu_item(
                 SimpleMenuItem(text="Delete sound '%s'" % node.label, data=(MainTreeMenuActions.DELETE, node_id)))
         else:

@@ -40,6 +40,7 @@ class PSBProject(object):
             path: Path to file to load
         """
         savefile = file.load_project(path)
+
         # clear previous information
         self._audio_tree.clear_nodes()
         self._audio_tree.clear_data()

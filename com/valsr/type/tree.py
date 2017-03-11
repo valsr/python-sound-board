@@ -51,7 +51,7 @@ def find_by_property(name, value):
     """
     def _find(node, name, value):
         if hasattr(node, name):
-            return node.__getattr__(property) == value
+            return node.__getattr__(name) == value
         return False
     return GenericTreeNodeSearcher(_find, name, value)
 
