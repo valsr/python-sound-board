@@ -7,7 +7,232 @@ import uuid
 import copy
 
 
-class GenericTreeNode(object):
+class GenericTreeNodeInterface(object):
+    """GenericTreeNodeInterface. This provides the a basic implementation of a tree-node interface provided the
+    implementing class provides implementation to few methods:
+        add_node (at position)
+        node_index (get index for node)
+        node_at (get node at given position)
+        remove_at (remove position)
+        clear_nodes (clear all nodes, technically we could iterate over the children nodes)
+        children (obtain children node list)
+        parent (obtain parent node if any)
+        clone (obtain a clone of self and children nodes)"""
+
+    def add_node(self, node, position=-1):
+        """Add node at given position
+
+        Args:
+            node: Node to add
+            position: Position to add the node at. If >=0, then the node will be inserted before at the position index
+                (or end if greater than the child node list). If < 0 then it will be inserted from the back at given
+                position (-1 being last, -2 second last..)
+
+        Returns:
+            self
+
+        Raises:
+            TypeError: If node is not instance of GenericTreeNode
+            RuntimeError: If node is - self, already added, detected a recursive node addition
+        """
+        raise NotImplementedError()
+
+    def add_at(self, node, position):
+        """Equivalent to add_node"""
+        return self.add_node(node, position)
+
+    def node_index(self, node):
+        """Return the index of given node"""
+        raise NotImplementedError()
+
+    def iterate_nodes(self, cb=lambda n: True, descend=False, include_self=True):
+        """Iterate over child nodes based on given function
+
+        Args:
+            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            descend: Whether to descend into child nodes as well
+            include_self: Include self in the iteration
+
+        Returns:
+            yields GenericTreeNode
+
+        Notes:
+            When iterating, it will descend to child nodes if the current node has any.
+        """
+        if include_self:
+            if cb(self):
+                yield self
+
+        for n in self.children():
+            if cb(n):
+                yield n
+
+            if descend:
+                if len(n.children()) > 0:
+                    yield from n.iterate_nodes(cb, descend, False)  # we already did the child nodes here/at this level
+
+    def find_nodes(self, cb, descend=False, include_self=True):
+        """Return a list of nodes that match based on given function (it actualizes the iterate_nodes function)
+
+        Args:
+            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            descend: Whether to descend into child nodes as well
+            include_self: Whether to include self in the search
+
+        Returns:
+            []
+        """
+        return [x for x in self.iterate_nodes(cb, descend, include_self)]
+
+    def find_node(self, cb, descend=False, include_self=True):
+        """Return the first node found by given callback function.
+
+        Args:
+            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            descend: Whether to descend into child nodes as well
+            include_self: Whether to include self in the search
+
+        Returns:
+            GenericTreeNode or None
+        """
+        try:
+            return next(self.iterate_nodes(cb, descend, include_self))
+        except StopIteration:
+            return None
+
+    def has_node(self, cb, descend=False, include_self=True):
+        """Return if given call back returns at least one matched node. This method is faster than find_nodes as it
+        stops after/return the first found node.
+
+        Args:
+            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            descend: Whether to descend into child nodes as well
+            include_self: Whether to include self in the search
+
+        Returns:
+            Boolean
+        """
+        return self.find_node(cb, descend, include_self=include_self) is not None
+
+    def get_node(self, node_id, descend=False):
+        """Obtain the node by given node_id
+
+        Args:
+            node_id: Node node_id
+            descend: Whether to descend into child nodes as well
+
+        Returns:
+            GenericTreeNode or None
+        """
+        return self.find_node(lambda n: n.id == node_id, descend)
+
+    def node_at(self, position=0):
+        """Obtain node at given position
+
+        Args:
+            position: The node index. If <0, then it will return the index as counted from the back (-1 being the last
+                item)
+
+        Returns:
+            GenericTreeNode or None if index > node's child list
+        """
+        raise NotImplementedError()
+
+    def remove_node(self, node):
+        """Remove given node
+
+        Args:
+            node: Node to remove
+
+        Returns:
+            self
+
+        Note:
+            Scans only immediate nodes (does not scan for children's children nodes). For that use remove_node_by_id
+        """
+        self.remove_at(self.node_index(node))
+        return self
+
+    def remove_at(self, position=-1):
+        """Remove node at given position
+
+        Args:
+            position: The node index. If <0, then it will return the index as counted from the back (-1 being the last
+                item)
+
+        Returns:
+            Removed node or None if index > child size
+        """
+        raise NotImplementedError()
+
+    def remove_node_by_id(self, node_id, descend=False):
+        """Remove node by given node_id
+
+        Args:
+            node_id: Node node_id to remove
+            descend: Whether to scan children's children
+
+        Returns:
+            Removed node or None
+        """
+        n = self.get_node(node_id, descend)
+
+        if n:
+            n.detach()
+
+        return n
+
+    def clear_nodes(self):
+        """Remove all child nodes
+
+        Returns:
+            self
+        """
+        raise NotImplementedError()
+
+    def children(self):
+        """Obtain child list
+
+        Returns:
+            List of GenericTreeNode
+
+        Note:
+            Will always return a list, empty if no node has no children
+        """
+        raise NotImplementedError()
+
+    def parent(self):
+        """Obtain parent node
+
+        Returns:
+            GenericTreeNode or None
+        """
+        raise NotImplementedError()
+
+    def detach(self):
+        """Remove self from parent (if attached)
+
+        Returns:
+            self
+        """
+        if self.parent():
+            self.parent().remove_node(self)
+
+        return self
+
+    def clone(self, deep=False):
+        """Performs a shallow clone of the data and children (new ids will be generated)
+
+        Args:
+            deep: Perform a deep copy instead
+
+        Returns:
+            GenericTreeNode cloned node
+        """
+        raise NotImplementedError()
+
+
+class GenericTreeNode(GenericTreeNodeInterface):
     """A generic tree node/tree structure with ability to store custom data"""
 
     def __init__(self, **kwargs):
@@ -123,100 +348,9 @@ class GenericTreeNode(object):
         if _top is node:
             raise RuntimeError("Detected recursive addition of node")
 
-    def add_at(self, node, position):
-        """Equivalent to add_node"""
-        return self.add_node(node, position)
-
     def node_index(self, node):
         """Return the index of given node"""
         return self._children.index(node)
-
-    def iterate_nodes(self, cb=lambda n: True, descend=False, include_self=True):
-        """Iterate over child nodes based on given function
-
-        Args:
-            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
-            descend: Whether to descend into child nodes as well
-            include_self: Include self in the iteration
-
-        Returns:
-            yields GenericTreeNode
-
-        Notes:
-            When iterating, it will descend to child nodes if the current node has any.
-        """
-        if include_self:
-            if cb(self):
-                yield self
-
-        for n in self._children:
-            if cb(n):
-                yield n
-
-            if descend:
-                if len(n.children()) > 0:
-                    yield from n.iterate_nodes(cb, descend, False)  # we already did the child nodes here/at this level
-
-    def find_nodes(self, cb, descend=False, include_self=True):
-        """Return a list of nodes that match based on given function (it actualizes the iterate_nodes function)
-
-        Args:
-            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
-            descend: Whether to descend into child nodes as well
-            include_self: Whether to include self in the search
-
-        Returns:
-            []
-        """
-
-        return [x for x in self.iterate_nodes(cb, descend, include_self)]
-
-    def find_node(self, cb, descend=False, include_self=True):
-        """Return the first node found by given callback function.
-
-        Args:
-            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
-            descend: Whether to descend into child nodes as well
-            include_self: Whether to include self in the search
-
-        Returns:
-            GenericTreeNode or None
-        """
-
-        try:
-            return next(self.iterate_nodes(cb, descend, include_self))
-        except StopIteration:
-            return None
-
-    def has_node(self, cb, descend=False, include_self=True):
-        """Return if given call back returns at least one matched node. This method is faster than find_nodes as it
-        stops after/return the first found node.
-
-        Args:
-            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
-            descend: Whether to descend into child nodes as well
-            include_self: Whether to include self in the search
-
-        Returns:
-            Boolean
-        """
-        return self.find_node(cb, descend, include_self=include_self) is not None
-
-    def get_node(self, node_id, descend=False):
-        """Obtain the node by given node_id
-
-        Args:
-            node_id: Node node_id
-            descend: Whether to descend into child nodes as well
-
-        Returns:
-            GenericTreeNode or None
-        """
-        nodes = self.find_nodes(lambda n: n.id == node_id, descend)
-        if nodes:
-            return nodes[0]
-        else:
-            return None
 
     def node_at(self, position=0):
         """Obtain node at given position
@@ -236,24 +370,6 @@ class GenericTreeNode(object):
 
         return self._children[position]
 
-    def remove_node(self, node):
-        """Remove given node
-
-        Args:
-            node: Node to remove
-
-        Returns:
-            self
-
-        Note:
-            Scans only immediate nodes (does not scan for children's children nodes). For that use remove_node_by_id
-        """
-        if node in self._children:
-            self._children.remove(node)
-            node._parent = None
-
-        return self
-
     def remove_at(self, position=-1):
         """Remove node at given position
 
@@ -270,24 +386,9 @@ class GenericTreeNode(object):
         if position < 0 or position >= len(self._children):
             return None
 
-        return self._children.pop(position)
-
-    def remove_node_by_id(self, node_id, descend=False):
-        """Remove node by given node_id
-
-        Args:
-            node_id: Node node_id to remove
-            descend: Whether to scan children's children
-
-        Returns:
-            Removed node or None
-        """
-        n = self.get_node(node_id, descend)
-
-        if n:
-            n.detach()
-
-        return n
+        node = self._children.pop(position)
+        node._parent = None
+        return node
 
     def clear_nodes(self):
         """Remove all child nodes
@@ -319,17 +420,6 @@ class GenericTreeNode(object):
             GenericTreeNode or None
         """
         return self._parent
-
-    def detach(self):
-        """Remove self from parent (if attached)
-
-        Returns:
-            self
-        """
-        if self._parent:
-            self._parent.remove_node(self)
-
-        return self
 
     def clone(self, deep=False):
         """Performs a shallow clone of the data and children (new ids will be generated)
