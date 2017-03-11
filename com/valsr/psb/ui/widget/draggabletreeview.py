@@ -360,7 +360,7 @@ def update_tree_node(draggable_node, tree_node):
         draggable_node.label = tree_node.label
 
     # update if three is a leaf or a branch
-    if len(tree_node.children()) == 0 and tree_node.has_data('info'):
+    if len(tree_node.children()) == 0:
         draggable_node.is_leaf = True
     else:
         draggable_node.is_leaf = False

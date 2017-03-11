@@ -47,10 +47,10 @@ class MainWindow(WindowBase):
         project.load_project('test.psb')
         PSBProject.project = project
         self.audio_files_tree = self.get_ui('audio_files')
-        self.audio_files_tree.bind(on_touch_up=self.ui_file_tree_touch_up)
-        self._update_audio_tree()
+        self.audio_files_tree.bind(on_touch_up=self.on_file_tree_touch_up)
+        self._update_ui()
 
-    def _update_audio_tree(self):
+    def _update_ui(self):
         PSBProject.project.audio_files._dump_node(logger=Logger.debug)
         draggabletreeview.synchronize_with_tree(self.audio_files_tree, PSBProject.project.audio_files)
 
@@ -106,17 +106,22 @@ class MainWindow(WindowBase):
                                     yes_button_label='Create', no_button_label='Cancel', parent=self,
                                     callback=lambda x: self._add_category(x.selection, selected_node.id, x.text))
 
-    # TODO:
-    def ui_file_tree_touch_up(self, tree, touch):
-        """Handle file tree touch events - opens menu"""
-        pos = tree.to_window(touch.pos[0], touch.pos[1], relative=True)
+    def on_new_project(self, *args):
+        PSBProject.project = PSBProject()
+        self._update_ui()
 
+    def on_file_tree_touch_up(self, tree, touch):
+        """Handle file tree touch events - opens menu"""
+        pos = touch.pos  # tree.parent.to_window(touch.pos[0], touch.pos[1], relative=True)
+
+        print(touch.pos, pos)
         if tree.collide_point(*pos):
             if touch.button == 'right':
                 # create menu
                 Logger.debug('Touch up from tree %s', tree.id)
 
                 node = tree.get_node_at_pos(touch.pos)
+                Logger.debug('Touched node %s %s', node.id, node.label)
                 if node and node is not self.audio_files_tree.root:
                     # construct menu
                     m = self._create_files_menu(node.id)
@@ -181,17 +186,22 @@ class MainWindow(WindowBase):
         tree = PSBProject.project.audio_files
         if tree.has_node(lambda x: x.has_data('data') and x.data.fingerprint == info.fingerprint):
             popup.show_ok_popup(
-                'File Already Added', 'File by similar fingerprint has already been added', parent=self)
+                'File Already Added', 'File by similar fingerprint has already been added', parent_node=self)
             return
 
         Logger.debug("Adding to %s to collection", file)
 
-        parent = tree.find_node(lambda x: x.label.lower() == 'uncategorized', False)
-        if not parent:
-            parent = tree.add_node(AudioFileNode(label="Uncategorized"))
+        ui_selected_node = self.audio_files_tree.selected_node
+        if not ui_selected_node:
+            ui_selected_node = self.audio_files_tree.root
 
-        parent.add_node(AudioFileNode(label=os.path.basename(file), data=info))
-        self._update_audio_tree()
+        parent_node = tree.find_node(lambda x: x.node_id == ui_selected_node.id, True, True)
+
+        if parent_node.is_file():
+            parent_node = parent_node.parent()
+
+        parent_node.add_node(AudioFileNode(label=os.path.basename(file), data=info))
+        self._update_ui()
 
     def _save_project(self, from_dialogue=False):
         if from_dialogue:
@@ -209,15 +219,19 @@ class MainWindow(WindowBase):
 
     def _open_project(self, *args):
         window = WindowManager.window(MainWindow.POPUP_WINDOW_ID)
-        if self._open_window.close_state == WindowCloseState.OK:
-            PSBProject.load_project(self, window.file)
-        WindowManager.destroy_window(self._open_window.id)
+        if window.close_state == WindowCloseState.OK:
+            PSBProject.project.load_project(window.file)
+            self._update_ui()
+        WindowManager.destroy_window(window.id)
 
     def _add_category(self, button, parent_id, text):
         if button == WindowCloseState.YES:
             # find if we have the node by text
             tree = PSBProject.project.audio_files
             parent_node = tree.find_node(lambda x: x.node_id == parent_id, True)
+            if parent_node.is_file:
+                parent_node = parent_node.parent()
+
             Logger.trace('Adding %s node to %s', text, parent_node.label)
 
             if parent_node.has_node(lambda x: x.label == text, include_self=False):
@@ -228,7 +242,7 @@ class MainWindow(WindowBase):
 
             node = AudioFileNode(label=text)
             parent_node.add_node(node)
-            self._update_audio_tree()
+            self._update_ui()
 
             # open the node
             # TODO: Open the new node
