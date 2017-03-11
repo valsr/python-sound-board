@@ -4,7 +4,7 @@ Created on Mar 3, 2017
 @author: valsr <valsr@valsr.com>
 """
 import unittest
-from com.valsr.type.tree import DataTreeNode
+from com.valsr.type.tree import DataTreeNode, find_by_id
 
 
 class TestGenericTreeNode(unittest.TestCase):
@@ -219,27 +219,30 @@ class TestGenericTreeNode(unittest.TestCase):
         self.assertIsNot(t.node_at(0), n)
         self.assertEqual(len(t.nodes()), children_size - 1)
 
-    def test_remove_node_id(self):
+    def test_remove_nodes(self):
         t = self.set_up_tree()
 
         n = t.node_at(0)
 
         children_size = len(t.nodes())
-        self.assertIs(t.remove_node_by_id(n.id), n)
-        self.assertIsNot(t.node_at(0), n)
+        self.assertIs(t.remove_nodes(find_by_id(n.id)), t)
+        self.assertFalse(t.has_node(find_by_id(n.id)))
         self.assertEqual(len(t.nodes()), children_size - 1)
 
         # remove non existing
-        self.assertIsNone(t.remove_node_by_id(n.node_at(1).id))
+        children_size = len(t.nodes())
+        t.remove_nodes(find_by_id(n.node_at(1).id))
+        self.assertEqual(len(t.nodes()), children_size)
 
     def test_remove_child_node_id(self):
         t = self.set_up_tree()
 
         n = t.node_at(1).node_at(1)
 
-        self.assertIsNone(t.remove_node_by_id(n.id))
-        self.assertIs(t.remove_node_by_id(n.id, True), n)
-        self.assertIsNone(t.get_node(n.id, True))
+        t.remove_nodes(find_by_id(n.id))
+        self.assertTrue(t.has_node(find_by_id(n.id), True))
+        t.remove_nodes(find_by_id(n.id), True)
+        self.assertFalse(t.has_node(find_by_id(n.id), True))
 
     def test_iterate(self):
         t = self.set_up_tree()

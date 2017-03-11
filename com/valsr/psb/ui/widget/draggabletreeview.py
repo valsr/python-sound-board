@@ -19,11 +19,11 @@ class TreeViewNodeInterface(GenericTreeNodeInterface):
     """TreeViewNodeInterface. This provides the a custom implementation of the GenericTreeNodeInterface to account
     for the incomparability between TreeViewNode and GenericTreeView node interface."""
 
-    def iterate_nodes(self, cb=lambda n: True, descend=False, include_self=True):
+    def iterate_nodes(self, callback=lambda n: True, descend=False, include_self=True):
         """Iterate over child nodes based on given function
 
         Args:
-            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            callback: Function to determine whether to iterate over node or not (callback(n), return Boolean)
             descend: Whether to descend into child nodes as well
             include_self: Include self in the iteration
 
@@ -34,16 +34,16 @@ class TreeViewNodeInterface(GenericTreeNodeInterface):
             When iterating, it will descend to child nodes if the current node has any.
         """
         if include_self:
-            if cb(self):
+            if callback(self):
                 yield self
 
         for n in self.nodes:
-            if cb(n):
+            if callback(n):
                 yield n
 
             if descend:
                 if len(n.nodes) > 0:
-                    yield from n.iterate_nodes(cb, descend, False)  # we already did the child nodes here/at this level
+                    yield from n.iterate_nodes(callback, descend, False)  # we already did the child nodes here/at this level
 
     def detach(self):
         """Remove self from parent_node (if attached)

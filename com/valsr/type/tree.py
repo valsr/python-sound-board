@@ -7,6 +7,62 @@ import uuid
 import copy
 
 
+class GenericTreeNodeSearcher():
+    """Class used for creating searchers through GenericTreeNode. In stores search parameters and delegates the call/
+    searching.
+
+    Use:
+        searcher = GenericTreeNodeSearcher(func, .....)
+        tree.find_nodes(searcher,...)
+    """
+
+    def __init__(self, f, *args, **kwargs):
+        self._args = args
+        self._kwargs = kwargs
+        self._f = f
+
+    def __call__(self, node):
+        return self._f(node, *self._args, **self._kwargs)
+
+
+def find_by_id(id):
+    """Search by id
+
+    Args:
+        id: Node identifier
+
+    Returns:
+        GenericTreeNodeSearcher
+    """
+    def _find(node, id):
+        return node.id == id
+    return GenericTreeNodeSearcher(_find, id)
+
+
+def find_by_property(name, value):
+    """Search by property name and value
+
+    Args:
+        name: Property name
+        value: Property value
+
+    Returns:
+        GenericTreeNodeSearcher
+    """
+    def _find(node, name, value):
+        if hasattr(node, name):
+            return node.__getattr__(property) == value
+        return False
+    return GenericTreeNodeSearcher(_find, name, value)
+
+
+def find_all():
+    """Generic node iterator/searcher"""
+    def _find(node):
+        return True
+    return GenericTreeNodeSearcher(_find)
+
+
 class GenericTreeNodeInterface(object):
     """GenericTreeNodeInterface. This provides the a basic implementation of a tree-node interface provided the
     implementing class provides implementation to few methods:
@@ -45,11 +101,11 @@ class GenericTreeNodeInterface(object):
         """Return the index of given node"""
         raise NotImplementedError()
 
-    def iterate_nodes(self, cb=lambda n: True, descend=False, include_self=True):
+    def iterate_nodes(self, callback=find_all(), descend=False, include_self=True):
         """Iterate over child nodes based on given function
 
         Args:
-            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            callback: Function to determine whether to iterate over node or not (callback(n), return Boolean)
             descend: Whether to descend into child nodes as well
             include_self: Include self in the iteration
 
@@ -60,35 +116,36 @@ class GenericTreeNodeInterface(object):
             When iterating, it will descend to child nodes if the current node has any.
         """
         if include_self:
-            if cb(self):
+            if callback(self):
                 yield self
 
         for n in self.nodes():
-            if cb(n):
+            if callback(n):
                 yield n
 
             if descend:
                 if len(n.nodes()) > 0:
-                    yield from n.iterate_nodes(cb, descend, False)  # we already did the child nodes here/at this level
+                    # we already did the child nodes here/at this level
+                    yield from n.iterate_nodes(callback, descend, False)
 
-    def find_nodes(self, cb, descend=False, include_self=True):
+    def find_nodes(self, callback, descend=False, include_self=True):
         """Return a list of nodes that match based on given function (it actualizes the iterate_nodes function)
 
         Args:
-            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            callback: Function to determine whether to iterate over node or not (callback(n), return Boolean)
             descend: Whether to descend into child nodes as well
             include_self: Whether to include self in the search
 
         Returns:
             []
         """
-        return [x for x in self.iterate_nodes(cb, descend, include_self)]
+        return [x for x in self.iterate_nodes(callback, descend, include_self)]
 
-    def find_node(self, cb, descend=False, include_self=True):
+    def find_node(self, callback, descend=False, include_self=True):
         """Return the first node found by given callback function.
 
         Args:
-            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            callback: Function to determine whether to iterate over node or not (callback(n), return Boolean)
             descend: Whether to descend into child nodes as well
             include_self: Whether to include self in the search
 
@@ -96,35 +153,48 @@ class GenericTreeNodeInterface(object):
             DataTreeNode or None
         """
         try:
-            return next(self.iterate_nodes(cb, descend, include_self))
+            return next(self.iterate_nodes(callback, descend, include_self))
         except StopIteration:
             return None
 
-    def has_node(self, cb, descend=False, include_self=True):
+    def has_node(self, callback, descend=False, include_self=True):
         """Return if given call back returns at least one matched node. This method is faster than find_nodes as it
         stops after/return the first found node.
 
         Args:
-            cb: Function to determine whether to iterate over node or not (cb(n), return Boolean)
+            callback: Function to determine whether to iterate over node or not (callback(n), return Boolean)
             descend: Whether to descend into child nodes as well
             include_self: Whether to include self in the search
 
         Returns:
             Boolean
         """
-        return self.find_node(cb, descend, include_self=include_self) is not None
+        return self.find_node(callback, descend, include_self=include_self) is not None
 
-    def get_node(self, node_id, descend=False):
-        """Obtain the node by given node_id
+    def has_child(self, id, descend=False):
+        """Return if given call back returns at least one matched node. This method is faster than find_nodes as it
+        stops after/return the first found node.
 
         Args:
-            node_id: Node node_id
+            id: Node id
+            descend: Whether to descend into child nodes as well
+
+        Returns:
+            Boolean
+        """
+        return self.has_node(find_by_id(id), descend, include_self=False)
+
+    def get_node(self, id, descend=False):
+        """Obtain the node by given id
+
+        Args:
+            id: Node id
             descend: Whether to descend into child nodes as well
 
         Returns:
             DataTreeNode or None
         """
-        return self.find_node(lambda n: n.id == node_id, descend)
+        return self.find_node(find_by_id(id), descend)
 
     def node_at(self, position=0):
         """Obtain node at given position
@@ -165,22 +235,26 @@ class GenericTreeNodeInterface(object):
         """
         raise NotImplementedError()
 
-    def remove_node_by_id(self, node_id, descend=False):
-        """Remove node by given node_id
+    def remove_nodes(self, callback, descend=False, include_self=False):
+        """Scan and remove nodes by matching callback
 
         Args:
-            node_id: Node node_id to remove
+            callback: Callback to determine nodes removal status
             descend: Whether to scan children's nodes
+            include_self: Whether to include self (detach) from its parent 
 
         Returns:
-            Removed node or None
+            self
         """
-        n = self.get_node(node_id, descend)
+        if include_self:
+            if callback(self):
+                self.detach()
 
-        if n:
-            n.detach()
+        nodes = self.find_nodes(callback,  descend, False)
+        for node in nodes:
+            node.detach()
 
-        return n
+        return self
 
     def clear_nodes(self):
         """Remove all child nodes
