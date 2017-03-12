@@ -14,6 +14,7 @@ from com.valsr.psb.ui.widget.draggable import Draggable
 from com.valsr.psb.ui.widget.droppable import Droppable
 from com.valsr.type import tree
 from com.valsr.type.tree import find_by_id
+from kivy.clock import Clock
 
 
 class TreeViewNodeInterface(tree.GenericTreeNodeInterface):
@@ -76,6 +77,9 @@ class DraggableTreeView(TreeView, Droppable):
         """Constructor"""
         super().__init__(**kwargs)
         self.drop_acceptable_cb = self._drop_acceptable
+        self.__last_hover_node = None
+        self.__last_hover_clock = None
+        self.__last_hover_pos = None
 
     def add_node(self, node, position=-1, parent_node=None):
         if self._root:  # allow adding different nodes during tree initialization
@@ -141,7 +145,7 @@ class DraggableTreeView(TreeView, Droppable):
 
             Logger.debug('Adding %s to %s', draggable._label.text, node._label.text)
             # add before
-            self.select_node(self.add_node(draggable, node))
+            self.select_node(self.add_node(node=draggable, parent_node=node))
             return True
 
         return False
@@ -152,6 +156,14 @@ class DraggableTreeView(TreeView, Droppable):
         if not node:
             node = self.root
 
+        self._check_hover_unschedule(touch.pos)
+
+        if self.__last_hover_node is not node:
+            Logger.debug("Schedule to expand node %s", node.label)
+            self.__last_hover_node = node
+            self.__last_hover_clock = Clock.schedule_once(self._expand_on_hover, 1.5)
+            self.__last_hover_pos = touch.pos
+
         # figure if we can drop here
         while not self.drop_acceptable_cb(node):
             node = node.parent_node
@@ -159,8 +171,26 @@ class DraggableTreeView(TreeView, Droppable):
         self.select_node(node)
         return True
 
+    def on_hover_out(self, draggable, touch):
+        if self.__last_hover_clock:
+            self._clear_on_hover_expand()
+
+    def _check_hover_unschedule(self, pos):
+        if self.__last_hover_pos:
+            distance = pow(pos[0] - self.__last_hover_pos[0], 2) + pow(pos[1] - self.__last_hover_pos[1], 2)
+            if distance > 25:
+                self._clear_on_hover_expand()
+
     def _drop_acceptable(self, node):
         return True
+
+    def _expand_on_hover(self, *args):
+        if self.__last_hover_node:
+            self.__last_hover_node.open()
+
+    def _clear_on_hover_expand(self):
+        Clock.unschedule(self.__last_hover_clock)
+        self.__last_hover_node = None
 
 
 class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInterface):
