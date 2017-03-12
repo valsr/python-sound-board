@@ -33,6 +33,8 @@ class Draggable(Widget):
         self._grab_offset = ()
         self._detached = False
         self._original_parent = None
+        self._last_hover = None
+        self.drag_data = None
 
     def on_touch_down(self, touch):
         if not touch.grab_current and self.draggable:
@@ -46,8 +48,14 @@ class Draggable(Widget):
         if touch.grab_current is self:
             distance = abs(touch.pos[0] - self._grab_pos[0]) + abs(touch.pos[1] - self._grab_pos[1])
             if not self._detached:
+
                 if distance > self.draggable_offset:
-                    Logger.debug('drag started')
+                    Logger.debug('Initiate drag')
+                    if not self.init_drag():
+                        Logger.debug("Drag prevented by init_drag")
+                        touch.ungrab(self)
+                        return True
+
                     root_widget = self._find_root_wiget()
                     size = self.size
                     self._original_parent = self.parent
@@ -68,7 +76,10 @@ class Draggable(Widget):
                         if isinstance(widget, Droppable):
                             x, y = widget.to_widget(*touch.pos)
                             if widget.collide_point(x, y):
-                                if widget._drag_over(self, touch):
+                                if self._last_hover is not widget and self._last_hover:
+                                    self._last_hover.on_hover_out(self, touch)
+                                self._last_hover = widget
+                                if widget.on_hover(self, touch):
                                     break
 
     def on_touch_up(self, touch):
@@ -118,6 +129,9 @@ class Draggable(Widget):
 
     def on_drag(self, draggable, touch):
         pass
+
+    def init_drag(self):
+        return self.draggable
 
     def _drag_detach_parent(self):
         self._original_parent.remove_widget(self)

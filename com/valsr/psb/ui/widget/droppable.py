@@ -27,12 +27,17 @@ class Droppable(object):
         """
         pass
 
-    def _drag_over(self, draggable, touch):
-        ret = self.on_hover(draggable, touch)
-        return ret
-
     def on_hover(self, draggable, touch):
         """Handles when a draggable object is hovered (but not dropped) over.
+
+        Args:
+            draggable: Object being dropped
+            touch: Touch event
+        """
+        pass
+
+    def on_hover_out(self, draggable, touch):
+        """Handles when a draggable object is hovered out (but not dropped) over.
 
         Args:
             draggable: Object being dropped
