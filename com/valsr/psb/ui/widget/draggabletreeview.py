@@ -351,9 +351,10 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInte
         self.label = args[1]
         self._label.text = args[1]
 
-    def _drag_detach_parent(self):
+    def drag_detach_parent(self):
         self._tree.remove_node(self)
         self._original_parent._do_layout()
+        return True
 
 
 def synchronize_with_tree(draggable_tree, tree_node):

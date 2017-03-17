@@ -29,6 +29,7 @@ from com.valsr.psb.project import PSBProject
 from com.valsr.psb.ui.widget import draggabletreeview
 from com.valsr.type.nodes import AudioFileNode, find_by_fingerprint
 from com.valsr.type.tree import find_by_id, find_by_property
+from com.valsr.psb.ui.widget.scrollview import ScrollViewEx
 
 
 class MainWindow(WindowBase):
