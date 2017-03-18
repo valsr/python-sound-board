@@ -8,88 +8,198 @@ from kivy.logger import Logger
 from kivy.properties import ObjectProperty, BooleanProperty, NumericProperty
 from kivy.uix.widget import Widget
 from com.valsr.psb.ui.widget.droppable import Droppable
+import copy
+from kivy.clock import Clock
 
 
 class Draggable(Widget):
-    """Draggable class interface"""
+    """Draggable class interface.
 
-    __events__ = ('on_drag', 'on_drop')
+    The lifecycle (and important steps) of dragging follows the following:
+    1. Touch down: Mouse event
+        stores touch event in drag_touch
+        stores touch offset in drag_offset
+        register selection timer (drag_select_timeout)
+
+    2. Selection: Timer event
+        unschedule drag selection timer
+        dispatches on_drag_select event
+
+    3. Start dragging: Dragging starts immediately after drag selecting or after min_drag_offset
+        calls drag select (if not yet selected, see above)
+        calls init_drag method (if false then resets drag status and resumes normal operations)
+        detaches from parent (drag_detach)
+            this will set the drag_parent and call drag_detach method. drag_detach must return the UI to use for moving
+            around (could be self). This will be stored in drag_ui
+        dispatches on_drag
+
+    4. Dragging:
+        moves drag_ui to new mouse position
+        calls on_hover for each widget that is under the mouse position
+        calls on_hover_out for each widget that was but no longer is under the mouse position (see Droppable for more
+        information)
+
+    5. Touch up: Mouse event, and only after a touch down has been issued
+        dispatches on_drag_release
+        drop the widget at the current position (will backwards iterate - children first then their parents - over
+        widgets of the Droppable interface and the first one to accept will trigger on_drop
+        if no widgets accept the drop, then it will drop at the original parent widget (if possible) or issue an error
+    """
+
+    __events__ = ('on_drag_select', 'on_drag_release', 'on_drag', 'on_drop')
 
     draggable = BooleanProperty(True)
-    """Whether dragging is enabled"""
+    """Whether _dragging is enabled"""
 
-    draggable_offset = NumericProperty(30)
+    min_drag_offset = NumericProperty(30)
     """Minimum drag distance before drag stars"""
 
-    draggableBoundWindow = ObjectProperty(defaultvalue=None, allownone=True)
-    """Bound dragging to this window"""
+    draggable_bound_window = ObjectProperty(defaultvalue=None, allownone=True)
+    """Bound _dragging to this window"""
 
-    draggableBoundWindowClass = ObjectProperty(defaultvalue=WindowSDL, allownone=False)
-    """Bound dragging to this window class"""
+    draggable_bound_window_class = ObjectProperty(defaultvalue=WindowSDL, allownone=False)
+    """Bound _dragging to this window class"""
+
+    drag_data = ObjectProperty(defaultvalue=None, allownone=True)
+    """Drag bounded data"""
+
+    drag_select_timeout = NumericProperty(0.4)
+    """Timeout from selecting widget to starting drag. In seconds"""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._grab_pos = ()
-        self._grab_offset = ()
-        self._detached = False
-        self._drag = False
-        self._original_parent = None
+        self._reset_drag()
+
+    def _reset_drag(self):
+        self._drag_touch = None
+        self._drag_offset = ()
+        self._drag_select_timer = None
+        self._dragging = False
+        self._drag_detached = False
+        self._drag_ui = None
+        self._drag_parent = None
+        self._drag_selected = False
         self.drag_data = None
         self._hover_list = ()
 
+    @property
+    def drag_touch(self):
+        return self._drag_touch
+
+    @property
+    def drag_offset(self):
+        return self._drag_offset
+
+    @property
+    def dragging(self):
+        return self._dragging
+
+    @property
+    def drag_detached(self):
+        return self._drag_detached
+
+    @property
+    def drag_ui(self):
+        """Return the drag UI element
+
+        Returns:
+            Widget
+        """
+        return self._drag_ui if self._drag_ui else self
+
+    @property
+    def drag_parent(self):
+        return self._drag_parent
+
+    @property
+    def drag_selected(self):
+        return self._drag_selected
+
     def on_touch_down(self, touch):
         if not touch.grab_current and self.draggable:
-            Logger.debug("Grab started")
+            self._drag_touch = copy.deepcopy(touch)
             touch.grab(self)
-            self._grab_pos = touch.pos
-            self._grab_offset = self.to_local(touch.pos[0], touch.pos[1], True)
+            self._drag_offset = self.to_local(touch.pos[0], touch.pos[1], True)
+            self._drag_select_timer = Clock.schedule_once(self._drag_select, self.drag_select_timeout)
             return True
 
-    def _detach(self, touch):
-        Logger.debug("Initating drag")
-        if not self.init_drag():
-            Logger.debug("Drag prevented by init_drag")
-            touch.ungrab(self)
-            return True
+    def _drag_select(self, *args):
+        if self._drag_select_timer:
+            Clock.unschedule(self._drag_select_timer)
 
-        root_widget = self._find_root_wiget()
-        size = self.size
-        self._original_parent = self.parent
-
-        # do detach or copy
-        if self.drag_detach_parent():
-            Logger.debug("Detached from parent")
-            root_widget.add_widget(self)
-            self._detached = True
-            self.size_hint = (None, None)
-            self.size = size
-        else:
-            Logger.debug("Prevented form detaching from parent")
-
-        self.dispatch('on_drag', self, touch)
-        self._drag = True
+        if not self.drag_selected:
+            Logger.debug("Select drag element")
+            self._drag_selected = True
+            self.dispatch('on_drag_select', self, self._drag_touch)
 
     def on_touch_move(self, touch):
         if touch.grab_current is self:
-            distance = abs(touch.pos[0] - self._grab_pos[0]) + abs(touch.pos[1] - self._grab_pos[1])
-            if not self._drag:
-                if distance > self.draggable_offset:
-                    self._detach(touch)
+            grab_pos = self._drag_touch.pos
+            distance = abs(touch.pos[0] - grab_pos[0]) + abs(touch.pos[1] - grab_pos[1])
+            if not self.dragging:
+                if distance > self.min_drag_offset:  # begin _dragging
+                    if not self.drag_selected:
+                        self._drag_select()
+                    self._start_drag(touch)
             else:
-                self.pos = (touch.pos[0] - self._grab_offset[0], touch.pos[1] - self._grab_offset[1])
+                self.drag_ui.pos = (touch.pos[0] - self._drag_offset[0], touch.pos[1] - self._drag_offset[1])
                 self._issue_hover_over(touch, self.parent)
                 self._issue_hover_out(touch)
 
+    def _start_drag(self, touch):
+        if not self.init_drag():
+            Logger.debug("Drag prevented by init_drag")
+            touch.ungrab(self)
+            self._reset_drag()
+        else:
+            self._detach(touch)
+            self.dispatch('on_drag', self, touch)
+            self._dragging = True
+
+    def _detach(self, touch):
+        Logger.debug("Detaching widget")
+
+        root_widget = self._find_root_wiget()
+        size = self.size
+        self._drag_parent = self.parent
+
+        self._drag_ui = self.drag_detach()
+        if self._drag_ui:  # keep as _drag_ui since we drag_ui can return self as ui
+            Logger.debug("Detached from parent")
+            root_widget.add_widget(self.drag_ui)
+            self._drag_detached = True
+            self.drag_ui.size_hint = (None, None)
+            self.drag_ui.size = size
+        else:
+            Logger.debug("Prevented form detaching from parent")
+
+    def drag_detach(self):
+        """Detach from parent widget
+
+        Returns:
+            widget: Widget to use for _dragging (UI)
+            None: Detach was unsuccessful or prevent from detaching
+
+        Notes:
+            Remember to detach from the parent widget if detaching
+        """
+        self.drag_parent.remove_widget(self)
+        self.drag_parent._trigger_layout()
+        return self
+
     def on_touch_up(self, touch):
         if touch.grab_current is self and touch.button == 'left':
-            Logger.debug('grab ended')
+            Logger.debug("Drag touch up event")
+            self.dispatch("on_drag_release", self, touch)
             touch.ungrab(self)
 
-            if self._drag:
-                # find what is under
+            if self.dragging:
                 dropped = False
                 parent = self.parent
                 self.parent.remove_widget(self)
+
+                # note even though we get the collide list in proper order (child first, parent second), at this point
+                # we are not checking for z-values so it is possible that the drop goes to the wrong widget
                 collide_list = self._get_collide_list(touch.pos[0], touch.pos[1], parent)
                 collide_list.reverse()
                 for widget in collide_list:
@@ -103,26 +213,30 @@ class Draggable(Widget):
                 # if not, drop back to original parent
                 if not dropped:
                     Logger.debug('No drop recipients, returning to original parent')
-                    if not self._original_parent._drop(self, touch):
+                    if isinstance(self.drag_parent, Droppable) and not self.drag_parent._drop(self, touch):
                         raise RuntimeError('Previous parent rejected us!!!')
-                    self.dispatch('on_drop', self, self._original_parent, touch)
-
-                self._detached = False
-                self._drag = False
+                    self.dispatch('on_drop', self, self.drag_parent, touch)
+            self._reset_drag()
 
     def _find_root_wiget(self):
-        if self.draggableBoundWindow:
+        if self.draggable_bound_window:
             parent = self.parent
-            while not isinstance(parent.parent, WindowSDL) and parent is not self.draggableBoundWindow:
+            while not isinstance(parent.parent, WindowSDL) and parent is not self.draggable_bound_window:
                 parent = parent.parent
             return parent
         else:
             parent = self.parent
-            while not isinstance(parent.parent, self.draggableBoundWindowClass):
+            while not isinstance(parent.parent, self.draggable_bound_window_class):
                 parent = parent.parent
             return parent
 
         return None
+
+    #
+    # Events
+    #
+    def on_drag_select(self, draggable, touch):
+        pass
 
     def on_drop(self, draggable, droppable, touch):
         pass
@@ -130,13 +244,25 @@ class Draggable(Widget):
     def on_drag(self, draggable, touch):
         pass
 
+    def on_drag_release(self, draggable, touch):
+        pass
+
     def init_drag(self):
+        """Initialize _dragging (before the drag begins). Usually perform any UI related swaps
+
+        Returns:
+            False: Prevent/stop _dragging
+            True: Initialization is ready and drag may begin
+        """
         return self.draggable
 
-    def drag_detach_parent(self):
-        self._original_parent.remove_widget(self)
-        self._original_parent._do_layout()
-        return True
+    def drag_release(self, touch):
+        """Fired when a touch up event has been received while _dragging
+
+        Args:
+            touch: Touch event
+        """
+        pass
 
     def _issue_hover_over(self, touch, root):
         collide_list = self._get_collide_list(touch.pos[0], touch.pos[1], root)

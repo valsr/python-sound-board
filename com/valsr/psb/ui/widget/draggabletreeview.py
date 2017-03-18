@@ -5,7 +5,7 @@ Created on Feb 4, 2017
 """
 import uuid
 from kivy.logger import Logger
-from kivy.properties import StringProperty, ObjectProperty, BooleanProperty, NumericProperty
+from kivy.properties import StringProperty, ObjectProperty, BooleanProperty, NumericProperty, ListProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.treeview import TreeView, TreeViewException, TreeViewNode
@@ -66,7 +66,7 @@ class DraggableTreeView(TreeView, Droppable):
     draggable = BooleanProperty(True)
     """Drag enabled"""
 
-    draggable_offset = NumericProperty(30)
+    min_drag_offset = NumericProperty(30)
     """How long of a distance (in pixels) to wait before starting drag"""
     # @TODO: Inherit draggable??? are these properties used at all???
 
@@ -211,6 +211,9 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInte
     label = StringProperty(defaultvalue=None, allownone=True)
     """String label for node"""
 
+    drag_selected_color = ListProperty([.5, .5, .5, 1.0])
+    """Drag background colour"""
+
     def __init__(self, node_id=None, data=None, label=None, **kwargs):
         super().__init__(**kwargs)
         if not node_id:
@@ -218,6 +221,8 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInte
 
         self.id = node_id
         self.data = data
+
+        self._selected_selected = self.color_selected
 
         # create a label for us
         self._label = Label(text=label)
@@ -351,10 +356,21 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInte
         self.label = args[1]
         self._label.text = args[1]
 
-    def drag_detach_parent(self):
+    def drag_detach(self):
         self._tree.remove_node(self)
-        self._original_parent._do_layout()
-        return True
+        self._drag_parent._do_layout()
+        return self
+
+    def on_drag_select(self, draggable, touch):
+        # modify drag color
+        self._selected_selected = self.color_selected
+        self.color_selected = self.drag_selected_color
+        self._trigger_layout
+
+    def on_drag_release(self, draggable, touch):
+        # modify drag color
+        self.color_selected = self._selected_selected
+        self._trigger_layout
 
 
 def synchronize_with_tree(draggable_tree, tree_node):
