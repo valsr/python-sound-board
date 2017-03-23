@@ -359,6 +359,8 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInte
     def drag_detach(self):
         self._tree.remove_node(self)
         self._drag_parent._do_layout()
+
+        # switch the ui
         return self
 
     def on_drag_select(self, draggable, touch):
