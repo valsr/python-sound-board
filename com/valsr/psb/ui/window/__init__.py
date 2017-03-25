@@ -19,12 +19,11 @@ from com.valsr.psb.ui.dialogue.addsound import AddSoundDialogue
 from com.valsr.psb.ui.dialogue.open import OpenDialogue
 from com.valsr.psb.ui.dialogue.save import SaveDialogue
 from com.valsr.psb.ui.menu import SimpleMenuItem, Menu
-from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeView, DraggableTreeViewNode
+from com.valsr.psb.ui.widget.audiotree import AudioTreeView, AudioTreeViewNode
 from com.valsr.psb.ui.widget.lane import LaneWidget
 from com.valsr.psb.ui.window.base import WindowBase, WindowCloseState
 from com.valsr.psb.ui.window.manager import WindowManager
 from com.valsr.psb.utility import MainTreeMenuActions
-from com.valsr.psb.ui.widget.audiotree import AudioTreeViewNode
 from com.valsr.psb.project import PSBProject
 from com.valsr.psb.ui.widget import draggabletreeview
 from com.valsr.type.nodes import AudioFileNode, find_by_fingerprint
@@ -49,12 +48,13 @@ class MainWindow(WindowBase):
         project.load_project('test.psb')
         PSBProject.project = project
         self.audio_files_tree = self.get_ui('audio_files')
+        self.audio_files_tree.audio_tree = PSBProject.project.audio_files
         self.audio_files_tree.bind(on_touch_up=self.on_file_tree_touch_up)
         self._update_ui()
 
     def _update_ui(self):
         PSBProject.project.audio_files._dump_node(logger=Logger.debug)
-        draggabletreeview.synchronize_with_tree(self.audio_files_tree, PSBProject.project.audio_files)
+        self.audio_files_tree.synchronize_with_tree()
 
     #
     # UI Handling

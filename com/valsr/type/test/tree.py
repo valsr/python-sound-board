@@ -30,10 +30,10 @@ class TestGenericTreeNode(unittest.TestCase):
 
     def test_set_property(self):
         self.node.foo = '1'
-        self.assertEqual(self.node._data['foo'], '1')
+        self.assertEqual(self.node._widget_data['foo'], '1')
 
         self.node.foo = 'data'
-        self.assertEqual(self.node._data['foo'], 'data')
+        self.assertEqual(self.node._widget_data['foo'], 'data')
 
     def test_get_property(self):
         self.node.foo = "1"

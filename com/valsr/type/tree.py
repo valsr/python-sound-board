@@ -311,7 +311,7 @@ class DataTreeNode(GenericTreeNodeInterface):
 
     def __init__(self, **kwargs):
         """Constructor"""
-        self._data = {}
+        self._widget_data = {}
         self._parent_node = None
         self._nodes = []
         self._id = str(uuid.uuid1())
@@ -325,12 +325,12 @@ class DataTreeNode(GenericTreeNodeInterface):
         return self._id
 
     def __getattr__(self, name):
-        if name is "_data":  # we forgot to init _data variable
-            self._data = {}
-            return self._data
+        if name is "_widget_data":  # we forgot to init _widget_data variable
+            self._widget_data = {}
+            return self._widget_data
 
-        if name in self._data:
-            return self._data[name]
+        if name in self._widget_data:
+            return self._widget_data[name]
 
         raise AttributeError("No attribute '%s' defined" % name)
 
@@ -338,7 +338,7 @@ class DataTreeNode(GenericTreeNodeInterface):
         if name.startswith("_") or name is "id":
             return super().__setattr__(name, value)
 
-        self._data[name] = value
+        self._widget_data[name] = value
 
     def has_data(self, name):
         """Check if given data attribute exists in the node
@@ -349,11 +349,11 @@ class DataTreeNode(GenericTreeNodeInterface):
         Returns:
             Boolean
         """
-        return name in self._data
+        return name in self._widget_data
 
     def get_data(self):
         """Get all data attributes"""
-        return self._data
+        return self._widget_data
 
     def set_data(self, value):
         """Set data attributes
@@ -366,7 +366,7 @@ class DataTreeNode(GenericTreeNodeInterface):
         """
         if value:
             if isinstance(value, dict):
-                self._data = value
+                self._widget_data = value
             else:
                 raise TypeError("value must be a dictionary or None")
         else:
@@ -374,7 +374,7 @@ class DataTreeNode(GenericTreeNodeInterface):
 
     def clear_data(self):
         """Clear data dictionary"""
-        self._data = {}
+        self._widget_data = {}
 
     def add_node(self, node, position=-1):
         self._validate_node_add(node)

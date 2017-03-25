@@ -219,7 +219,7 @@ class WindowManager(object):
         return False
 
     @staticmethod
-    def _closest_smallest_size(size):
+    def theme_closest_smallest_size(size):
         """Calculate the closest smallest (<=) size for a UI image
 
         Args:
@@ -255,7 +255,7 @@ class WindowManager(object):
         found = False
         file = ""
         while not found:
-            size = WindowManager._closest_smallest_size(size)
+            size = WindowManager.theme_closest_smallest_size(size)
             file = "ui/fontawesome/%s/png/%d/%s.png" % (theme, size, name)
 
             if os.path.exists(file):
