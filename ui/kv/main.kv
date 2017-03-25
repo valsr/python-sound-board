@@ -1,20 +1,9 @@
-<ImageButton@Button>:
-	label: ''
-	source: None
-	size_hint_y: None
-	BoxLayout:
-		y: self.parent.y + (self.parent.height - self.height)/2
-		x: self.parent.center_x - self.width/2
-		Image:
-			size: 24, 24
-			source: app.theme_image_file(root.source, 24)
-		Label:
-			text: root.label
-	
 GridLayout:
 	id: main
 	cols: 1
 	rows_minimum: {0:30}
+	
+	# Top menu (new, open, save)
 	BoxLayout:
 		orientation: 'horizontal'
 		height: 30
@@ -43,18 +32,22 @@ GridLayout:
 			label: 'Save As'
 			on_press: root.parent.on_save_as_project()
 			source: 'download'
+	
+	# Main window screen
 	GridLayout:
 		cols: 2
 		size: root.width, root.height-30
 		pos: 0,30
-		Splitter:
+		Splitter: # use splitter for basic functionality
 			sizable_from: 'right'
 			min_size: 150
-			max_size: 400
+			max_size: 450
 			size_hint_x: None
 			width: 250
 			keep_within_parent: True
 			strip_size: '8pt'			
+			
+			# Left side of the screen (audio tree + other buttons for it)
 			BoxLayout:
 				orientation: 'vertical'
 				TextInput:
@@ -81,10 +74,12 @@ GridLayout:
 					label: 'Add Sound'
 					source: 'plus'
 					height: 30
-					size_hint_y: None		
+					size_hint_y: None
+					
+		# Lane body section		
 		BoxLayout:
 			orientation: 'vertical'
-			ScrollView:
+			ScrollView: # we add the widgets once we press the add widget button
 				size_hint: (1, 1)
 				GridLayout:
 					id: lanes

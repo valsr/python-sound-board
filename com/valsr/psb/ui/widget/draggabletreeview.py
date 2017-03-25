@@ -61,6 +61,7 @@ class TreeViewNodeInterface(tree.GenericTreeNodeInterface):
 
 
 class DraggableTreeView(TreeView, Droppable):
+    # TODO: On drag highlight between spots
     """Adds ability to drag individual items for kivy's TreeView"""
 
     draggable = BooleanProperty(True)

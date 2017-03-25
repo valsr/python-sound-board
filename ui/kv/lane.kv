@@ -1,71 +1,114 @@
-<ImageOnlyButton@Button>:
-	label: ''
-	source: None
-	size_hint: None,None
-	on_press: print("Size {}:{}".format(self.size, self.source))
-	Image:
-		pos: root.pos
-		size: root.size
-		source: app.theme_image_file(root.source, root.width)
-			
 <LaneWidget@BoxLayout>:
 	size_hint_y: None
+	orientation: 'vertical'
+	height: 112
+	
+	# Top border
 	BoxLayout:
+		height: 10
+		size_hint: 1, None
 		canvas.before:
 			Color:
-				rgba: 0.5, 0.5, 0.5, 0.5
+				rgb: 0, 0, 0
 			Rectangle:
 				pos: self.pos
 				size: self.size
-		width: 150
-		size_hint: None, None
-		orientation: 'vertical'
-		TextInput:
-			height: 30
-			width: 50
-			size_hint_y: None
-			id: lane_name
-			text: 'Lane'
+	
+	# Lane elements scontainer		
+	BoxLayout:
+		orientation: 'horizontal'
+		size_hint: 1, None
+		
+		# Left side UI controls (playback controls)
+		BoxLayout:
+			canvas.before:
+				Color:
+					rgba: 0.5, 0.5, 0.5, 0.5
+				Rectangle:
+					pos: self.pos
+					size: self.size
+			width: 150
+			size_hint: None, None
+			orientation: 'vertical'
+			TextInput:
+				height: 30
+				width: 50
+				size_hint_y: None
+				id: lane_name
+				text: 'Lane'
+			
+			# Middle layer buttons (Play, stop, next event)
+			BoxLayout:
+				orientation: 'vertical'
+				height: 48
+				size_hint_y: None
+				RelativeLayout:
+					ImageOnlyButton:
+						source: 'stop'
+						size_hint: None, None
+						size: 24,24
+						pos: 27,12
+						id: stop_all
+					ImageOnlyButton:
+						source: 'play'
+						size_hint: None, None
+						size: 48,48
+						pos: 51,0
+						id: play
+					ImageOnlyButton:
+						source: 'share'
+						size_hint: None, None
+						size: 24,24
+						pos: 99,12
+						id: next_event
+			# Left right bar activity
+			BoxLayout:
+				height: 24
+				Label:
+					x: 0
+					width: 12
+					size_hint_x: None
+					text: 'L'
+				BoxLayout: # used for the graphics of the bars
+					id: lr_bars
+				Label:
+					x: 138
+					width: 12
+					size_hint_x: None
+					text: 'R'
+		
+		# Divider between UI controls and lane elements
 		BoxLayout:
 			orientation: 'vertical'
-			height: 48
-			size_hint_y: None
-			RelativeLayout:
-				ImageOnlyButton:
-					source: 'stop'
-					size: 24,24
-					pos: 27,12
-					id: stop_all
-				ImageOnlyButton:
-					source: 'play'
-					size: 48,48
-					pos: 51,0
-					id: play
-				ImageOnlyButton:
-					source: 'share'
-					size: 24,24
-					pos: 99,12
-					id: next_event
+			width: 5
+			size_hint: None, 1
+			canvas.before:
+				Color:
+					rgba: 0.5, 0.5, 0.5, 1
+				Rectangle:
+					pos: self.pos
+					size: self.size
+		# Lane container
 		BoxLayout:
-			height: 24
-			Label:
-				x: 0
-				width: 12
-				size_hint_x: None
-				text: 'L'
+			orientation: 'vertical'
+			canvas.before:
+				Color:
+					rgba: 0.25, 0.25, 0.25, 0.5
+				Rectangle:
+					pos: self.pos
+					size: self.size
+			
+			# Top bar (navigation)
 			BoxLayout:
-				id: lr_bars
-			Label:
-				x: 138
-				width: 12
-				size_hint_x: None
-				text: 'R'
-	BoxLayout:
-		orientation: 'vertical'
-		canvas.before:
-			Color:
-				rgba: 0.25, 0.25, 0.25, 0.5
-			Rectangle:
-				pos: self.pos
-				size: self.size
-		
+				height: 12
+				size_hint: 1, None
+				canvas.before:
+					Color:
+						rgba: 0.7, 0.7, 0.7, 1
+					Line:
+						points: self.x, self.y, self.x+self.width, self.y, self.x+self.width, self.y + self.height, self.x , self.y + self.height
+						close: True
+
+			# Lane
+			BoxLayout:
+				size_hint: 1, 1

@@ -17,6 +17,7 @@ from com.valsr.type.tree import find_by_id, find_by_property
 
 class AudioTreeView(DraggableTreeView):
     # TODO: On Drop also update tree structure
+    # TODO: On cancel drop revert to original drop location or copy the element on drag
     audio_tree = ObjectProperty(allownone=True)
 
     def __init__(self, tree=None, **kwargs):

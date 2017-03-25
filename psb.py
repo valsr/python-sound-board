@@ -12,8 +12,11 @@ from kivy.logger import Logger
 from com.valsr.psb import sound
 from com.valsr.psb.ui.window import MainWindow
 from com.valsr.psb.ui.window.manager import WindowManager
+from kivy.lang import Builder
 
 gi.require_version('Gst', '1.0')
+
+# TODO: Separate kivy UI definitions in separate file and load it first
 
 
 class PSB(App):
@@ -36,8 +39,14 @@ class PSB(App):
         """Obtain (most appropriate) theme image file. See WindowManager.theme_image_file"""
         return WindowManager.theme_image_file(name=name, size=size, theme=theme)
 
+    def init_utility_ui(self):
+        Builder.load_file("ui/kv/utility.kv")
+
 if __name__ == '__main__':
     sound.init_audio()
     Config.set('input', 'mouse', 'mouse,multitouch_on_demand')
     Logger.info("GStreamer version %d.%d.%d.%d" % Gst.version())
-    PSB().run()
+
+    app = PSB()
+    app.init_utility_ui()
+    app.run()

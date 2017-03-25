@@ -1,28 +1,3 @@
-<ImageButton@Button>:
-	label: ' '
-	source: None
-	size_hint_y: None
-	size_hint_x: None
-	BoxLayout:
-		y: self.parent.y + (self.parent.height - self.height)/2
-		x: self.parent.center_x - self.width/2
-		Image:
-			size: 24, 24
-			source: app.theme_image_file(root.source, 24)	
-		Label:
-			text: root.label
-<ImageOnlyButton@Button>:
-	source: None
-	size_hint_y: None
-	size_hint_x: None
-	BoxLayout:
-		size: self.parent.size
-		y: self.parent.y
-		x: self.parent.x
-		Image:
-			size: self.parent.size
-			source: app.theme_image_file(root.source, self.parent.height)	
-
 BoxLayout:
 	id: add_sound
 	orientation: 'vertical'
@@ -39,6 +14,7 @@ BoxLayout:
 			dirselect: False
 			show_hidden: True
 
+	# Bottom of window
 	BoxLayout:
 		orientation: 'horizontal'
 		size_hint_y: None
