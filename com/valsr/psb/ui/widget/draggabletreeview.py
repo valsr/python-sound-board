@@ -148,6 +148,7 @@ class DraggableTreeView(TreeView, Droppable):
                 node = node.parent_node
 
             Logger.debug('Adding %s to %s', draggable._label.text, node._label.text)
+
             # add before
             self.select_node(self.add_node(node=draggable, parent_node=node))
             return True

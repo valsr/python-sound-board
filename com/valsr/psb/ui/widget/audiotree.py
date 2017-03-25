@@ -3,19 +3,20 @@ Created on Mar 3, 2017
 
 @author: valsr <valsr@valsr.com>
 """
-from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeViewNode, DraggableTreeView
-from com.valsr.psb.sound.info import MediaInfo
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
-from com.valsr.psb.ui.window.manager import WindowManager
-from kivy.uix.image import Image
-from kivy.properties import ObjectProperty
 from kivy.logger import Logger
+from kivy.properties import ObjectProperty
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.image import Image
+from kivy.uix.label import Label
+
+from com.valsr.psb.ui.widget.draggabletreeview import DraggableTreeViewNode, DraggableTreeView
+from com.valsr.psb.ui.widget.waveform import WaveformWidget
+from com.valsr.psb.ui.window.manager import WindowManager
 from com.valsr.type.tree import find_by_id, find_by_property
 
 
 class AudioTreeView(DraggableTreeView):
-
+    # TODO: On Drop also update tree structure
     audio_tree = ObjectProperty(allownone=True)
 
     def __init__(self, tree=None, **kwargs):
@@ -74,6 +75,8 @@ class AudioTreeViewNode(DraggableTreeViewNode):
         self.set_ui(self._ui_layout)
         self._ui_layout.do_layout()
 
+        self._linked_node = None
+
         image_size = WindowManager.theme_closest_smallest_size(
             WindowManager.theme_closest_smallest_size(self.height) - 1)
 
@@ -101,15 +104,18 @@ class AudioTreeViewNode(DraggableTreeViewNode):
 
     def on_drag(self, draggable, touch):
         if self.is_file():
-            # get the waveform and switch
-            pass
+            ui = WaveformWidget(size=self.size, pos=self.pos)
+            ui.file = self._linked_node.data.file
+            self.set_ui(ui)
+
+    def on_drop(self, draggable, droppable, touch):
+        self.set_ui(self._ui_layout)
+        DraggableTreeViewNode.on_drop(self, draggable, droppable, touch)
 
     def is_file(self):
-        if self._tree and self._tree.audio_tree:
-            # find out if it has media
-            audio_node = self._tree.audio_tree.find_node(find_by_property('node_id', self.id), descend=True)
-            if audio_node:
-                return audio_node.is_file()
+        if self._linked_node:
+            return self._linked_node.is_file()
+
         return False
 
     def insert_node_at_position(self, tree_node, position):
@@ -125,6 +131,7 @@ class AudioTreeViewNode(DraggableTreeViewNode):
         if tree_node.has_data('label'):
             self.label = tree_node.label
 
+        self._linked_node = tree_node
         # update if three is a leaf or a branch
         if len(tree_node.nodes()) == 0:
             self.is_leaf = True
@@ -134,5 +141,8 @@ class AudioTreeViewNode(DraggableTreeViewNode):
         self.id = tree_node.node_id
 
     def on_add_to_tree(self):
+        if self._tree and self._tree.audio_tree:
+            self._linked_node = self._tree.audio_tree.find_node(find_by_property('node_id', self.id), descend=True)
+
         image_source = "file-audio-o" if self.is_file() else "folder"
         self._ui_image.source = WindowManager.theme_image_file(image_source, self._ui_image.width)
