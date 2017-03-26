@@ -10,6 +10,7 @@ from kivy.uix.widget import Widget
 from com.valsr.psb.ui.widget.droppable import Droppable
 import copy
 from kivy.clock import Clock
+from kivy.uix.label import Label
 
 
 class Draggable(Widget):
@@ -66,6 +67,8 @@ class Draggable(Widget):
     drag_select_timeout = NumericProperty(0.4)
     """Timeout from selecting widget to starting drag. In seconds"""
 
+    drag_ui = ObjectProperty(defaultvalue=Label(text="Drag Me"), allownone=False)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._reset_drag()
@@ -76,7 +79,7 @@ class Draggable(Widget):
         self._drag_select_timer = None
         self._dragging = False
         self._drag_detached = False
-        self._drag_ui = None
+        self.drag_ui = Label(text="Drag Me")
         self._drag_parent = None
         self._drag_selected = False
         self.drag_data = None
@@ -97,15 +100,6 @@ class Draggable(Widget):
     @property
     def drag_detached(self):
         return self._drag_detached
-
-    @property
-    def drag_ui(self):
-        """Return the drag UI element
-
-        Returns:
-            Widget
-        """
-        return self._drag_ui if self._drag_ui else self
 
     @property
     def drag_parent(self):
@@ -142,7 +136,10 @@ class Draggable(Widget):
                         self._drag_select()
                     self._start_drag(touch)
             else:
-                self.drag_ui.pos = (touch.pos[0] - self._drag_offset[0], touch.pos[1] - self._drag_offset[1])
+                mouse_pos = self.to_window(touch.pos[0], touch.pos[1])
+                self.drag_ui.pos = (mouse_pos[0] - self._drag_offset[0], mouse_pos[1] - self._drag_offset[1])
+                print("pos:", mouse_pos, self.drag_ui.pos)
+                print("size:", self.size, self.drag_ui.size)
                 self._issue_hover_over(touch, self.parent)
                 self._issue_hover_out(touch)
 
@@ -160,18 +157,27 @@ class Draggable(Widget):
         Logger.debug("Detaching widget")
 
         root_widget = self._find_root_wiget()
-        size = self.size
         self._drag_parent = self.parent
 
-        self._drag_ui = self.drag_detach()
-        if self._drag_ui:  # keep as _drag_ui since we drag_ui can return self as ui
+        self.drag_ui = self.drag_detach()
+
+        # cast position to window position
+        window_pos = self.to_window(touch.pos[0], touch.pos[1])
+        if self.drag_ui:  # keep as drag_ui since we drag_ui can return self as ui
             Logger.debug("Detached from parent")
             root_widget.add_widget(self.drag_ui)
             self._drag_detached = True
-            self.drag_ui.size_hint = (None, None)
-            self.drag_ui.size = size
+
+            # figure out the position
+            self.drag_ui.pos = window_pos
         else:
             Logger.debug("Prevented form detaching from parent")
+
+    def set_drag_ui(self, ui):
+        parent = self.drag_ui.parent
+        parent.remove_widget(self.drag_ui)
+        self.drag_ui = ui
+        parent.add_widget(self.drag_ui)
 
     def drag_detach(self):
         """Detach from parent widget

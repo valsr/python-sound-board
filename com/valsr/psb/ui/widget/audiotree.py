@@ -105,9 +105,7 @@ class AudioTreeViewNode(DraggableTreeViewNode):
 
     def on_drag(self, draggable, touch):
         if self.is_file():
-            ui = WaveformWidget(size=self.size, pos=self.pos)
-            ui.file = self._linked_node.data.file
-            self.set_ui(ui)
+            self.set_drag_ui(self._get_waveform_ui())
 
     def on_drop(self, draggable, droppable, touch):
         self.set_ui(self._ui_layout)
@@ -147,3 +145,30 @@ class AudioTreeViewNode(DraggableTreeViewNode):
 
         image_source = "file-audio-o" if self.is_file() else "folder"
         self._ui_image.source = WindowManager.theme_image_file(image_source, self._ui_image.width)
+
+    def drag_detach(self):
+        return self._get_label_ui()
+
+    def _get_label_ui(self):
+        # create a label in a box
+        ui = BoxLayout(orientation='horizontal', size_hint=(None, None), size=self._ui_layout.size)
+
+        image = Image(source=self._ui_image.source,  size=self._ui_image.size)
+        ui.add_widget(image)
+        label = Label(text=self.label, size_hint=(None, None), size=self._ui_label.size)
+        label.shorten = True
+        label.max_lines = 1
+        label.halign = 'left'
+        label.texture_update()
+        label.shorten_from = 'right'
+        label.text_size[0] = label.size[0]
+        label.width = ui.width - image.width
+
+        ui.add_widget(label)
+
+        return ui
+
+    def _get_waveform_ui(self):
+        ui = WaveformWidget(size=self.size, pos=self.pos, size_hint=(None, None))
+        ui.file = self._linked_node.data.file
+        return ui

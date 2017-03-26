@@ -5,6 +5,7 @@
 	
 	# Top border
 	BoxLayout:
+		id: lane_top_separator
 		height: 10
 		size_hint: 1, None
 		canvas.before:
@@ -42,25 +43,44 @@
 				orientation: 'vertical'
 				height: 48
 				size_hint_y: None
+				# Buttons
 				RelativeLayout:
 					ImageOnlyButton:
 						source: 'stop'
 						size_hint: None, None
 						size: 24,24
-						pos: 27,12
+						pos: 75-48,12
 						id: stop_all
 					ImageOnlyButton:
 						source: 'play'
 						size_hint: None, None
 						size: 48,48
-						pos: 51,0
+						pos: 75-24,0
 						id: play
 					ImageOnlyButton:
 						source: 'share'
 						size_hint: None, None
 						size: 24,24
-						pos: 99,12
+						pos: 75+24,12
 						id: next_event
+					ImageOnlyButton:
+						source: 'search-plus'
+						size_hint: None, None
+						size: 16,16
+						pos: 150-16,32
+						id: zoom_in
+					ImageOnlyButton:
+						source: 'search'
+						size_hint: None, None
+						size: 16,16
+						pos: 150-16,16
+						id: zoom_auto
+					ImageOnlyButton:
+						source: 'search-minus'
+						size_hint: None, None
+						size: 16,16
+						pos: 150-16,0
+						id: zoom_in
 			# Left right bar activity
 			BoxLayout:
 				height: 24
@@ -102,6 +122,7 @@
 			BoxLayout:
 				height: 12
 				size_hint: 1, None
+				id: lane_top_navigation
 				canvas.before:
 					Color:
 						rgba: 0.7, 0.7, 0.7, 1
@@ -111,4 +132,5 @@
 
 			# Lane
 			BoxLayout:
+				id: lane_view
 				size_hint: 1, 1
