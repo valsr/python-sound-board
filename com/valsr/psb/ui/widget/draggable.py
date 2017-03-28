@@ -14,7 +14,7 @@ from kivy.uix.label import Label
 
 
 class Draggable(Widget):
-    """Draggable class interface.
+    """Draggable class interface. The draggable interface uses window coordinate system when dispatching events.
 
     The lifecycle (and important steps) of dragging follows the following:
     1. Touch down: Mouse event
@@ -68,19 +68,21 @@ class Draggable(Widget):
     """Timeout from selecting widget to starting drag. In seconds"""
 
     drag_ui = ObjectProperty(defaultvalue=Label(text="Drag Me"), allownone=False)
+    """UI to display when dragging as drag object. Can be self."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._reset_drag()
 
     def _reset_drag(self):
-        self._drag_touch = None
+        self._drag_touch = None  # in window coordinates
         self._drag_offset = ()
         self._drag_select_timer = None
         self._dragging = False
         self._drag_detached = False
         self.drag_ui = Label(text="Drag Me")
         self._drag_parent = None
+        self._drag_root_widget = None
         self._drag_selected = False
         self.drag_data = None
         self._hover_list = ()
@@ -110,10 +112,12 @@ class Draggable(Widget):
         return self._drag_selected
 
     def on_touch_down(self, touch):
+        # touch is in parent coordinates
         if not touch.grab_current and self.draggable:
             self._drag_touch = copy.deepcopy(touch)
+            self._drag_touch.apply_transform_2d(self.to_window)
             touch.grab(self)
-            self._drag_offset = self.to_local(touch.pos[0], touch.pos[1], True)
+            self._drag_offset = self.to_local(touch.pos[0], touch.pos[1], True)  # convert to local offset point
             self._drag_select_timer = Clock.schedule_once(self._drag_select, self.drag_select_timeout)
             return True
 
@@ -127,7 +131,11 @@ class Draggable(Widget):
             self.dispatch('on_drag_select', self, self._drag_touch)
 
     def on_touch_move(self, touch):
+        # touch is in parent coordinates
         if touch.grab_current is self:
+            touch.push()
+            touch.apply_transform_2d(self.to_window)
+
             grab_pos = self._drag_touch.pos
             distance = abs(touch.pos[0] - grab_pos[0]) + abs(touch.pos[1] - grab_pos[1])
             if not self.dragging:
@@ -136,14 +144,13 @@ class Draggable(Widget):
                         self._drag_select()
                     self._start_drag(touch)
             else:
-                mouse_pos = self.to_window(touch.pos[0], touch.pos[1])
-                self.drag_ui.pos = (mouse_pos[0] - self._drag_offset[0], mouse_pos[1] - self._drag_offset[1])
-                print("pos:", mouse_pos, self.drag_ui.pos)
-                print("size:", self.size, self.drag_ui.size)
-                self._issue_hover_over(touch, self.parent)
-                self._issue_hover_out(touch)
+                self.drag_ui.pos = (touch.pos[0] - self._drag_offset[0], touch.pos[1] - self._drag_offset[1])
+                self._issue_hover_events(touch)
+
+            touch.pop()
 
     def _start_drag(self, touch):
+        # touch is in window coordinates
         if not self.init_drag():
             Logger.debug("Drag prevented by init_drag")
             touch.ungrab(self)
@@ -154,22 +161,21 @@ class Draggable(Widget):
             self._dragging = True
 
     def _detach(self, touch):
+        # touch is in window coordinates
         Logger.debug("Detaching widget")
 
-        root_widget = self._find_root_wiget()
+        self._drag_root_widget = self._find_root_wiget()
         self._drag_parent = self.parent
 
         self.drag_ui = self.drag_detach()
 
-        # cast position to window position
-        window_pos = self.to_window(touch.pos[0], touch.pos[1])
         if self.drag_ui:  # keep as drag_ui since we drag_ui can return self as ui
             Logger.debug("Detached from parent")
-            root_widget.add_widget(self.drag_ui)
+            self._drag_root_widget.add_widget(self.drag_ui)
             self._drag_detached = True
 
             # figure out the position
-            self.drag_ui.pos = window_pos
+            self.drag_ui.pos = touch.pos
         else:
             Logger.debug("Prevented form detaching from parent")
 
@@ -194,19 +200,21 @@ class Draggable(Widget):
         return self
 
     def on_touch_up(self, touch):
+        # touch is in parent coordinates
         if touch.grab_current is self and touch.button == 'left':
             Logger.debug("Drag touch up event")
             self.dispatch("on_drag_release", self, touch)
             touch.ungrab(self)
 
             if self.dragging:
+                touch.push()
+                touch.apply_transform_2d(self.to_window)
                 dropped = False
-                parent = self.parent
                 self.parent.remove_widget(self)
 
                 # note even though we get the collide list in proper order (child first, parent second), at this point
                 # we are not checking for z-values so it is possible that the drop goes to the wrong widget
-                collide_list = self._get_collide_list(touch.pos[0], touch.pos[1], parent)
+                collide_list = self._get_collide_list(touch.pos[0], touch.pos[1], self._drag_root_widget)
                 collide_list.reverse()
                 for widget in collide_list:
                     if widget._drop(self, touch):
@@ -222,6 +230,8 @@ class Draggable(Widget):
                     if isinstance(self.drag_parent, Droppable) and not self.drag_parent._drop(self, touch):
                         raise RuntimeError('Previous parent rejected us!!!')
                     self.dispatch('on_drop', self, self.drag_parent, touch)
+
+                touch.pop()
             self._reset_drag()
 
     def _find_root_wiget(self):
@@ -242,15 +252,44 @@ class Draggable(Widget):
     # Events
     #
     def on_drag_select(self, draggable, touch):
+        """
+            Issue when a draggable element is selected
+
+            Args:
+                draggable: Draggable selected
+                touch: Touch event (position in window coordinates)
+        """
         pass
 
     def on_drop(self, draggable, droppable, touch):
+        """
+            Issue when a draggable element is dropped (successfully)
+
+            Args:
+                draggable: Draggable element
+                droppable: Droppable element
+                touch: Touch event (position in window coordinates)
+        """
         pass
 
     def on_drag(self, draggable, touch):
+        """
+            Issue when a draggable element starts dragging
+
+            Args:
+                draggable: Draggable element
+                touch: Touch event (position in window coordinates)
+        """
         pass
 
     def on_drag_release(self, draggable, touch):
+        """
+            Issue when a draggable element is being dropped (before the drop)
+
+            Args:
+                draggable: Draggable element
+                touch: Touch event (position in window coordinates)
+        """
         pass
 
     def init_drag(self):
@@ -266,12 +305,13 @@ class Draggable(Widget):
         """Fired when a touch up event has been received while _dragging
 
         Args:
-            touch: Touch event
+            touch: Touch event (position in window coordinates)
         """
         pass
 
-    def _issue_hover_over(self, touch, root):
-        collide_list = self._get_collide_list(touch.pos[0], touch.pos[1], root)
+    def _issue_hover_events(self, touch):
+        # touch is in window coordinates
+        collide_list = self._get_collide_list(touch.pos[0], touch.pos[1], self._drag_root_widget)
         collide_list.reverse()
 
         # now call each widget
@@ -305,6 +345,7 @@ class Draggable(Widget):
         self._hover_list = hover_list
 
     def _get_collide_list(self, x, y, widget):
+        # x, y is in parent coordinates
         collide = []
         if isinstance(widget, Droppable) and widget is not self:
             if widget.collide_point(x, y):
@@ -315,6 +356,3 @@ class Draggable(Widget):
             collide.extend(self._get_collide_list(x, y, child))
 
         return collide
-
-    def _issue_hover_out(self, touch):
-        pass
