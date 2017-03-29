@@ -148,10 +148,23 @@ class DraggableTreeView(TreeView, Droppable):
             while not self.drop_acceptable_cb(node):
                 node = node.parent_node
 
-            Logger.debug('Adding %s to %s', draggable._label.text, node._label.text)
+            # check if we are adding to self or child
+            added_node = None
+            if self.root.has_node(find_by_id(draggable.id), descend=True):
+                # check if are adding as a sub-child of self
+                if draggable.find_node(find_by_id(node.id), descend=True):
+                    Logger.debug('Can not add node (%s) to self or child (%s)',
+                                 draggable._label.text, node._label.text)
+                else:
+                    Logger.debug('Moving %s to %s', draggable._label.text, node._label.text)
+                    draggable.detach()
+                    added_node = self.add_node(node=draggable, parent_node=node)
+            else:
+                Logger.debug('Adding %s to %s', draggable._label.text, node._label.text)
+                added_node = self.add_node(node=draggable, parent_node=node)
 
-            # add before
-            self.select_node(self.add_node(node=draggable, parent_node=node))
+            if added_node:
+                self.select_node(added_node)
             return True
 
         return False
@@ -387,3 +400,6 @@ class DraggableTreeViewNode(TreeViewNode, BoxLayout, Draggable, TreeViewNodeInte
 
     def on_remove_from_tree(self, tree):
         pass
+
+    def cancel_drag(self):
+        return True

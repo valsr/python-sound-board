@@ -44,7 +44,8 @@ class Draggable(Widget):
         dispatches on_drag_release
         drop the widget at the current position (will backwards iterate - children first then their parents - over
         widgets of the Droppable interface and the first one to accept will trigger on_drop
-        if no widgets accept the drop, then it will drop at the original parent widget (if possible) or issue an error
+        if no widgets accept the drop, then it will call drag_cancel
+        if drag cancel returns false, then it will drop at the original parent widget (if possible) or issue an error
     """
 
     __events__ = ('on_drag_select', 'on_drag_release', 'on_drag', 'on_drop')
@@ -210,7 +211,7 @@ class Draggable(Widget):
                 touch.push()
                 touch.apply_transform_2d(self.to_window)
                 dropped = False
-                self.parent.remove_widget(self)
+                self._drag_root_widget.remove_widget(self.drag_ui)
 
                 # note even though we get the collide list in proper order (child first, parent second), at this point
                 # we are not checking for z-values so it is possible that the drop goes to the wrong widget
@@ -226,10 +227,12 @@ class Draggable(Widget):
 
                 # if not, drop back to original parent
                 if not dropped:
-                    Logger.debug('No drop recipients, returning to original parent')
-                    if isinstance(self.drag_parent, Droppable) and not self.drag_parent._drop(self, touch):
-                        raise RuntimeError('Previous parent rejected us!!!')
-                    self.dispatch('on_drop', self, self.drag_parent, touch)
+                    Logger.debug('No drop recipients, canceling the drag')
+                    if not self.cancel_drag():
+                        Logger.debug('Unable to cancel drag, attempting recovery')
+                        if isinstance(self.drag_parent, Droppable) and not self.drag_parent._drop(self, touch):
+                            raise RuntimeError('Previous parent rejected us!!!')
+                        self.dispatch('on_drop', self, self.drag_parent, touch)
 
                 touch.pop()
             self._reset_drag()
@@ -300,6 +303,15 @@ class Draggable(Widget):
             True: Initialization is ready and drag may begin
         """
         return self.draggable
+
+    def cancel_drag(self):
+        """Handle drag cancellation
+
+        Returns:
+            True: Cancellation handled (nothing else to do)
+            False: Attempt to recover by dropping to the original parent
+        """
+        return False
 
     def drag_release(self, touch):
         """Fired when a touch up event has been received while _dragging

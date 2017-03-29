@@ -41,7 +41,7 @@ class Droppable(object):
 
         Args:
             draggable: Object being dropped
-            touch: Touch event
+            touch: Touch event (window coordinate)
 
         Returns:
             Boolean: To accept as target or not
@@ -53,7 +53,7 @@ class Droppable(object):
 
         Args:
             draggable: Object being dropped
-            touch: Touch event
+            touch: Touch event (window coordinate)
         """
         pass
 
@@ -62,6 +62,6 @@ class Droppable(object):
 
         Args:
             draggable: Object being dropped
-            touch: Touch event
+            touch: Touch event (window coordinate)
         """
         pass
